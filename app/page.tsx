@@ -1,3 +1,4 @@
+import { ContactSection } from "@/components/sections/contact-section";
 import { HeroSection } from "@/components/sections/hero-section";
 import { PackagesSection } from "@/components/sections/packages-section";
 import { ReferencesSection } from "@/components/sections/references-section";
@@ -13,7 +14,7 @@ export default function Home() {
       <ReferencesSection />
       <PackagesSection />
       <WhyGastroCraftSection />
-      <section id="contact" aria-label="Kontakt" className="h-px" />
+      <ContactSection />
     </>
   );
 }
