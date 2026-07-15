@@ -22,7 +22,7 @@ export function Header() {
 
   useEffect(() => {
     const updateScrollState = () => {
-      setIsScrolled(window.scrollY > 8);
+      setIsScrolled(window.scrollY > 10);
     };
 
     updateScrollState();
@@ -51,33 +51,33 @@ export function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b transition-colors duration-200 ${
+      className={`sticky top-0 z-50 border-b backdrop-blur-sm transition-[background-color,border-color] duration-200 ${
         isScrolled || isMenuOpen
-          ? "border-white/10 bg-midnight"
-          : "border-transparent bg-midnight/70 md:bg-midnight/30"
+          ? "border-white/10 bg-midnight/95"
+          : "border-transparent bg-midnight/80 lg:bg-midnight/55"
       }`}
     >
-      <Container className="flex min-h-20 items-center justify-between gap-6 py-4">
+      <Container className="flex min-h-16 items-center justify-between gap-5 py-3 sm:min-h-[4.5rem]">
         <Link
           href="/"
-          className="inline-flex items-center gap-3 focus-visible:rounded-sm"
+          className="inline-flex min-w-0 items-center gap-2.5 focus-visible:rounded-sm sm:gap-3"
           aria-label="GastroCraft Startseite"
           onClick={closeMenu}
         >
           <Image
             src="/brand/gastrocraft-monogram.svg"
             alt=""
-            width={42}
-            height={42}
+            width={38}
+            height={38}
             priority
             aria-hidden="true"
-            className="h-10 w-10"
+            className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
           />
-          <span className="inline-flex flex-col">
-            <span className="font-heading text-xl font-semibold text-warm-white">
+          <span className="inline-flex min-w-0 flex-col">
+            <span className="font-heading text-lg font-semibold leading-tight text-warm-white sm:text-xl">
               GastroCraft
             </span>
-            <span className="hidden text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-premium-gold sm:inline">
+            <span className="hidden text-[0.64rem] font-semibold uppercase leading-none tracking-[0.18em] text-premium-gold sm:mt-1 sm:inline">
               Restaurant Digital Solutions
             </span>
           </span>
@@ -85,18 +85,18 @@ export function Header() {
 
         <nav
           aria-label="Hauptnavigation"
-          className="hidden items-center gap-7 lg:flex"
+          className="hidden items-center gap-5 xl:flex xl:gap-6"
         >
           {navigationItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="rounded-sm text-sm font-medium text-slate-300 transition-colors hover:text-warm-white"
+              className="rounded-sm px-0.5 py-2 text-sm font-medium text-slate-300 transition-colors duration-200 hover:text-warm-white"
             >
               {item.label}
             </a>
           ))}
-          <Button href="#contact" variant="primary" size="sm">
+          <Button href="#contact" variant="primary" size="sm" className="ml-1">
             Kostenlose Demo
           </Button>
         </nav>
@@ -106,7 +106,7 @@ export function Header() {
           aria-label={isMenuOpen ? "Menü schließen" : "Menü öffnen"}
           aria-expanded={isMenuOpen}
           aria-controls="mobile-navigation"
-          className="inline-flex h-11 w-11 items-center justify-center rounded border border-white/15 text-warm-white transition-colors hover:border-premium-gold hover:text-premium-gold lg:hidden"
+          className="inline-flex h-11 w-11 items-center justify-center rounded border border-white/15 text-warm-white transition-colors duration-200 hover:border-premium-gold hover:text-premium-gold xl:hidden"
           onClick={() => setIsMenuOpen((current) => !current)}
         >
           {isMenuOpen ? (
@@ -119,18 +119,18 @@ export function Header() {
 
       <div
         id="mobile-navigation"
-        className={`lg:hidden ${isMenuOpen ? "block" : "hidden"}`}
+        className={`xl:hidden ${isMenuOpen ? "block" : "hidden"}`}
       >
-        <Container className="pb-6">
+        <Container className="pb-5">
           <nav
             aria-label="Mobile Hauptnavigation"
-            className="grid gap-2 border-t border-white/10 pt-5"
+            className="grid gap-1 border-t border-white/10 pt-4"
           >
             {navigationItems.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded px-1 py-3 text-base font-medium text-slate-200 transition-colors hover:text-premium-gold"
+                className="rounded px-1 py-3 text-base font-medium text-slate-200 transition-colors duration-200 hover:text-premium-gold"
                 onClick={closeMenu}
               >
                 {item.label}

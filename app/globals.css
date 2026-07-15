@@ -44,6 +44,30 @@ body {
   outline-offset: 4px;
 }
 
+.hero-reveal-line {
+  animation: hero-line-reveal 640ms ease-out both;
+}
+
+.hero-reveal-delay-1 {
+  animation-delay: 60ms;
+}
+
+.hero-reveal-delay-2 {
+  animation-delay: 120ms;
+}
+
+@keyframes hero-line-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -52,5 +76,10 @@ body {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .hero-reveal-line {
+    opacity: 1;
+    transform: none;
   }
 }
