@@ -77,7 +77,7 @@ export function Header() {
             <span className="font-heading text-lg font-semibold leading-tight text-warm-white sm:text-xl">
               GastroCraft
             </span>
-            <span className="hidden text-[0.64rem] font-semibold uppercase leading-none tracking-[0.18em] text-premium-gold sm:mt-1 sm:inline">
+            <span className="hidden text-[0.64rem] font-semibold uppercase leading-none tracking-[0.18em] text-premium-gold sm:mt-1 xl:inline">
               Restaurant Digital Solutions
             </span>
           </span>
@@ -85,7 +85,7 @@ export function Header() {
 
         <nav
           aria-label="Hauptnavigation"
-          className="hidden items-center gap-5 xl:flex xl:gap-6"
+          className="hidden items-center gap-4 lg:flex xl:gap-6"
         >
           {navigationItems.map((item) => (
             <a
@@ -106,7 +106,7 @@ export function Header() {
           aria-label={isMenuOpen ? "Menü schließen" : "Menü öffnen"}
           aria-expanded={isMenuOpen}
           aria-controls="mobile-navigation"
-          className="inline-flex h-11 w-11 items-center justify-center rounded border border-white/15 text-warm-white transition-colors duration-200 hover:border-premium-gold hover:text-premium-gold xl:hidden"
+          className="inline-flex h-11 w-11 items-center justify-center rounded border border-white/15 text-warm-white transition-colors duration-200 hover:border-premium-gold hover:text-premium-gold lg:hidden"
           onClick={() => setIsMenuOpen((current) => !current)}
         >
           {isMenuOpen ? (
@@ -119,7 +119,7 @@ export function Header() {
 
       <div
         id="mobile-navigation"
-        className={`xl:hidden ${isMenuOpen ? "block" : "hidden"}`}
+        className={`lg:hidden ${isMenuOpen ? "block" : "hidden"}`}
       >
         <Container className="pb-5">
           <nav
