@@ -3,6 +3,7 @@ node_modules/
 
 # Next.js
 .next/
+.next-local/
 out/
 
 # production
@@ -25,6 +26,9 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# local visual checks
+visual-qa/
 
 # TypeScript
 *.tsbuildinfo
