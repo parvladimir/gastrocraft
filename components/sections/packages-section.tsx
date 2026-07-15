@@ -53,7 +53,7 @@ export function PackagesSection() {
           </div>
         </div>
 
-        <div className="mt-12 grid items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3 lg:pt-4">
+        <div className="mt-12 grid min-w-0 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3 lg:pt-4">
           {servicePackages.map((servicePackage) => (
             <PackageCard key={servicePackage.id} servicePackage={servicePackage} />
           ))}
@@ -82,7 +82,7 @@ function PackageCard({
 
   return (
     <article
-      className={`group flex h-full min-h-[32rem] flex-col rounded-lg border p-6 transition-[border-color,transform,box-shadow,background-color] duration-200 md:min-h-[34rem] ${
+      className={`group flex h-full min-h-[32rem] min-w-0 flex-col rounded-lg border p-6 transition-[border-color,transform,box-shadow,background-color] duration-200 md:min-h-[34rem] ${
         isFeatured
           ? "order-first shadow-[0_18px_46px_rgba(0,0,0,0.22)] motion-safe:lg:-translate-y-4 motion-safe:hover:lg:-translate-y-5 md:order-none"
           : "border-white/10 bg-[#101a2c] text-warm-white hover:border-premium-gold/45 motion-safe:hover:-translate-y-1"
@@ -94,8 +94,8 @@ function PackageCard({
           : servicePackage.name
       }
     >
-      <div className="flex min-h-16 items-start justify-between gap-4">
-        <div>
+      <div className="flex min-h-16 min-w-0 items-start justify-between gap-4">
+        <div className="min-w-0">
           <h3 className="font-heading text-2xl font-semibold leading-8">
             {servicePackage.name}
           </h3>

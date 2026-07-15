@@ -11,8 +11,8 @@ const serviceHints = [
 export function HeroSection() {
   return (
     <section className="overflow-hidden" aria-labelledby="hero-heading">
-      <Container className="grid min-h-[calc(100svh-4.5rem)] items-center gap-12 pb-14 pt-12 sm:pb-16 sm:pt-14 lg:grid-cols-[minmax(0,1.12fr)_minmax(390px,0.88fr)] lg:gap-12 lg:pb-16 lg:pt-12 xl:gap-14">
-        <div className="max-w-[45rem] lg:-mt-8">
+      <Container className="grid min-h-[calc(100svh-4.5rem)] min-w-0 items-center gap-12 pb-14 pt-12 sm:pb-16 sm:pt-14 lg:grid-cols-[minmax(0,1.12fr)_minmax(390px,0.88fr)] lg:gap-12 lg:pb-16 lg:pt-12 xl:gap-14">
+        <div className="min-w-0 max-w-[45rem] lg:-mt-8">
           <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
             Restaurant Digital Solutions
           </p>
@@ -59,7 +59,7 @@ export function HeroSection() {
 function HeroVisual() {
   return (
     <div
-      className="relative mx-auto w-full max-w-[34rem] lg:mx-0 lg:-mt-4"
+      className="relative mx-auto w-full min-w-0 max-w-[34rem] lg:mx-0 lg:-mt-4"
       aria-hidden="true"
     >
       <div className="absolute -left-5 top-12 hidden h-32 w-28 rounded-lg border border-premium-gold/25 bg-midnight/60 sm:block" />
@@ -88,15 +88,15 @@ function HeroVisual() {
               </div>
 
               <div className="mt-6 grid grid-cols-3 gap-2.5 sm:gap-3">
-                <div className="h-[4.5rem] rounded border border-white/10 bg-[#172238] p-3">
+                <div className="h-[4.5rem] overflow-hidden rounded border border-white/10 bg-[#172238] p-2 sm:p-3">
                   <div className="h-2 w-10 rounded bg-white/35" />
                   <div className="mt-3 h-2 w-14 rounded bg-white/18" />
                 </div>
-                <div className="h-[4.5rem] rounded border border-premium-gold/35 bg-[#172238] p-3">
+                <div className="h-[4.5rem] overflow-hidden rounded border border-premium-gold/35 bg-[#172238] p-2 sm:p-3">
                   <div className="h-2 w-10 rounded bg-premium-gold" />
                   <div className="mt-3 h-2 w-12 rounded bg-white/25" />
                 </div>
-                <div className="h-[4.5rem] rounded border border-white/10 bg-[#172238] p-3">
+                <div className="h-[4.5rem] overflow-hidden rounded border border-white/10 bg-[#172238] p-2 sm:p-3">
                   <div className="h-2 w-10 rounded bg-white/35" />
                   <div className="mt-3 h-2 w-16 rounded bg-white/18" />
                 </div>

@@ -49,7 +49,7 @@ export function ReferencesSection() {
   return (
     <section
       id="references"
-      className="scroll-mt-2 border-t border-white/10 py-20 sm:py-24 lg:py-28"
+      className="scroll-mt-20 border-t border-white/10 py-20 sm:py-24 lg:py-28"
       aria-labelledby="references-heading"
     >
       <Container>
@@ -109,18 +109,18 @@ function ReferenceCard({
 }) {
   return (
     <article
-      className={`group overflow-hidden rounded-lg border border-white/10 bg-[#101a2c] transition-[border-color,transform,background-color] duration-200 hover:border-premium-gold/45 hover:bg-[#111d31] motion-safe:hover:-translate-y-1 ${
+      className={`group min-w-0 overflow-hidden rounded-lg border border-white/10 bg-[#101a2c] transition-[border-color,transform,background-color] duration-200 hover:border-premium-gold/45 hover:bg-[#111d31] motion-safe:hover:-translate-y-1 ${
         isFeatured ? "lg:col-span-2" : ""
       }`}
     >
       <div
-        className={`grid gap-0 ${
+        className={`grid min-w-0 gap-0 ${
           isFeatured ? "lg:grid-cols-[1.15fr_0.85fr]" : ""
         }`}
       >
         <ProjectPreview project={project} isFeatured={isFeatured} />
 
-        <div className="flex flex-col p-6 sm:p-7">
+        <div className="flex min-w-0 flex-col p-6 sm:p-7">
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded border border-premium-gold/35 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-premium-gold">
               Demo-Projekt
@@ -171,7 +171,7 @@ function ProjectPreview({
 
   return (
     <div
-      className={`relative min-h-[22rem] border-b border-white/10 p-5 sm:p-6 lg:border-b-0 ${
+      className={`relative min-h-[22rem] min-w-0 overflow-hidden border-b border-white/10 p-5 sm:p-6 lg:border-b-0 ${
         isFeatured ? "lg:border-r" : ""
       } lg:border-white/10`}
       aria-hidden="true"
@@ -257,7 +257,7 @@ function RhodosPreview({
         <div className="mt-4 h-5 w-44 rounded bg-warm-white/90" />
         <div className="mt-5 grid grid-cols-3 gap-3">
           {[0, 1, 2].map((item) => (
-            <div key={item} className="rounded border border-white/12 bg-white/8 p-3">
+            <div key={item} className="overflow-hidden rounded border border-white/12 bg-white/8 p-2 sm:p-3">
               <div className="h-10 rounded bg-warm-white/75" />
               <div className="mt-3 h-2 w-12 rounded bg-white/45" />
             </div>
