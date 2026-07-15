@@ -1,6 +1,7 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
+import { SectionClosingStatement } from "@/components/ui/section-closing-statement";
 import {
   referenceProjects,
   type ReferenceProject,
@@ -88,13 +89,11 @@ export function ReferencesSection() {
           ))}
         </div>
 
-        <div className="mt-12 max-w-3xl border-l border-premium-gold/50 pl-5">
-          <p className="font-heading text-xl font-semibold leading-8 text-warm-white sm:text-2xl">
-            Ihr Restaurant ist anders.
-            <span className="block text-premium-gold">
-              Ihr digitaler Auftritt sollte es auch sein.
-            </span>
-          </p>
+        <div className="mt-12">
+          <SectionClosingStatement
+            firstLine="Ihr Restaurant ist anders."
+            secondLine="Ihr digitaler Auftritt sollte es auch sein."
+          />
         </div>
       </Container>
     </section>
