@@ -60,10 +60,10 @@ export function PackagesSection() {
 
         <SupportBlock />
 
-        <div className="mt-10 max-w-3xl border-l border-premium-gold/50 pl-5">
-          <p className="font-heading text-xl font-semibold leading-8 text-warm-white sm:text-2xl">
+        <div className="mt-14 max-w-3xl border-l border-premium-gold/60 py-2 pl-6 sm:mt-16 sm:py-3 lg:mt-20 lg:pl-7">
+          <p className="font-heading text-xl font-semibold leading-8 text-warm-white sm:text-2xl sm:leading-9">
             Sie wissen noch nicht, welches Paket passt?
-            <span className="block text-premium-gold">
+            <span className="mt-1 block text-premium-gold sm:mt-1.5">
               Wir empfehlen Ihnen kostenlos die passende Lösung.
             </span>
           </p>
