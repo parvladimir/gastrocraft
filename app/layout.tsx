@@ -3,6 +3,8 @@ import { Inter, Manrope } from "next/font/google";
 import type { ReactNode } from "react";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { StructuredData } from "@/components/seo/structured-data";
+import { getSiteUrl, siteConfig } from "@/lib/site-config";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,22 +20,75 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "GastroCraft | Restaurant Digital Solutions",
-  description:
-    "GastroCraft entwickelt digitale Lösungen, damit Restaurants online gefunden werden.",
+  alternates: {
+    canonical: "/"
+  },
+  applicationName: siteConfig.name,
+  authors: [{ name: siteConfig.name }],
+  category: "Restaurant Digital Solutions",
+  creator: siteConfig.name,
+  description: siteConfig.description,
+  icons: {
+    apple: [{ type: "image/svg+xml", url: "/apple-icon.svg" }],
+    icon: [{ type: "image/svg+xml", url: "/icon.svg" }]
+  },
+  keywords: [
+    "Restaurant Website",
+    "Digitale Speisekarte",
+    "Gastronomie Website",
+    "QR Speisekarte",
+    "Google Business Restaurant",
+    "Restaurant Digitalisierung",
+    "Webdesign Gastronomie",
+    "Restaurant Marketing",
+    "Gastronomie Dorsten",
+    "Gastronomie NRW"
+  ],
+  manifest: "/manifest.webmanifest",
+  metadataBase: new URL(getSiteUrl()),
   openGraph: {
-    title: "GastroCraft | Restaurant Digital Solutions",
-    description:
-      "Ihre Gäste suchen online. Wir sorgen dafür, dass sie Sie finden.",
-    locale: "de_DE",
-    type: "website"
+    description: siteConfig.description,
+    images: [
+      {
+        alt: `${siteConfig.name} – ${siteConfig.descriptor}`,
+        height: 630,
+        url: "/opengraph-image",
+        width: 1200
+      }
+    ],
+    locale: siteConfig.locale,
+    siteName: siteConfig.name,
+    title: "GastroCraft | Digitale Lösungen für Restaurants",
+    type: "website",
+    url: "/"
+  },
+  publisher: siteConfig.name,
+  robots: {
+    follow: true,
+    index: true
+  },
+  title: {
+    default: "GastroCraft | Digitale Lösungen für Restaurants",
+    template: "%s | GastroCraft"
+  },
+  twitter: {
+    card: "summary_large_image",
+    description: siteConfig.description,
+    images: [
+      {
+        alt: `${siteConfig.name} – ${siteConfig.descriptor}`,
+        url: "/twitter-image"
+      }
+    ],
+    title: "GastroCraft | Digitale Lösungen für Restaurants"
   }
 };
 
 export const viewport: Viewport = {
-  width: "device-width",
+  colorScheme: "dark",
   initialScale: 1,
-  themeColor: "#0F172A"
+  themeColor: "#0F172A",
+  width: "device-width"
 };
 
 export default function RootLayout({
@@ -42,8 +97,9 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="de" className={`${inter.variable} ${manrope.variable}`}>
+    <html lang={siteConfig.language} className={`${inter.variable} ${manrope.variable}`}>
       <body>
+        <StructuredData />
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-1">{children}</main>

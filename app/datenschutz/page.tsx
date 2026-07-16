@@ -1,10 +1,22 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
+import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/datenschutz"
+  },
+  robots: {
+    follow: false,
+    index: false
+  },
+  title: "Datenschutz"
+};
 
 export default function DatenschutzPage() {
   return (
-    <Container className="py-20 sm:py-24 lg:py-28">
-      <div className="max-w-3xl">
+    <Container className="flex min-h-[calc(100svh-9rem)] items-center py-20 sm:py-24 lg:py-28">
+      <div className="max-w-3xl border-l border-premium-gold/60 py-3 pl-6">
         <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
           Rechtliches
         </p>
@@ -15,12 +27,9 @@ export default function DatenschutzPage() {
           Diese Seite ist noch nicht vollständig eingerichtet. Die rechtlichen
           Angaben werden vor dem öffentlichen Start ergänzt.
         </p>
-        <Link
-          href="/"
-          className="mt-10 inline-flex text-base font-semibold text-premium-gold underline-offset-4 hover:text-warm-white hover:underline focus-visible:rounded-sm"
-        >
+        <Button href="/" variant="secondary" className="mt-10">
           Zurück zur Startseite
-        </Link>
+        </Button>
       </div>
     </Container>
   );
