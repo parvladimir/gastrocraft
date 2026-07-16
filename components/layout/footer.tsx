@@ -6,6 +6,7 @@ import { contactPeople } from "@/data/contact-details";
 
 const footerNavigation = [
   { href: "#solutions", label: "Lösungen" },
+  { href: "#services", label: "Leistungen" },
   { href: "#references", label: "Referenzen" },
   { href: "#packages", label: "Pakete" },
   { href: "#about", label: "Über uns" },
