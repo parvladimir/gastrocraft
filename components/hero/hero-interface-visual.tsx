@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, CircleDot } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useInView } from "@/hooks/use-in-view";
 
@@ -71,7 +71,7 @@ export function HeroInterfaceVisual() {
   return (
     <div
       ref={ref}
-      className="relative mx-auto w-full min-w-0 max-w-[36rem] lg:mx-0 lg:-mt-3 xl:max-w-[37rem]"
+      className="relative mx-auto w-full min-w-0 max-w-[34rem] lg:mx-0 lg:-mt-3 xl:max-w-[35rem]"
       aria-hidden="true"
     >
       <div className="absolute -left-5 top-12 hidden h-32 w-28 rounded-lg border border-premium-gold/25 bg-midnight/60 sm:block" />
@@ -86,23 +86,19 @@ export function HeroInterfaceVisual() {
             <span className="ml-3 h-7 flex-1 rounded border border-white/10 bg-[#111c31]" />
           </div>
 
-          <div className="grid gap-4 p-4 sm:p-5">
-            <div className="rounded-md border border-white/10 bg-[#111c31] p-4 sm:p-5">
+          <div className="grid gap-3.5 p-4 sm:p-5">
+            <div className="rounded-md border border-white/10 bg-[#111c31] p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="inline-flex rounded border border-premium-gold/35 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-premium-gold">
                     Digitale Lösung
                   </div>
-                  <div className="mt-5 h-4 w-52 max-w-full rounded bg-warm-white/85" />
-                  <div className="mt-3 h-3.5 w-40 max-w-[80%] rounded bg-white/28" />
-                </div>
-                <div className="inline-flex w-fit items-center gap-2 rounded border border-white/10 px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-300">
-                  <CircleDot className="h-3.5 w-3.5 text-premium-gold" />
-                  Verbunden
+                  <div className="mt-4 h-3.5 w-48 max-w-full rounded bg-warm-white/85" />
+                  <div className="mt-3 h-3 w-36 max-w-[80%] rounded bg-white/28" />
                 </div>
               </div>
 
-              <div className="mt-6">
+              <div className="mt-5">
                 <div className="grid gap-3 sm:grid-cols-3">
                   {solutionModules.map((module, index) => (
                     <SolutionModuleCard
@@ -142,32 +138,16 @@ export function HeroInterfaceVisual() {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-stretch">
-              <div className="rounded-md border border-premium-gold/30 bg-[#101a2c] p-4">
-                <p className="font-heading text-lg font-semibold leading-6 text-warm-white">
-                  Mehr Sichtbarkeit.
-                  <span className="block text-premium-gold">
-                    Weniger Umwege für Ihre Gäste.
-                  </span>
-                </p>
-                <p className="mt-3 text-sm leading-6 text-slate-400">
-                  Alle wichtigen Informationen an einem Ort.
-                </p>
-              </div>
-
-              <div className="flex rounded-md border border-white/10 bg-[#172238] p-4 sm:w-36 sm:flex-col sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-                    Ergebnis
-                  </p>
-                  <p className="mt-2 font-heading text-base font-semibold leading-6 text-warm-white">
-                    Online bereit
-                  </p>
-                </div>
-                <span className="ml-auto mt-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-premium-gold/45 text-premium-gold sm:ml-0 sm:mt-5">
-                  <Check className="h-4 w-4" />
+            <div className="rounded-md border border-premium-gold/30 bg-[#101a2c] p-4">
+              <p className="font-heading text-lg font-semibold leading-6 text-warm-white">
+                Mehr Sichtbarkeit.
+                <span className="block text-premium-gold">
+                  Weniger Umwege für Ihre Gäste.
                 </span>
-              </div>
+              </p>
+              <p className="mt-2.5 text-sm leading-6 text-slate-400">
+                Alle wichtigen Informationen an einem Ort.
+              </p>
             </div>
           </div>
         </div>
@@ -205,9 +185,9 @@ function SolutionModuleCard({
   return (
     <div
       data-active={isActive ? "true" : "false"}
-      className={`relative min-h-32 rounded-md border bg-[#172238] p-3.5 transition-[border-color,background-color] duration-200 ease-out sm:min-h-36 ${
+      className={`relative min-h-[7rem] rounded-md border bg-[#172238] p-3.5 transition-[border-color,background-color] duration-200 ease-out sm:min-h-[7.5rem] ${
         isActive
-          ? "border-premium-gold/65 bg-[#121f34]"
+          ? "border-premium-gold/70 bg-[#121f34]"
           : "border-white/10"
       }`}
     >
@@ -226,7 +206,7 @@ function SolutionModuleCard({
         />
       </div>
       <p
-        className={`mt-5 text-sm font-semibold leading-5 transition-colors duration-200 ${
+        className={`mt-4 text-sm font-semibold leading-5 transition-colors duration-200 ${
           isActive ? "text-warm-white" : "text-slate-200"
         }`}
       >
