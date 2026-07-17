@@ -1,4 +1,5 @@
 import { HeroInterfaceVisual } from "@/components/hero/hero-interface-visual";
+import { HeroTrustItems } from "@/components/hero/hero-trust-items";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 
@@ -38,10 +39,7 @@ export function HeroSection() {
               Referenzen ansehen
             </Button>
           </div>
-          <p className="mt-7 inline-flex max-w-full items-center gap-3 text-sm font-medium leading-6 text-slate-400">
-            <span className="h-px w-8 shrink-0 bg-premium-gold" aria-hidden="true" />
-            <span>Modern. Persönlich. Für die Gastronomie entwickelt.</span>
-          </p>
+          <HeroTrustItems />
         </div>
 
         <HeroInterfaceVisual />

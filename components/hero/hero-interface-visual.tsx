@@ -1,42 +1,77 @@
 "use client";
 
-import { ArrowRight, Check, ExternalLink } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ArrowRight, Check, CircleDot } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useInView } from "@/hooks/use-in-view";
 
-const serviceHints = [
-  "Digitale Speisekarte",
-  "Google sichtbar",
-  "Direkt erreichbar"
+type SolutionModule = {
+  id: string;
+  label: string;
+  supportLabel: string;
+};
+
+const solutionModules: SolutionModule[] = [
+  {
+    id: "website",
+    label: "Professionelle Website",
+    supportLabel: "Moderner Auftritt"
+  },
+  {
+    id: "menu",
+    label: "Digitale Speisekarte",
+    supportLabel: "Mobil verfügbar"
+  },
+  {
+    id: "visibility",
+    label: "Google & Kontakt",
+    supportLabel: "Direkt gefunden"
+  }
 ];
+
+const processSteps = ["Website", "Speisekarte", "Kontakt"];
 
 export function HeroInterfaceVisual() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVisualInView, setIsVisualInView] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const handleEnter = useCallback(() => setIsVisualInView(true), []);
   const ref = useInView<HTMLDivElement>({
     onEnter: handleEnter,
     threshold: 0.24
   });
+  const completedModules = useMemo(
+    () => (prefersReducedMotion ? solutionModules.map((module) => module.id) : []),
+    [prefersReducedMotion]
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => setPrefersReducedMotion(mediaQuery.matches);
 
-    if (!isVisualInView || mediaQuery.matches) {
+    updateMotionPreference();
+    mediaQuery.addEventListener("change", updateMotionPreference);
+
+    return () => mediaQuery.removeEventListener("change", updateMotionPreference);
+  }, []);
+
+  useEffect(() => {
+    if (!isVisualInView || prefersReducedMotion) {
       return;
     }
 
     const interval = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % serviceHints.length);
-    }, 3200);
+      if (document.visibilityState === "visible") {
+        setActiveIndex((current) => (current + 1) % solutionModules.length);
+      }
+    }, 3000);
 
     return () => window.clearInterval(interval);
-  }, [isVisualInView]);
+  }, [isVisualInView, prefersReducedMotion]);
 
   return (
     <div
       ref={ref}
-      className="relative mx-auto w-full min-w-0 max-w-[34rem] lg:mx-0 lg:-mt-4"
+      className="relative mx-auto w-full min-w-0 max-w-[36rem] lg:mx-0 lg:-mt-3 xl:max-w-[37rem]"
       aria-hidden="true"
     >
       <div className="absolute -left-5 top-12 hidden h-32 w-28 rounded-lg border border-premium-gold/25 bg-midnight/60 sm:block" />
@@ -53,61 +88,101 @@ export function HeroInterfaceVisual() {
 
           <div className="grid gap-4 p-4 sm:p-5">
             <div className="rounded-md border border-white/10 bg-[#111c31] p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-5">
-                <div>
-                  <div className="h-2.5 w-24 rounded bg-premium-gold" />
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="inline-flex rounded border border-premium-gold/35 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-premium-gold">
+                    Digitale Lösung
+                  </div>
                   <div className="mt-5 h-4 w-52 max-w-full rounded bg-warm-white/85" />
                   <div className="mt-3 h-3.5 w-40 max-w-[80%] rounded bg-white/28" />
                 </div>
-                <div className="hidden rounded border border-premium-gold/35 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-premium-gold sm:block">
-                  Sichtbar
+                <div className="inline-flex w-fit items-center gap-2 rounded border border-white/10 px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-300">
+                  <CircleDot className="h-3.5 w-3.5 text-premium-gold" />
+                  Verbunden
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-3 gap-2.5 sm:gap-3">
-                {[0, 1, 2].map((item) => (
-                  <div
-                    key={item}
-                    className={`h-[4.5rem] overflow-hidden rounded border bg-[#172238] p-2 transition-colors duration-200 ease-out sm:p-3 ${
-                      item === activeIndex
-                        ? "border-premium-gold/55"
-                        : "border-white/10"
-                    }`}
-                  >
-                    <div
-                      className={`h-2 w-10 rounded transition-colors duration-200 ${
-                        item === activeIndex ? "bg-premium-gold" : "bg-white/35"
-                      }`}
+              <div className="mt-6">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {solutionModules.map((module, index) => (
+                    <SolutionModuleCard
+                      key={module.id}
+                      index={index}
+                      isActive={prefersReducedMotion || index === activeIndex}
+                      isComplete={completedModules.includes(module.id)}
+                      module={module}
                     />
-                    <div className="mt-3 h-2 w-14 rounded bg-white/20" />
-                  </div>
-                ))}
+                  ))}
+                </div>
+
+                <div className="mt-4 hidden items-center justify-center gap-2 px-1 text-[0.72rem] font-semibold uppercase tracking-[0.12em] sm:flex">
+                  {processSteps.map((step, index) => (
+                    <div key={step} className="flex items-center gap-2">
+                      <span
+                        className={`transition-colors duration-200 ${
+                          prefersReducedMotion || index <= activeIndex
+                            ? "text-premium-gold"
+                            : "text-slate-500"
+                        }`}
+                      >
+                        {step}
+                      </span>
+                      {index < processSteps.length - 1 ? (
+                        <ArrowRight
+                          className={`h-3.5 w-3.5 shrink-0 transition-colors duration-200 ${
+                            prefersReducedMotion || index < activeIndex
+                              ? "text-premium-gold"
+                              : "text-slate-500"
+                          }`}
+                        />
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              {serviceHints.map((label, index) => (
-                <ServiceHint
-                  key={label}
-                  isActive={index === activeIndex}
-                  label={label}
-                />
-              ))}
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-stretch">
+              <div className="rounded-md border border-premium-gold/30 bg-[#101a2c] p-4">
+                <p className="font-heading text-lg font-semibold leading-6 text-warm-white">
+                  Mehr Sichtbarkeit.
+                  <span className="block text-premium-gold">
+                    Weniger Umwege für Ihre Gäste.
+                  </span>
+                </p>
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Alle wichtigen Informationen an einem Ort.
+                </p>
+              </div>
+
+              <div className="flex rounded-md border border-white/10 bg-[#172238] p-4 sm:w-36 sm:flex-col sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    Ergebnis
+                  </p>
+                  <p className="mt-2 font-heading text-base font-semibold leading-6 text-warm-white">
+                    Online bereit
+                  </p>
+                </div>
+                <span className="ml-auto mt-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-premium-gold/45 text-premium-gold sm:ml-0 sm:mt-5">
+                  <Check className="h-4 w-4" />
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="absolute -bottom-6 left-4 right-4 rounded-md border border-premium-gold/25 bg-[#101a2c] px-4 py-3.5 shadow-[0_18px_48px_rgba(0,0,0,0.34)] sm:left-6 sm:right-6">
+        <div className="relative mt-3 rounded-md border border-premium-gold/25 bg-[#101a2c] px-4 py-3.5 shadow-[0_18px_48px_rgba(0,0,0,0.34)] sm:absolute sm:-bottom-6 sm:left-6 sm:right-6 sm:mt-0">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-warm-white">GastroCraft</p>
               <p className="mt-0.5 text-xs text-slate-400">
-                Digitale Präsenz für Restaurants
+                Digitaler Auftritt verbunden
               </p>
             </div>
             <span className="inline-flex shrink-0 items-center gap-1.5 rounded border border-premium-gold/35 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-premium-gold">
               <Check className="h-3.5 w-3.5" />
-              Bereit
+              Online bereit
             </span>
           </div>
         </div>
@@ -116,46 +191,48 @@ export function HeroInterfaceVisual() {
   );
 }
 
-function ServiceHint({
+function SolutionModuleCard({
+  index,
   isActive,
-  label
+  isComplete,
+  module
 }: {
+  index: number;
   isActive: boolean;
-  label: string;
+  isComplete: boolean;
+  module: SolutionModule;
 }) {
   return (
     <div
       data-active={isActive ? "true" : "false"}
-      className={`rounded-md border bg-[#101a2c] px-4 py-4 transition-[border-color,background-color] duration-200 ease-out ${
+      className={`relative min-h-32 rounded-md border bg-[#172238] p-3.5 transition-[border-color,background-color] duration-200 ease-out sm:min-h-36 ${
         isActive
-          ? "border-premium-gold/60 bg-[#121f34]"
+          ? "border-premium-gold/65 bg-[#121f34]"
           : "border-white/10"
       }`}
     >
-      <div
-        className={`mb-4 inline-flex h-8 w-8 items-center justify-center rounded border transition-colors duration-200 ${
-          isActive
-            ? "border-premium-gold/70 text-premium-gold"
-            : "border-premium-gold/35 text-premium-gold/80"
-        }`}
-      >
-        <ExternalLink className="h-3.5 w-3.5" />
-      </div>
-      <p
-        className={`text-sm font-semibold leading-5 transition-colors duration-200 ${
-          isActive ? "text-warm-white" : "text-slate-200"
-        }`}
-      >
-        {label}
-      </p>
-      <div className="mt-4 flex items-center text-premium-gold/80">
-        <span className="h-px flex-1 bg-premium-gold/25" />
-        <ArrowRight
-          className={`ml-2 h-3.5 w-3.5 transition-transform duration-200 ${
-            isActive ? "translate-x-0.5" : ""
+      <div className="flex items-center justify-between gap-3">
+        <span
+          className={`font-heading text-xs font-semibold tracking-[0.16em] transition-colors duration-200 ${
+            isActive ? "text-premium-gold" : "text-slate-500"
+          }`}
+        >
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <span
+          className={`h-2 w-2 rounded-full transition-colors duration-200 ${
+            isActive || isComplete ? "bg-premium-gold" : "bg-white/25"
           }`}
         />
       </div>
+      <p
+        className={`mt-5 text-sm font-semibold leading-5 transition-colors duration-200 ${
+          isActive ? "text-warm-white" : "text-slate-200"
+        }`}
+      >
+        {module.label}
+      </p>
+      <p className="mt-2 text-xs leading-5 text-slate-400">{module.supportLabel}</p>
     </div>
   );
 }
