@@ -8,6 +8,7 @@ import {
   Search
 } from "lucide-react";
 import { Container } from "@/components/layout/container";
+import { Reveal } from "@/components/ui/reveal";
 
 type Solution = {
   description: string;
@@ -69,7 +70,7 @@ export function SolutionsSection() {
       aria-labelledby="solutions-heading"
     >
       <Container>
-        <div className="max-w-3xl">
+        <Reveal className="max-w-3xl">
           <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
             Digitale Lösungen für die Gastronomie
           </p>
@@ -84,11 +85,17 @@ export function SolutionsSection() {
             alle wichtigen digitalen Bausteine zu einer Lösung, die zu Ihrem
             Restaurant passt.
           </p>
-        </div>
+        </Reveal>
 
         <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
-          {solutions.map((solution) => (
-            <SolutionCard key={solution.number} solution={solution} />
+          {solutions.map((solution, index) => (
+            <Reveal
+              key={solution.number}
+              className="h-full"
+              delay={index % 3 === 0 ? 0 : index % 3 === 1 ? 80 : 120}
+            >
+              <SolutionCard solution={solution} />
+            </Reveal>
           ))}
         </div>
 
@@ -109,7 +116,7 @@ function SolutionCard({ solution }: { solution: Solution }) {
   const Icon = solution.icon;
 
   return (
-    <article className="group flex min-h-[18rem] flex-col rounded-lg border border-white/10 bg-[#101a2c] p-6 transition-[border-color,transform,background-color] duration-200 hover:border-premium-gold/45 hover:bg-[#111d31] motion-safe:hover:-translate-y-1">
+    <article className="group flex min-h-[18rem] h-full flex-col rounded-lg border border-white/10 bg-[#101a2c] p-6 shadow-[0_12px_34px_rgba(0,0,0,0.12)] transition-[border-color,transform,background-color,box-shadow] duration-200 ease-out hover:border-premium-gold/45 hover:bg-[#111d31] hover:shadow-[0_18px_42px_rgba(0,0,0,0.18)] motion-safe:hover:-translate-y-1">
       <div className="flex items-start justify-between gap-4">
         <div className="flex h-11 w-11 items-center justify-center rounded border border-premium-gold/35 text-premium-gold transition-colors duration-200 group-hover:border-premium-gold">
           <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />

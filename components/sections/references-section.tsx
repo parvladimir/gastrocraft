@@ -1,6 +1,8 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/layout/container";
+import { ReferenceShowcase } from "@/components/references/reference-showcase";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/ui/reveal";
 import { SectionClosingStatement } from "@/components/ui/section-closing-statement";
 import {
   referenceProjects,
@@ -53,7 +55,7 @@ export function ReferencesSection() {
       aria-labelledby="references-heading"
     >
       <Container>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <Reveal className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
               Ausgewählte Demo-Projekte
@@ -77,15 +79,20 @@ export function ReferencesSection() {
           <p className="inline-flex w-fit rounded border border-premium-gold/35 px-4 py-2 text-sm font-semibold text-premium-gold">
             Konzeptprojekte zur Veranschaulichung
           </p>
-        </div>
+        </Reveal>
 
         <div className="mt-12 grid gap-5 lg:grid-cols-2">
           {referenceProjects.map((project, index) => (
-            <ReferenceCard
+            <Reveal
               key={project.id}
-              project={project}
-              isFeatured={index === 0}
-            />
+              className={`h-full ${index === 0 ? "lg:col-span-2" : ""}`}
+              delay={index === 0 ? 0 : 80}
+            >
+              <ReferenceCard
+                project={project}
+                isFeatured={index === 0}
+              />
+            </Reveal>
           ))}
         </div>
 
@@ -109,16 +116,18 @@ function ReferenceCard({
 }) {
   return (
     <article
-      className={`group min-w-0 overflow-hidden rounded-lg border border-white/10 bg-[#101a2c] transition-[border-color,transform,background-color] duration-200 hover:border-premium-gold/45 hover:bg-[#111d31] motion-safe:hover:-translate-y-1 ${
-        isFeatured ? "lg:col-span-2" : ""
-      }`}
+      className="group h-full min-w-0 overflow-hidden rounded-lg border border-white/10 bg-[#101a2c] shadow-[0_12px_34px_rgba(0,0,0,0.14)] transition-[border-color,transform,background-color,box-shadow] duration-200 ease-out hover:border-premium-gold/45 hover:bg-[#111d31] hover:shadow-[0_20px_48px_rgba(0,0,0,0.22)] motion-safe:hover:-translate-y-1"
     >
       <div
         className={`grid min-w-0 gap-0 ${
           isFeatured ? "lg:grid-cols-[1.15fr_0.85fr]" : ""
         }`}
       >
-        <ProjectPreview project={project} isFeatured={isFeatured} />
+        <ReferenceShowcase
+          project={project}
+          isFeatured={isFeatured}
+          fallback={<ProjectPreview project={project} isFeatured={isFeatured} />}
+        />
 
         <div className="flex min-w-0 flex-col p-6 sm:p-7">
           <div className="flex flex-wrap items-center gap-3">

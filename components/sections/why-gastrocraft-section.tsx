@@ -1,4 +1,5 @@
 import { Container } from "@/components/layout/container";
+import { Reveal } from "@/components/ui/reveal";
 import { SectionClosingStatement } from "@/components/ui/section-closing-statement";
 import {
   companyBenefits,
@@ -14,7 +15,7 @@ export function WhyGastroCraftSection() {
     >
       <Container>
         <div className="grid gap-12 lg:grid-cols-[0.86fr_1.14fr] lg:gap-14">
-          <div className="max-w-2xl">
+          <Reveal className="max-w-2xl">
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
               Warum GastroCraft
             </p>
@@ -36,11 +37,17 @@ export function WhyGastroCraftSection() {
                 digitalen Auftritt verdient.
               </p>
             </div>
-          </div>
+          </Reveal>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {companyBenefits.map((benefit) => (
-              <BenefitCard key={benefit.number} benefit={benefit} />
+            {companyBenefits.map((benefit, index) => (
+              <Reveal
+                key={benefit.number}
+                className="h-full"
+                delay={index % 2 === 0 ? 0 : 80}
+              >
+                <BenefitCard benefit={benefit} />
+              </Reveal>
             ))}
           </div>
         </div>
@@ -60,7 +67,7 @@ function BenefitCard({ benefit }: { benefit: CompanyBenefit }) {
   const Icon = benefit.icon;
 
   return (
-    <article className="group rounded-lg border border-white/10 bg-[#101a2c] p-5 transition-[border-color,transform,background-color] duration-200 hover:border-premium-gold/45 hover:bg-[#111d31] motion-safe:hover:-translate-y-1">
+    <article className="group h-full rounded-lg border border-white/10 bg-[#101a2c] p-5 shadow-[0_12px_34px_rgba(0,0,0,0.12)] transition-[border-color,transform,background-color,box-shadow] duration-200 ease-out hover:border-premium-gold/45 hover:bg-[#111d31] hover:shadow-[0_18px_42px_rgba(0,0,0,0.18)] motion-safe:hover:-translate-y-1">
       <div className="flex items-start justify-between gap-4">
         <div className="flex h-10 w-10 items-center justify-center rounded border border-white/12 text-slate-300 transition-colors duration-200 group-hover:border-premium-gold/45 group-hover:text-premium-gold">
           <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />

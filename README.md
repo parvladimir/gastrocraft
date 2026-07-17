@@ -79,6 +79,29 @@ npm run start
 A normal PHP-only shared hosting package cannot run this Next.js server build
 unless it explicitly supports Node.js applications.
 
+## Reference Screenshots
+
+The `Referenzen` section uses local static screenshots when the following files
+exist:
+
+- `public/images/references/restaurant-demo-desktop.webp`
+- `public/images/references/restaurant-demo-mobile.webp`
+- `public/images/references/rhodos-grill-desktop.webp`
+- `public/images/references/rhodos-grill-mobile.webp`
+- `public/images/references/schlemmerhus-desktop.webp`
+- `public/images/references/schlemmerhus-mobile.webp`
+
+Recommended dimensions:
+
+- Desktop: around `1600 x 1000` in WebP format
+- Mobile: around `430 x 900` in WebP format
+
+Optimize screenshots before committing them. Do not include browser chrome inside
+the screenshot because the website adds its own browser and phone frames.
+
+If one of the desktop screenshot assets is unavailable, the section falls back to
+the built-in CSS preview so the build and layout remain stable.
+
 ## Project Conventions
 
 - The project uses Next.js with the App Router, TypeScript, Tailwind CSS and ESLint.

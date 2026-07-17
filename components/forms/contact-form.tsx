@@ -3,14 +3,14 @@
 import { useState } from "react";
 
 const inputClasses =
-  "mt-2 min-h-12 w-full rounded border border-white/10 bg-midnight px-4 text-base text-warm-white transition-colors placeholder:text-slate-500 focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/25";
+  "mt-2 min-h-12 w-full rounded border border-white/10 bg-midnight px-4 text-base text-warm-white transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-slate-500 focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/25";
 
 export function ContactForm() {
   const [message, setMessage] = useState("");
 
   return (
     <form
-      className="rounded-lg border border-white/10 bg-[#101a2c] p-6 sm:p-7"
+      className="rounded-lg border border-white/10 bg-[#101a2c] p-6 shadow-[0_12px_34px_rgba(0,0,0,0.14)] sm:p-7"
       onSubmit={(event) => {
         event.preventDefault();
         setMessage(
@@ -73,7 +73,7 @@ export function ContactForm() {
 
       <button
         type="submit"
-        className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded bg-premium-gold px-6 text-base font-semibold text-midnight shadow-[inset_0_-1px_0_rgba(15,23,42,0.18)] transition-[background-color,box-shadow] duration-200 hover:bg-[#d6b238] hover:shadow-[inset_0_-2px_0_rgba(15,23,42,0.22)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-focus-ring)] active:bg-[#b8921f]"
+        className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded bg-premium-gold px-6 text-base font-semibold text-midnight shadow-[inset_0_-1px_0_rgba(15,23,42,0.18)] transition-[background-color,box-shadow,transform] duration-200 ease-out hover:bg-[#d6b238] hover:shadow-[inset_0_-2px_0_rgba(15,23,42,0.22)] active:translate-y-px active:bg-[#b8921f] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-focus-ring)]"
       >
         Kostenlose Beratung anfragen
       </button>

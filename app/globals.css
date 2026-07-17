@@ -56,6 +56,21 @@ body {
   animation-delay: 120ms;
 }
 
+[data-reveal="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reveal="true"][data-reveal-ready="true"][data-reveal-state="hidden"] {
+  opacity: 0;
+  transform: translateY(1rem);
+}
+
+[data-reveal="true"][data-reveal-state="visible"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @keyframes hero-line-reveal {
   from {
     opacity: 0;

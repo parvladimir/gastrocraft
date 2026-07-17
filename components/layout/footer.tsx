@@ -57,7 +57,7 @@ export function Footer() {
                 <li key={item.href}>
                   <a
                     href={item.href}
-                    className="text-sm text-slate-400 transition-colors duration-200 hover:text-premium-gold"
+                    className="rounded-sm text-sm text-slate-400 transition-colors duration-200 ease-out hover:text-premium-gold"
                   >
                     {item.label}
                   </a>
@@ -83,7 +83,7 @@ export function Footer() {
                             : undefined
                         }
                         aria-label={action.ariaLabel}
-                        className="text-sm text-slate-400 transition-colors duration-200 hover:text-premium-gold"
+                        className="rounded-sm text-sm text-slate-400 transition-colors duration-200 ease-out hover:text-premium-gold"
                       >
                         {action.type === "phone"
                           ? action.value
@@ -102,7 +102,7 @@ export function Footer() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-sm text-slate-400 transition-colors duration-200 hover:text-premium-gold"
+                    className="rounded-sm text-sm text-slate-400 transition-colors duration-200 ease-out hover:text-premium-gold"
                   >
                     {item.label}
                   </Link>

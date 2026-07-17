@@ -1,12 +1,6 @@
-import { ArrowRight, Check, ExternalLink } from "lucide-react";
+import { HeroInterfaceVisual } from "@/components/hero/hero-interface-visual";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
-
-const serviceHints = [
-  "Digitale Speisekarte",
-  "Google sichtbar",
-  "Direkt erreichbar"
-];
 
 export function HeroSection() {
   return (
@@ -50,97 +44,8 @@ export function HeroSection() {
           </p>
         </div>
 
-        <HeroVisual />
+        <HeroInterfaceVisual />
       </Container>
     </section>
-  );
-}
-
-function HeroVisual() {
-  return (
-    <div
-      className="relative mx-auto w-full min-w-0 max-w-[34rem] lg:mx-0 lg:-mt-4"
-      aria-hidden="true"
-    >
-      <div className="absolute -left-5 top-12 hidden h-32 w-28 rounded-lg border border-premium-gold/25 bg-midnight/60 sm:block" />
-      <div className="absolute -right-4 bottom-16 hidden h-24 w-24 rounded-lg border border-white/10 bg-[#101a2c] sm:block" />
-
-      <div className="relative rounded-lg border border-white/12 bg-[#111c31] p-3.5 shadow-[0_28px_80px_rgba(0,0,0,0.34)] sm:p-4">
-        <div className="rounded-md border border-white/10 bg-midnight">
-          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-premium-gold" />
-            <span className="h-2.5 w-2.5 rounded-full bg-slate-gray" />
-            <span className="h-2.5 w-2.5 rounded-full bg-slate-500" />
-            <span className="ml-3 h-7 flex-1 rounded border border-white/10 bg-[#111c31]" />
-          </div>
-
-          <div className="grid gap-4 p-4 sm:p-5">
-            <div className="rounded-md border border-white/10 bg-[#111c31] p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-5">
-                <div>
-                  <div className="h-2.5 w-24 rounded bg-premium-gold" />
-                  <div className="mt-5 h-4 w-52 max-w-full rounded bg-warm-white/85" />
-                  <div className="mt-3 h-3.5 w-40 max-w-[80%] rounded bg-white/28" />
-                </div>
-                <div className="hidden rounded border border-premium-gold/35 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-premium-gold sm:block">
-                  Sichtbar
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-3 gap-2.5 sm:gap-3">
-                <div className="h-[4.5rem] overflow-hidden rounded border border-white/10 bg-[#172238] p-2 sm:p-3">
-                  <div className="h-2 w-10 rounded bg-white/35" />
-                  <div className="mt-3 h-2 w-14 rounded bg-white/18" />
-                </div>
-                <div className="h-[4.5rem] overflow-hidden rounded border border-premium-gold/35 bg-[#172238] p-2 sm:p-3">
-                  <div className="h-2 w-10 rounded bg-premium-gold" />
-                  <div className="mt-3 h-2 w-12 rounded bg-white/25" />
-                </div>
-                <div className="h-[4.5rem] overflow-hidden rounded border border-white/10 bg-[#172238] p-2 sm:p-3">
-                  <div className="h-2 w-10 rounded bg-white/35" />
-                  <div className="mt-3 h-2 w-16 rounded bg-white/18" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              {serviceHints.map((label) => (
-                <ServiceHint key={label} label={label} />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="absolute -bottom-6 left-4 right-4 rounded-md border border-premium-gold/25 bg-[#101a2c] px-4 py-3.5 shadow-[0_18px_48px_rgba(0,0,0,0.34)] sm:left-6 sm:right-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-warm-white">GastroCraft</p>
-              <p className="mt-0.5 text-xs text-slate-400">
-                Digitale Präsenz für Restaurants
-              </p>
-            </div>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded border border-premium-gold/35 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-premium-gold">
-              <Check className="h-3.5 w-3.5" />
-              Bereit
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ServiceHint({ label }: { label: string }) {
-  return (
-    <div className="rounded-md border border-white/10 bg-[#101a2c] px-4 py-4">
-      <div className="mb-4 inline-flex h-8 w-8 items-center justify-center rounded border border-premium-gold/35 text-premium-gold">
-        <ExternalLink className="h-3.5 w-3.5" />
-      </div>
-      <p className="text-sm font-semibold leading-5 text-warm-white">{label}</p>
-      <div className="mt-4 flex items-center text-premium-gold/80">
-        <span className="h-px flex-1 bg-premium-gold/25" />
-        <ArrowRight className="ml-2 h-3.5 w-3.5" />
-      </div>
-    </div>
   );
 }

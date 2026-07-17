@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/layout/container";
+import { Reveal } from "@/components/ui/reveal";
 import { SectionClosingStatement } from "@/components/ui/section-closing-statement";
 import {
   serviceProcessStages,
@@ -14,7 +15,7 @@ export function ServicesSection() {
       aria-labelledby="services-heading"
     >
       <Container>
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+        <Reveal className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
           <div className="max-w-3xl">
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
               Unsere Leistungen
@@ -32,13 +33,21 @@ export function ServicesSection() {
             und Konzeption über Design und Umsetzung bis zur langfristigen Pflege
             Ihres digitalen Auftritts.
           </p>
-        </div>
+        </Reveal>
 
-        <ProcessLine />
+        <Reveal delay={80}>
+          <ProcessLine />
+        </Reveal>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:mt-12 lg:grid-cols-4 lg:gap-5">
-          {serviceProcessStages.map((stage) => (
-            <ServiceStageCard key={stage.id} stage={stage} />
+          {serviceProcessStages.map((stage, index) => (
+            <Reveal
+              key={stage.id}
+              className="h-full"
+              delay={index % 2 === 0 ? 0 : 80}
+            >
+              <ServiceStageCard stage={stage} />
+            </Reveal>
           ))}
         </div>
 
@@ -92,7 +101,7 @@ function ServiceStageCard({ stage }: { stage: ServiceProcessStage }) {
   const Icon = stage.icon;
 
   return (
-    <article className="group relative flex min-h-[20rem] flex-col rounded-lg border border-white/10 bg-midnight p-6 transition-[border-color,transform,background-color] duration-200 hover:border-premium-gold/45 hover:bg-[#111d31] motion-safe:hover:-translate-y-1">
+    <article className="group relative flex min-h-[20rem] h-full flex-col rounded-lg border border-white/10 bg-midnight p-6 shadow-[0_12px_34px_rgba(0,0,0,0.1)] transition-[border-color,transform,background-color,box-shadow] duration-200 ease-out hover:border-premium-gold/45 hover:bg-[#111d31] hover:shadow-[0_18px_42px_rgba(0,0,0,0.18)] motion-safe:hover:-translate-y-1">
       <div className="flex items-start justify-between gap-4">
         <div className="flex h-11 w-11 items-center justify-center rounded border border-white/12 text-slate-300 transition-colors duration-200 group-hover:border-premium-gold/45 group-hover:text-premium-gold">
           <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />

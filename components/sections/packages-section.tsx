@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { Check, Info } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/ui/reveal";
 import { SectionClosingStatement } from "@/components/ui/section-closing-statement";
 import {
   monthlySupport,
@@ -23,7 +24,7 @@ export function PackagesSection() {
       aria-labelledby="packages-heading"
     >
       <Container>
-        <div className="grid gap-7 lg:grid-cols-[minmax(0,0.95fr)_minmax(22rem,0.55fr)] lg:items-end lg:gap-12">
+        <Reveal className="grid gap-7 lg:grid-cols-[minmax(0,0.95fr)_minmax(22rem,0.55fr)] lg:items-end lg:gap-12">
           <div className="max-w-3xl">
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
               Transparente Pakete
@@ -51,15 +52,21 @@ export function PackagesSection() {
               Projektumfang konkret angeboten.
             </p>
           </div>
-        </div>
+        </Reveal>
 
         <div className="mt-12 grid min-w-0 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3 lg:pt-4">
-          {servicePackages.map((servicePackage) => (
-            <PackageCard key={servicePackage.id} servicePackage={servicePackage} />
+          {servicePackages.map((servicePackage, index) => (
+            <PackageCard
+              key={servicePackage.id}
+              servicePackage={servicePackage}
+              revealDelay={index === 1 ? 80 : 0}
+            />
           ))}
         </div>
 
-        <SupportBlock />
+        <Reveal delay={80}>
+          <SupportBlock />
+        </Reveal>
 
         <div className="pt-14 sm:pt-16 lg:pt-20">
           <SectionClosingStatement
@@ -73,27 +80,33 @@ export function PackagesSection() {
 }
 
 function PackageCard({
+  revealDelay,
   servicePackage
 }: {
+  revealDelay: 0 | 80;
   servicePackage: ServicePackage;
 }) {
   const isFeatured = servicePackage.featured;
   const cardStyle = isFeatured ? featuredCardStyle : undefined;
 
   return (
-    <article
-      className={`group flex h-full min-h-[32rem] min-w-0 flex-col rounded-lg border p-6 transition-[border-color,transform,box-shadow,background-color] duration-200 md:min-h-[34rem] ${
-        isFeatured
-          ? "order-first shadow-[0_18px_46px_rgba(0,0,0,0.22)] motion-safe:lg:-translate-y-4 motion-safe:hover:lg:-translate-y-5 md:order-none"
-          : "border-white/10 bg-[#101a2c] text-warm-white hover:border-premium-gold/45 motion-safe:hover:-translate-y-1"
-      }`}
-      style={cardStyle}
-      aria-label={
-        isFeatured
-          ? `${servicePackage.name}, empfohlenes Paket`
-          : servicePackage.name
-      }
+    <Reveal
+      className={`h-full ${isFeatured ? "order-first md:order-none" : ""}`}
+      delay={revealDelay}
     >
+      <article
+        className={`group flex h-full min-h-[32rem] min-w-0 flex-col rounded-lg border p-6 transition-[border-color,transform,box-shadow,background-color] duration-200 ease-out md:min-h-[34rem] ${
+          isFeatured
+            ? "shadow-[0_18px_46px_rgba(0,0,0,0.22)] motion-safe:lg:-translate-y-4 motion-safe:hover:lg:-translate-y-5"
+            : "border-white/10 bg-[#101a2c] text-warm-white hover:border-premium-gold/45 hover:shadow-[0_18px_42px_rgba(0,0,0,0.18)] motion-safe:hover:-translate-y-1"
+        }`}
+        style={cardStyle}
+        aria-label={
+          isFeatured
+            ? `${servicePackage.name}, empfohlenes Paket`
+            : servicePackage.name
+        }
+      >
       <div className="flex min-h-16 min-w-0 items-start justify-between gap-4">
         <div className="min-w-0">
           <h3 className="font-heading text-2xl font-semibold leading-8">
@@ -173,13 +186,14 @@ function PackageCard({
           {servicePackage.ctaLabel}
         </Button>
       </div>
-    </article>
+      </article>
+    </Reveal>
   );
 }
 
 function SupportBlock() {
   return (
-    <article className="mt-8 rounded-lg border border-white/10 bg-[#101a2c] p-5 sm:p-6 lg:p-7">
+    <article className="mt-8 rounded-lg border border-white/10 bg-[#101a2c] p-5 shadow-[0_12px_34px_rgba(0,0,0,0.12)] sm:p-6 lg:p-7">
       <div className="grid gap-7 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
         <div>
           <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">

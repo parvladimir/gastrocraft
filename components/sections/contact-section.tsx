@@ -1,6 +1,7 @@
 import { MessageCircle, Phone } from "lucide-react";
 import { ContactForm } from "@/components/forms/contact-form";
 import { Container } from "@/components/layout/container";
+import { Reveal } from "@/components/ui/reveal";
 import { SectionClosingStatement } from "@/components/ui/section-closing-statement";
 import {
   contactPeople,
@@ -17,7 +18,7 @@ export function ContactSection() {
     >
       <Container>
         <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
-          <div>
+          <Reveal>
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
               Kostenlose Erstberatung
             </p>
@@ -38,13 +39,17 @@ export function ContactSection() {
             </p>
 
             <div className="mt-10 grid gap-4">
-              {contactPeople.map((person) => (
-                <ContactCard key={person.name} person={person} />
+              {contactPeople.map((person, index) => (
+                <Reveal key={person.name} delay={index === 0 ? 0 : 80}>
+                  <ContactCard person={person} />
+                </Reveal>
               ))}
             </div>
-          </div>
+          </Reveal>
 
-          <ContactForm />
+          <Reveal delay={80}>
+            <ContactForm />
+          </Reveal>
         </div>
 
         <div className="pt-14 sm:pt-16 lg:pt-20">
@@ -60,7 +65,7 @@ export function ContactSection() {
 
 function ContactCard({ person }: { person: ContactPerson }) {
   return (
-    <article className="rounded-lg border border-white/10 bg-[#101a2c] p-5 transition-colors duration-200 hover:border-premium-gold/40">
+    <article className="rounded-lg border border-white/10 bg-[#101a2c] p-5 shadow-[0_12px_34px_rgba(0,0,0,0.12)] transition-[border-color,transform,box-shadow] duration-200 ease-out hover:border-premium-gold/40 hover:shadow-[0_18px_42px_rgba(0,0,0,0.18)] motion-safe:hover:-translate-y-0.5">
       <div>
         <h3 className="font-heading text-xl font-semibold text-warm-white">
           {person.name}
@@ -98,7 +103,7 @@ function ContactActionLink({ action }: { action: ContactAction }) {
       target={isExternal ? "_blank" : undefined}
       rel={isExternal ? "noopener noreferrer" : undefined}
       aria-label={action.ariaLabel}
-      className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-premium-gold/65 px-4 text-sm font-semibold text-premium-gold transition-colors duration-200 hover:border-premium-gold hover:bg-premium-gold/8 focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-focus-ring)] sm:flex-1"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-premium-gold/65 px-4 text-sm font-semibold text-premium-gold transition-[background-color,border-color,transform] duration-200 ease-out hover:border-premium-gold hover:bg-premium-gold/8 active:translate-y-px focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-focus-ring)] sm:flex-1"
     >
       <Icon aria-hidden="true" className="h-4 w-4" strokeWidth={1.9} />
       {action.label}
