@@ -17,13 +17,13 @@ export const referenceProjects: ReferenceProject[] = [
     category: "Modernes Restaurant",
     desktopImage: "/images/references/restaurant-demo-desktop.webp",
     description:
-      "Ein eleganter, atmosphärischer Auftritt für ein modernes Restaurant mit Fokus auf Vertrauen, Reservierung und hochwertige Präsentation.",
+      "Moderner Webauftritt für einen Imbiss mit digitaler Speisekarte, mobiler Optimierung und schneller Kontaktaufnahme.",
     id: "restaurant-demo",
     imageAlt:
-      "Screenshot des Restaurant Demo Webdesigns von GastroCraft auf Desktop und Smartphone.",
+      "Screenshot des Schnell & Lecker Webdesigns von GastroCraft auf Desktop und Smartphone.",
     mobileImage: "/images/references/restaurant-demo-mobile.webp",
     theme: "restaurant",
-    title: "Restaurant Demo",
+    title: "Schnell & Lecker",
     url: "https://restaurant.metro-gatecontrol.de/index.html"
   },
   {
