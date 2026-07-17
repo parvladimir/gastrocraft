@@ -56,7 +56,9 @@ export function FaqAccordion({ items }: FaqAccordionProps) {
         return (
           <article
             key={item.id}
-            className="rounded-lg border border-white/10 bg-[#101a2c] transition-[border-color,box-shadow] duration-200 ease-out hover:border-premium-gold/35 hover:shadow-[0_14px_36px_rgba(0,0,0,0.16)]"
+            className={`rounded-lg border bg-[#101a2c] transition-[border-color,box-shadow] duration-200 ease-out hover:border-premium-gold/35 hover:shadow-[0_14px_36px_rgba(0,0,0,0.16)] ${
+              isOpen ? "border-premium-gold/35" : "border-white/10"
+            }`}
           >
             <h3>
               <button
@@ -67,7 +69,7 @@ export function FaqAccordion({ items }: FaqAccordionProps) {
                 type="button"
                 aria-controls={panelId}
                 aria-expanded={isOpen}
-                className="flex w-full items-center justify-between gap-5 rounded-lg px-5 py-5 text-left font-heading text-lg font-semibold leading-7 text-warm-white transition-colors duration-200 ease-out hover:text-premium-gold focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-focus-ring)] sm:px-6"
+                className="flex w-full items-center justify-between gap-5 rounded-lg px-5 py-4.5 text-left font-heading text-lg font-semibold leading-7 text-warm-white transition-colors duration-200 ease-out hover:text-premium-gold focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-focus-ring)] sm:px-6"
                 onClick={() => setOpenItemId(item.id)}
                 onKeyDown={handleKeyDown}
               >
@@ -90,7 +92,7 @@ export function FaqAccordion({ items }: FaqAccordionProps) {
               }`}
             >
               <div className="overflow-hidden">
-                <p className="border-t border-white/10 px-5 pb-5 pt-4 text-base leading-7 text-slate-300 sm:px-6">
+                <p className="border-t border-white/10 px-5 pb-4 pt-3.5 text-base leading-7 text-slate-300 sm:px-6">
                   {item.answer}
                 </p>
               </div>

@@ -116,7 +116,7 @@ function ReferenceCard({
 }) {
   return (
     <article
-      className="group h-full min-w-0 overflow-hidden rounded-lg border border-white/10 bg-[#101a2c] shadow-[0_12px_34px_rgba(0,0,0,0.14)] transition-[border-color,transform,background-color,box-shadow] duration-200 ease-out hover:border-premium-gold/45 hover:bg-[#111d31] hover:shadow-[0_20px_48px_rgba(0,0,0,0.22)] motion-safe:hover:-translate-y-1"
+      className="group h-full min-w-0 overflow-visible rounded-lg border border-white/10 bg-[#101a2c] shadow-[0_12px_34px_rgba(0,0,0,0.14)] transition-[border-color,transform,background-color,box-shadow] duration-200 ease-out hover:border-premium-gold/45 hover:bg-[#111d31] hover:shadow-[0_20px_48px_rgba(0,0,0,0.22)] motion-safe:hover:-translate-y-1"
     >
       <div
         className={`grid min-w-0 gap-0 ${

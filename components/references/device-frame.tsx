@@ -17,7 +17,7 @@ export function DeviceFrame({
   mobileImage
 }: DeviceFrameProps) {
   return (
-    <div className="relative mx-auto max-w-xl">
+    <div className="relative mx-auto max-w-xl overflow-visible pb-12 sm:pb-16">
       <BrowserFrame accentClassName={accentClassName}>
         <div className="relative aspect-[16/10] overflow-hidden rounded-b bg-midnight">
           <Image
@@ -31,7 +31,7 @@ export function DeviceFrame({
       </BrowserFrame>
 
       {hasMobileImage ? (
-        <div className="absolute -bottom-8 right-4 hidden w-[27%] min-w-24 rounded-[1.4rem] border border-white/14 bg-midnight p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.35)] sm:block">
+        <div className="absolute bottom-0 right-3 w-[32%] min-w-20 max-w-32 rounded-[1.25rem] border border-white/14 bg-midnight p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.35)] sm:w-[25%] sm:min-w-24 lg:right-4">
           <div className="relative aspect-[43/90] overflow-hidden rounded-[1rem] bg-midnight">
             <Image
               src={mobileImage}

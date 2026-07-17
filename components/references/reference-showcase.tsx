@@ -32,7 +32,7 @@ export function ReferenceShowcase({
 
   return (
     <div
-      className={`relative min-h-[22rem] min-w-0 overflow-hidden border-b border-white/10 p-5 sm:p-6 ${
+      className={`relative min-h-[26rem] min-w-0 overflow-visible border-b border-white/10 p-5 pb-7 sm:min-h-[28rem] sm:p-6 sm:pb-8 ${
         isFeatured ? "lg:border-b-0 lg:border-r" : ""
       } lg:border-white/10`}
     >
