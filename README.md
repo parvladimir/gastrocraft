@@ -47,9 +47,17 @@ npm run build
 NEXT_PUBLIC_SITE_URL
 ```
 
-6. Set `NEXT_PUBLIC_SITE_URL` to the final public URL.
-7. Redeploy after adding or changing a custom domain.
-8. Verify:
+6. Add the contact form environment variables:
+
+```bash
+RESEND_API_KEY
+CONTACT_FORM_FROM_EMAIL
+CONTACT_FORM_TO_EMAIL
+```
+
+7. Set `NEXT_PUBLIC_SITE_URL` to the final public URL.
+8. Redeploy after adding or changing a custom domain.
+9. Verify:
    - `/sitemap.xml`
    - `/robots.txt`
    - `/manifest.webmanifest`
@@ -81,20 +89,27 @@ unless it explicitly supports Node.js applications.
 
 ## Contact Form Configuration
 
-The contact form endpoint is read from:
+The contact form submits to the internal Next.js route:
 
 ```bash
-NEXT_PUBLIC_CONTACT_FORM_ENDPOINT
+/api/contact
 ```
 
-Leave it empty in local development when no form provider is configured. In that
-case the form shows an honest not-configured message and does not attempt a
-network request.
+Email delivery is prepared for Resend and configured with server-side
+environment variables:
 
-The value may be a public HTTPS endpoint from a form service such as Formspree
-or another provider accepting JSON `POST` submissions. Never place API secrets,
-private tokens, email passwords or server credentials in `NEXT_PUBLIC_*`
-variables.
+```bash
+RESEND_API_KEY
+RESEND_API_URL
+CONTACT_FORM_FROM_EMAIL
+CONTACT_FORM_TO_EMAIL
+```
+
+`CONTACT_FORM_TO_EMAIL` may contain one recipient or a comma-separated list of
+recipients. `RESEND_API_URL` is optional and defaults to the Resend email API;
+it is mainly useful for production smoke tests against a controlled mock
+endpoint. Never place API secrets, private tokens, email passwords or server
+credentials in `NEXT_PUBLIC_*` variables.
 
 After deployment, submit a real test request through the production website and
 verify both success and failure behavior before launch.
@@ -103,10 +118,12 @@ verify both success and failure behavior before launch.
 
 - Deploy to Vercel.
 - Configure `NEXT_PUBLIC_SITE_URL`.
-- Configure `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT`.
+- Configure `RESEND_API_KEY`.
+- Configure `CONTACT_FORM_FROM_EMAIL`.
+- Configure `CONTACT_FORM_TO_EMAIL`.
 - Test the form success state.
 - Test the form failure state.
-- Test the missing endpoint state.
+- Test the missing Resend configuration state.
 - Complete `Impressum` before public commercial launch.
 - Complete `Datenschutz` with the actual hosting and form-processing services used.
 - Do not invent legal details in code.
@@ -127,9 +144,9 @@ After each production deployment:
 1. Open the final public URL in a private browser window.
 2. Verify the header navigation anchors:
    `#solutions`, `#services`, `#references`, `#packages`, `#about`, `#contact`.
-3. Submit one real contact form test with `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT` configured.
-4. Temporarily test a failing form endpoint in a preview deployment and confirm the error state.
-5. Test the missing endpoint state in a preview deployment with `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT` empty.
+3. Submit one real contact form test with Resend environment variables configured.
+4. Temporarily test a failing Resend configuration in a preview deployment and confirm the error state.
+5. Test the missing Resend configuration state in a preview deployment.
 6. Verify phone and WhatsApp links:
    `tel:+4917624229299`, `https://wa.me/380678400156`, `https://wa.me/380963354328`.
 7. Verify the three external demo links open in a new tab.

@@ -2,35 +2,40 @@
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
-const contactFormEndpoint =
-  process.env.NEXT_PUBLIC_CONTACT_FORM_ENDPOINT?.trim() ?? "";
-
 const messageMaxLength = 2000;
 const minimumInteractionMs = 2000;
 
 const inputClasses =
   "mt-2 min-h-12 w-full rounded border border-white/10 bg-midnight px-4 text-base text-warm-white transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-slate-500 focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/25 aria-[invalid=true]:border-red-300/70 aria-[invalid=true]:focus:ring-red-300/20";
 
-type FormStatus = "idle" | "submitting" | "success" | "error" | "notConfigured";
+type FormStatus = "idle" | "submitting" | "success" | "error";
 
 type ContactFormPayload = {
   business: string;
   city: string;
   consent: boolean;
-  contact: string;
+  email: string;
+  formStartedAt: string;
   message: string;
   name: string;
+  phone: string;
   sourceUrl: string;
   submittedAt: string;
+  website: string;
 };
 
-type FieldName = "business" | "city" | "consent" | "contact" | "message" | "name";
+type FieldName =
+  | "business"
+  | "city"
+  | "consent"
+  | "email"
+  | "message"
+  | "name"
+  | "phone";
 
 const statusMessages: Record<Exclude<FormStatus, "idle" | "submitting">, string> = {
   error:
     "Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt per Telefon oder WhatsApp.",
-  notConfigured:
-    "Das Kontaktformular ist noch nicht aktiviert. Bitte kontaktieren Sie uns direkt per Telefon oder WhatsApp.",
   success:
     "Vielen Dank. Ihre Anfrage wurde erfolgreich gesendet. Wir melden uns so schnell wie möglich."
 };
@@ -40,16 +45,14 @@ export function ContactForm() {
   const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const [messageLength, setMessageLength] = useState(0);
   const formStartedAt = useRef(0);
+  const isSubmittingRef = useRef(false);
   const statusRef = useRef<HTMLParagraphElement>(null);
 
   const isSubmitting = status === "submitting";
-  const visibleStatus =
-    status === "success" || status === "error" || status === "notConfigured"
-      ? status
-      : null;
+  const visibleStatus = status === "success" || status === "error" ? status : null;
 
   useEffect(() => {
-    formStartedAt.current = Date.now();
+    formStartedAt.current = new Date().getTime();
   }, []);
 
   useEffect(() => {
@@ -61,7 +64,7 @@ export function ContactForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSubmitting) {
+    if (isSubmittingRef.current) {
       return;
     }
 
@@ -75,40 +78,38 @@ export function ContactForm() {
     setInvalidFields(nextInvalidFields);
 
     if (nextInvalidFields.length > 0) {
-      setCustomValidity(form, nextInvalidFields);
+      setCustomValidity(form, nextInvalidFields, fields);
       form.reportValidity();
       return;
     }
 
-    if (fields.website || Date.now() - formStartedAt.current < minimumInteractionMs) {
+    const submittedAt = new Date();
+
+    if (fields.website || submittedAt.getTime() - formStartedAt.current < minimumInteractionMs) {
       setStatus("success");
-      form.reset();
-      setMessageLength(0);
-      setInvalidFields([]);
-      formStartedAt.current = Date.now();
+      resetForm(form);
       return;
     }
 
-    if (!contactFormEndpoint) {
-      setStatus("notConfigured");
-      return;
-    }
-
+    isSubmittingRef.current = true;
     setStatus("submitting");
 
     const payload: ContactFormPayload = {
       business: fields.business,
       city: fields.city,
       consent: fields.consent,
-      contact: fields.contact,
+      email: fields.email,
+      formStartedAt: new Date(formStartedAt.current).toISOString(),
       message: fields.message,
       name: fields.name,
+      phone: fields.phone,
       sourceUrl: window.location.href,
-      submittedAt: new Date().toISOString()
+      submittedAt: submittedAt.toISOString(),
+      website: fields.website
     };
 
     try {
-      const response = await fetch(contactFormEndpoint, {
+      const response = await fetch("/api/contact", {
         body: JSON.stringify(payload),
         headers: {
           Accept: "application/json",
@@ -122,12 +123,11 @@ export function ContactForm() {
       }
 
       setStatus("success");
-      form.reset();
-      setMessageLength(0);
-      setInvalidFields([]);
-      formStartedAt.current = Date.now();
+      resetForm(form);
     } catch {
       setStatus("error");
+    } finally {
+      isSubmittingRef.current = false;
     }
   }
 
@@ -144,12 +144,18 @@ export function ContactForm() {
     }
   }
 
+  function resetForm(form: HTMLFormElement) {
+    form.reset();
+    setMessageLength(0);
+    setInvalidFields([]);
+    formStartedAt.current = new Date().getTime();
+  }
+
   return (
     <form
       className="rounded-lg border border-white/10 bg-[#101a2c] p-6 shadow-[0_12px_34px_rgba(0,0,0,0.14)] sm:p-7"
       onInput={handleInput}
       onSubmit={handleSubmit}
-      noValidate={false}
     >
       <div className="pointer-events-none absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
         <label htmlFor="contact-form-website">
@@ -183,12 +189,22 @@ export function ContactForm() {
           required
         />
         <FormField
-          autoComplete="tel"
-          invalid={invalidFields.includes("contact")}
-          label="Telefon oder WhatsApp"
-          maxLength={100}
-          name="contact"
+          autoComplete="email"
+          invalid={invalidFields.includes("email")}
+          label="E-Mail"
+          maxLength={150}
+          name="email"
           required
+          type="email"
+        />
+        <FormField
+          autoComplete="tel"
+          invalid={invalidFields.includes("phone")}
+          label="Telefon"
+          maxLength={100}
+          name="phone"
+          required
+          type="tel"
         />
         <FormField
           autoComplete="address-level2"
@@ -271,7 +287,8 @@ function FormField({
   label,
   maxLength,
   name,
-  required = false
+  required = false,
+  type = "text"
 }: {
   autoComplete: string;
   invalid: boolean;
@@ -279,6 +296,7 @@ function FormField({
   maxLength: number;
   name: string;
   required?: boolean;
+  type?: "email" | "tel" | "text";
 }) {
   const fieldId = `contact-form-${name}`;
 
@@ -290,6 +308,7 @@ function FormField({
       <input
         id={fieldId}
         name={name}
+        type={type}
         required={required}
         maxLength={maxLength}
         autoComplete={autoComplete}
@@ -305,9 +324,10 @@ function getTrimmedFields(formData: FormData) {
     business: String(formData.get("business") ?? "").trim(),
     city: String(formData.get("city") ?? "").trim(),
     consent: formData.get("consent") === "true",
-    contact: String(formData.get("contact") ?? "").trim(),
+    email: String(formData.get("email") ?? "").trim(),
     message: String(formData.get("message") ?? "").trim(),
     name: String(formData.get("name") ?? "").trim(),
+    phone: String(formData.get("phone") ?? "").trim(),
     website: String(formData.get("website") ?? "").trim()
   };
 }
@@ -321,24 +341,40 @@ function clearCustomValidity(form: HTMLFormElement) {
 }
 
 function getInvalidFieldNames(fields: ReturnType<typeof getTrimmedFields>) {
-  const requiredFields = ["name", "business", "contact", "message"] as const;
+  const requiredFields = ["name", "business", "email", "phone", "message"] as const;
   const invalidFieldNames: FieldName[] = requiredFields.filter(
     (fieldName) => !fields[fieldName]
   );
+
+  if (fields.email && !isValidEmail(fields.email)) {
+    invalidFieldNames.push("email");
+  }
 
   if (!fields.consent) {
     invalidFieldNames.push("consent");
   }
 
-  return invalidFieldNames;
+  return [...new Set(invalidFieldNames)];
 }
 
-function setCustomValidity(form: HTMLFormElement, invalidFieldNames: FieldName[]) {
+function setCustomValidity(
+  form: HTMLFormElement,
+  invalidFieldNames: FieldName[],
+  fields: ReturnType<typeof getTrimmedFields>
+) {
   invalidFieldNames.forEach((fieldName) => {
     const field = form.elements.namedItem(fieldName);
 
     if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
-      field.setCustomValidity("Bitte füllen Sie dieses Feld aus.");
+      field.setCustomValidity(
+        fieldName === "email" && fields.email
+          ? "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+          : "Bitte füllen Sie dieses Feld aus."
+      );
     }
   });
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
