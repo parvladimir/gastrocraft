@@ -14,6 +14,8 @@ export const metadata: Metadata = {
 };
 
 export default function DatenschutzPage() {
+  // Launch note: Datenschutz must describe the actual hosting and form-processing services used.
+  // Do not invent legal details in code.
   return (
     <Container className="flex min-h-[calc(100svh-9rem)] items-center py-20 sm:py-24 lg:py-28">
       <div className="max-w-3xl border-l border-premium-gold/60 py-3 pl-6">

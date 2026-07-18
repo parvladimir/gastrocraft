@@ -79,6 +79,64 @@ npm run start
 A normal PHP-only shared hosting package cannot run this Next.js server build
 unless it explicitly supports Node.js applications.
 
+## Contact Form Configuration
+
+The contact form endpoint is read from:
+
+```bash
+NEXT_PUBLIC_CONTACT_FORM_ENDPOINT
+```
+
+Leave it empty in local development when no form provider is configured. In that
+case the form shows an honest not-configured message and does not attempt a
+network request.
+
+The value may be a public HTTPS endpoint from a form service such as Formspree
+or another provider accepting JSON `POST` submissions. Never place API secrets,
+private tokens, email passwords or server credentials in `NEXT_PUBLIC_*`
+variables.
+
+After deployment, submit a real test request through the production website and
+verify both success and failure behavior before launch.
+
+## Launch Checklist
+
+- Deploy to Vercel.
+- Configure `NEXT_PUBLIC_SITE_URL`.
+- Configure `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT`.
+- Test the form success state.
+- Test the form failure state.
+- Test the missing endpoint state.
+- Complete `Impressum` before public commercial launch.
+- Complete `Datenschutz` with the actual hosting and form-processing services used.
+- Do not invent legal details in code.
+- Verify demo links.
+- Verify phone and WhatsApp links.
+- Test on a real iPhone and Android device.
+- Verify `/robots.txt`.
+- Verify `/sitemap.xml`.
+- Verify the Open Graph image.
+- Run Lighthouse.
+- Connect the final custom domain.
+- Redeploy after domain changes.
+
+## Production Smoke Test
+
+After each production deployment:
+
+1. Open the final public URL in a private browser window.
+2. Verify the header navigation anchors:
+   `#solutions`, `#services`, `#references`, `#packages`, `#about`, `#contact`.
+3. Submit one real contact form test with `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT` configured.
+4. Temporarily test a failing form endpoint in a preview deployment and confirm the error state.
+5. Test the missing endpoint state in a preview deployment with `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT` empty.
+6. Verify phone and WhatsApp links:
+   `tel:+4917624229299`, `https://wa.me/380678400156`, `https://wa.me/380963354328`.
+7. Verify the three external demo links open in a new tab.
+8. Check `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, `/opengraph-image` and `/twitter-image`.
+9. Run Lighthouse on desktop and mobile.
+10. Re-test after connecting or changing the custom domain.
+
 ## Reference Screenshots
 
 The `Referenzen` section uses local static screenshots when the following files
