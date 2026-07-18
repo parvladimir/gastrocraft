@@ -8,7 +8,7 @@ const trustItems = [
 
 export function HeroTrustItems() {
   return (
-    <ul className="mt-7 grid max-w-[43rem] gap-2.5 text-sm font-medium leading-6 text-slate-300 sm:grid-cols-3 sm:gap-x-3 lg:text-[0.78rem] xl:text-[0.8rem]">
+    <ul className="mt-8 grid max-w-[42rem] grid-cols-1 gap-x-6 gap-y-3 text-sm font-medium leading-6 text-slate-300 sm:grid-cols-2 xl:grid-cols-3">
       {trustItems.map((item) => (
         <li key={item} className="flex min-w-0 items-center gap-2">
           <span
