@@ -1,6 +1,28 @@
-import { getSiteUrl, siteConfig } from "@/lib/site-config";
+import { getAbsoluteUrl, getSiteUrl, siteConfig } from "@/lib/site-config";
 
-const structuredData = {
+const organizationData = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  description: siteConfig.description,
+  name: siteConfig.name,
+  url: getSiteUrl()
+};
+
+const websiteData = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  description: siteConfig.description,
+  inLanguage: siteConfig.language,
+  name: siteConfig.name,
+  publisher: {
+    "@type": "Organization",
+    name: siteConfig.name,
+    url: getSiteUrl()
+  },
+  url: getAbsoluteUrl("/")
+};
+
+const professionalServiceData = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
   areaServed: "Deutschland",
@@ -24,7 +46,13 @@ export function StructuredData() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
+      dangerouslySetInnerHTML={{
+        __html: serializeJsonLd([
+          organizationData,
+          websiteData,
+          professionalServiceData
+        ])
+      }}
     />
   );
 }

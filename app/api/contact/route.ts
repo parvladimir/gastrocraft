@@ -210,7 +210,7 @@ function createResendMailPayload({
     from: fromEmail,
     html: createHtmlMessage(payload),
     reply_to: payload.email,
-    subject: `Neue GastroCraft Anfrage von ${payload.name}`,
+    subject: `Neue DINEVIO Anfrage von ${payload.name}`,
     text: createTextMessage(payload),
     to: recipients
   };
@@ -218,7 +218,7 @@ function createResendMailPayload({
 
 function createTextMessage(payload: ContactPayload) {
   return [
-    "Neue Kontaktanfrage über GastroCraft",
+    "Neue Kontaktanfrage über DINEVIO",
     "",
     `Name: ${payload.name}`,
     `Restaurant / Betrieb: ${payload.business}`,
@@ -236,7 +236,7 @@ function createTextMessage(payload: ContactPayload) {
 
 function createHtmlMessage(payload: ContactPayload) {
   return `
-    <h1>Neue Kontaktanfrage über GastroCraft</h1>
+    <h1>Neue Kontaktanfrage über DINEVIO</h1>
     <p><strong>Name:</strong> ${escapeHtml(payload.name)}</p>
     <p><strong>Restaurant / Betrieb:</strong> ${escapeHtml(payload.business)}</p>
     <p><strong>E-Mail:</strong> ${escapeHtml(payload.email)}</p>

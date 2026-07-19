@@ -1,6 +1,6 @@
-# GastroCraft
+# DINEVIO
 
-Official company website for **GastroCraft**, a premium digital solutions partner for restaurants.
+Official company website for **DINEVIO**, a premium digital solutions partner for restaurants.
 
 ## Requirements
 
@@ -33,7 +33,7 @@ npm run start
 ### Vercel
 
 1. Push the repository to GitHub.
-2. Import `parvladimir/gastrocraft` into Vercel.
+2. Import the GitHub repository into Vercel.
 3. Use the `Next.js` framework preset.
 4. Use the build command:
 
@@ -64,8 +64,7 @@ CONTACT_FORM_TO_EMAIL
    - `/opengraph-image`
    - `/twitter-image`
 
-Do not configure a production domain in the repository until the final public
-domain has been confirmed.
+The production domain is `https://dinevio.de`.
 
 ### Generic Node Hosting
 

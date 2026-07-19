@@ -14,7 +14,7 @@ export default function GlobalError({
         <main className="min-h-screen bg-midnight px-6 py-20 text-warm-white">
           <div className="mx-auto flex min-h-[calc(100svh-10rem)] max-w-2xl flex-col justify-center">
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
-              GastroCraft
+              DINEVIO
             </p>
             <h1 className="mt-5 font-heading text-4xl font-semibold leading-tight sm:text-5xl">
               Etwas ist schiefgelaufen.

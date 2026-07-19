@@ -9,13 +9,13 @@ export type SiteConfig = {
 };
 
 export const siteConfig: SiteConfig = {
-  defaultUrl: "http://localhost:3000",
+  defaultUrl: "https://dinevio.de",
   description:
-    "GastroCraft entwickelt moderne digitale Lösungen für Restaurants – von professionellen Websites und digitalen Speisekarten bis zur Google-Optimierung und laufenden Betreuung.",
+    "Dinevio entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
   descriptor: "Restaurant Digital Solutions",
   language: "de",
   locale: "de_DE",
-  name: "GastroCraft",
+  name: "DINEVIO",
   slogan: "Ihre Gäste suchen online. Wir sorgen dafür, dass sie Sie finden."
 };
 
@@ -23,17 +23,13 @@ export function getSiteUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   const vercelUrl = process.env.VERCEL_URL?.trim();
   const deploymentUrl = vercelUrl ? normalizeDeploymentUrl(vercelUrl) : "";
-  const fallbackUrl =
-    process.env.NODE_ENV === "production"
-      ? "https://site-url-not-configured.invalid"
-      : siteConfig.defaultUrl;
-  const url = configuredUrl || deploymentUrl || fallbackUrl;
+  const url = configuredUrl || deploymentUrl || siteConfig.defaultUrl;
   const normalizedUrl = url.replace(/\/+$/, "");
 
   try {
     return new URL(normalizedUrl).toString().replace(/\/+$/, "");
   } catch {
-    return fallbackUrl;
+    return siteConfig.defaultUrl;
   }
 }
 

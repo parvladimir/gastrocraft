@@ -20,7 +20,7 @@ export const referenceProjects: ReferenceProject[] = [
       "Moderner Webauftritt für einen Imbiss mit digitaler Speisekarte, mobiler Optimierung und schneller Kontaktaufnahme.",
     id: "restaurant-demo",
     imageAlt:
-      "Screenshot des Schnell & Lecker Webdesigns von GastroCraft auf Desktop und Smartphone.",
+      "Screenshot des Schnell & Lecker Webdesigns von Dinevio auf Desktop und Smartphone.",
     mobileImage: "/images/references/restaurant-demo-mobile.webp",
     theme: "restaurant",
     title: "Schnell & Lecker",
@@ -33,7 +33,7 @@ export const referenceProjects: ReferenceProject[] = [
       "Ein frischer, mediterraner Auftritt mit digitaler Speisekarte und einer klaren visuellen Identität für griechische Gastronomie.",
     id: "rhodos-grill",
     imageAlt:
-      "Screenshot des Rhodos Grill Demo Webdesigns von GastroCraft auf Desktop und Smartphone.",
+      "Screenshot des Rhodos Grill Demo Webdesigns von Dinevio auf Desktop und Smartphone.",
     mobileImage: "/images/references/rhodos-grill-mobile.webp",
     theme: "rhodos",
     title: "Rhodos Grill",
@@ -46,7 +46,7 @@ export const referenceProjects: ReferenceProject[] = [
       "Ein markanter, moderner Auftritt für Grill, Burger und Fast Casual mit direkter Ansprache und mobilem Fokus.",
     id: "schlemmerhus",
     imageAlt:
-      "Screenshot des Schlemmerhus Demo Webdesigns von GastroCraft auf Desktop und Smartphone.",
+      "Screenshot des Schlemmerhus Demo Webdesigns von Dinevio auf Desktop und Smartphone.",
     mobileImage: "/images/references/schlemmerhus-mobile.webp",
     theme: "schlemmerhus",
     title: "Schlemmerhus",

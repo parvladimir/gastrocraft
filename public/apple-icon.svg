@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-labelledby="title">
-  <title>GastroCraft Apple Icon</title>
+  <title>DINEVIO Apple Icon</title>
   <rect width="180" height="180" rx="32" fill="#0F172A"/>
-  <path d="M96 42H69.4C45.3 42 28 61.5 28 90C28 118.5 45.3 138 69.4 138H96V111.4H70.2C59.6 111.4 52.4 103 52.4 90C52.4 77 59.6 68.6 70.2 68.6H96V42Z" fill="#C9A227"/>
-  <path d="M107.2 42H152V68.6H107.2V42Z" fill="#C9A227"/>
-  <path d="M107.2 78.4H152V105H131V138H107.2V78.4Z" fill="#C9A227"/>
+  <path d="M46 38H82C115 38 134 57.5 134 90C134 122.5 115 142 82 142H46V38ZM74 65V115H82C97.5 115 106 105.5 106 90C106 74.5 97.5 65 82 65H74Z" fill="#FAFAF8"/>
+  <path d="M125 38H154L124 142H98L125 38Z" fill="#C9A227"/>
 </svg>

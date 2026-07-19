@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title>GastroCraft Monogramm</title>
-  <rect width="64" height="64" rx="8" fill="#0F172A"/>
-  <path d="M34 15H24.5C15.9 15 10 21.7 10 32C10 42.3 15.9 49 24.5 49H34V39.5H24.8C21 39.5 18.5 36.5 18.5 32C18.5 27.5 21 24.5 24.8 24.5H34V15Z" fill="#C9A227"/>
-  <path d="M38 15H54V24.5H38V15Z" fill="#C9A227"/>
-  <path d="M38 28H54V37.5H46.5V49H38V28Z" fill="#C9A227"/>
-</svg>

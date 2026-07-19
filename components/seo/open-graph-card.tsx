@@ -46,7 +46,7 @@ export function OpenGraphCard() {
                 letterSpacing: "-2px"
               }}
             >
-              GC
+              DV
             </span>
           </div>
 

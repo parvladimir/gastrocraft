@@ -6,15 +6,30 @@ import { PackagesSection } from "@/components/sections/packages-section";
 import { ReferencesSection } from "@/components/sections/references-section";
 import { ServicesSection } from "@/components/sections/services-section";
 import { SolutionsSection } from "@/components/sections/solutions-section";
-import { WhyGastroCraftSection } from "@/components/sections/why-gastrocraft-section";
+import { WhyDinevioSection } from "@/components/sections/why-dinevio-section";
+import { siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   alternates: {
     canonical: "/"
   },
   description:
-    "Moderne Restaurant-Websites, digitale Speisekarten, QR-Lösungen, Google-Optimierung und persönliche Betreuung für Gastronomiebetriebe.",
-  title: "Digitale Lösungen für Restaurants"
+    "DINEVIO entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
+  openGraph: {
+    description:
+      "DINEVIO entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
+    siteName: siteConfig.name,
+    title: "DINEVIO | Websites und digitale Lösungen für Restaurants",
+    url: "/"
+  },
+  title: {
+    absolute: "DINEVIO | Websites und digitale Lösungen für Restaurants"
+  },
+  twitter: {
+    description:
+      "DINEVIO entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
+    title: "DINEVIO | Websites und digitale Lösungen für Restaurants"
+  }
 };
 
 export default function Home() {
@@ -25,7 +40,7 @@ export default function Home() {
       <ServicesSection />
       <ReferencesSection />
       <PackagesSection />
-      <WhyGastroCraftSection />
+      <WhyDinevioSection />
       <FaqSection />
       <ContactSection />
     </>

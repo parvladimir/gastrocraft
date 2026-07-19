@@ -155,7 +155,7 @@ export function HeroInterfaceVisual() {
         <div className="relative mt-3 rounded-md border border-premium-gold/25 bg-[#101a2c] px-4 py-3.5 shadow-[0_18px_48px_rgba(0,0,0,0.34)] sm:absolute sm:-bottom-6 sm:left-6 sm:right-6 sm:mt-0">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-warm-white">GastroCraft</p>
+              <p className="text-sm font-semibold text-warm-white">DINEVIO</p>
               <p className="mt-0.5 text-xs text-slate-400">
                 Digitaler Auftritt verbunden
               </p>

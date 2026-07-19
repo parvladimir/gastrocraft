@@ -30,7 +30,11 @@ export const metadata: Metadata = {
   description: siteConfig.description,
   icons: {
     apple: [{ type: "image/svg+xml", url: "/apple-icon.svg" }],
-    icon: [{ type: "image/svg+xml", url: "/icon.svg" }]
+    icon: [
+      { type: "image/x-icon", url: "/favicon.ico" },
+      { type: "image/svg+xml", url: "/favicon.svg" },
+      { type: "image/svg+xml", url: "/icon.svg" }
+    ]
   },
   keywords: [
     "Restaurant Website",
@@ -58,7 +62,7 @@ export const metadata: Metadata = {
     ],
     locale: siteConfig.locale,
     siteName: siteConfig.name,
-    title: "GastroCraft | Digitale Lösungen für Restaurants",
+    title: "DINEVIO | Restaurant Digital Solutions",
     type: "website",
     url: "/"
   },
@@ -68,8 +72,8 @@ export const metadata: Metadata = {
     index: true
   },
   title: {
-    default: "GastroCraft | Digitale Lösungen für Restaurants",
-    template: "%s | GastroCraft"
+    default: "DINEVIO | Restaurant Digital Solutions",
+    template: "%s | DINEVIO"
   },
   twitter: {
     card: "summary_large_image",
@@ -80,7 +84,7 @@ export const metadata: Metadata = {
         url: "/twitter-image"
       }
     ],
-    title: "GastroCraft | Digitale Lösungen für Restaurants"
+    title: "DINEVIO | Restaurant Digital Solutions"
   }
 };
 

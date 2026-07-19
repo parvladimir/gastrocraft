@@ -6,7 +6,7 @@ import {
   type CompanyBenefit
 } from "@/data/company-benefits";
 
-export function WhyGastroCraftSection() {
+export function WhyDinevioSection() {
   return (
     <section
       id="about"
@@ -17,7 +17,7 @@ export function WhyGastroCraftSection() {
         <div className="grid gap-12 lg:grid-cols-[0.86fr_1.14fr] lg:gap-14">
           <Reveal className="max-w-2xl">
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold sm:text-sm">
-              Warum GastroCraft
+              Warum DINEVIO
             </p>
             <h2
               id="about-heading"

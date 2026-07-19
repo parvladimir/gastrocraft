@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DinevioLogo } from "@/components/brand/dinevio-logo";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 
@@ -60,27 +60,11 @@ export function Header() {
       <Container className="flex min-h-16 items-center justify-between gap-5 py-3 sm:min-h-[4.5rem]">
         <Link
           href="/"
-          className="inline-flex min-w-0 items-center gap-2.5 focus-visible:rounded-sm sm:gap-3"
-          aria-label="GastroCraft Startseite"
+          className="inline-flex min-w-0 items-center focus-visible:rounded-sm"
+          aria-label="DINEVIO – Restaurant Digital Solutions Startseite"
           onClick={closeMenu}
         >
-          <Image
-            src="/brand/gastrocraft-monogram.svg"
-            alt=""
-            width={38}
-            height={38}
-            priority
-            aria-hidden="true"
-            className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
-          />
-          <span className="inline-flex min-w-0 flex-col">
-            <span className="font-heading text-lg font-semibold leading-tight text-warm-white sm:text-xl">
-              GastroCraft
-            </span>
-            <span className="hidden text-[0.64rem] font-semibold uppercase leading-none tracking-[0.18em] text-premium-gold sm:mt-1 xl:inline">
-              Restaurant Digital Solutions
-            </span>
-          </span>
+          <DinevioLogo />
         </Link>
 
         <nav

@@ -91,11 +91,11 @@ function PackageCard({
 
   return (
     <Reveal
-      className={`h-full ${isFeatured ? "order-first md:order-none" : ""}`}
+      className={`h-full min-w-0 max-w-full ${isFeatured ? "order-first md:order-none" : ""}`}
       delay={revealDelay}
     >
       <article
-        className={`group flex h-full min-h-[32rem] min-w-0 flex-col rounded-lg border p-6 transition-[border-color,transform,box-shadow,background-color] duration-200 ease-out md:min-h-[34rem] ${
+        className={`group flex h-full min-h-[32rem] w-full min-w-0 max-w-full flex-col rounded-lg border p-6 transition-[border-color,transform,box-shadow,background-color] duration-200 ease-out md:min-h-[34rem] ${
           isFeatured
             ? "shadow-[0_18px_46px_rgba(0,0,0,0.22)] motion-safe:lg:-translate-y-4 motion-safe:hover:lg:-translate-y-5"
             : "border-white/10 bg-[#101a2c] text-warm-white hover:border-premium-gold/45 hover:shadow-[0_18px_42px_rgba(0,0,0,0.18)] motion-safe:hover:-translate-y-1"

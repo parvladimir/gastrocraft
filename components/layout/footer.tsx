@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { DinevioLogo } from "@/components/brand/dinevio-logo";
 import { Container } from "@/components/layout/container";
 import { contactPeople } from "@/data/contact-details";
 
@@ -26,25 +26,10 @@ export function Footer() {
           <div>
             <Link
               href="/"
-              className="inline-flex items-center gap-3 focus-visible:rounded-sm"
-              aria-label="GastroCraft Startseite"
+              className="inline-flex items-center focus-visible:rounded-sm"
+              aria-label="DINEVIO – Restaurant Digital Solutions Startseite"
             >
-              <Image
-                src="/brand/gastrocraft-monogram.svg"
-                alt=""
-                width={40}
-                height={40}
-                aria-hidden="true"
-                className="h-10 w-10"
-              />
-              <span className="inline-flex flex-col">
-                <span className="font-heading text-xl font-semibold text-warm-white">
-                  GastroCraft
-                </span>
-                <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-premium-gold">
-                  Restaurant Digital Solutions
-                </span>
-              </span>
+              <DinevioLogo size="lg" />
             </Link>
             <p className="mt-6 max-w-sm text-base leading-7 text-slate-300">
               Ihre Gäste suchen online. Wir sorgen dafür, dass sie Sie finden.
@@ -113,7 +98,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} GastroCraft</p>
+          <p>&copy; {new Date().getFullYear()} DINEVIO</p>
           <p>Restaurant Digital Solutions</p>
         </div>
       </Container>
