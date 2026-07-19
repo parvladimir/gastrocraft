@@ -39,7 +39,7 @@ export function FaqSection() {
                   href="tel:+4917624229299"
                   className="inline-flex min-h-10 items-center justify-center rounded border border-premium-gold/60 px-4 text-sm font-semibold text-premium-gold transition-[background-color,border-color,transform] duration-200 ease-out hover:border-premium-gold hover:bg-premium-gold/8 active:translate-y-px focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-focus-ring)]"
                 >
-                  Andrej anrufen
+                  Andrii anrufen
                 </a>
                 <a
                   href="https://wa.me/380678400156"

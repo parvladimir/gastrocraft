@@ -7,11 +7,11 @@ import { ReferencesSection } from "@/components/sections/references-section";
 import { ServicesSection } from "@/components/sections/services-section";
 import { SolutionsSection } from "@/components/sections/solutions-section";
 import { WhyDinevioSection } from "@/components/sections/why-dinevio-section";
-import { siteConfig } from "@/lib/site-config";
+import { getAbsoluteUrl, siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   alternates: {
-    canonical: "/"
+    canonical: getAbsoluteUrl("/")
   },
   description:
     "DINEVIO entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
       "DINEVIO entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
     siteName: siteConfig.name,
     title: "DINEVIO | Websites und digitale Lösungen für Restaurants",
-    url: "/"
+    url: getAbsoluteUrl("/")
   },
   title: {
     absolute: "DINEVIO | Websites und digitale Lösungen für Restaurants"

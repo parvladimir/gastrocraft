@@ -8,7 +8,9 @@ export function DinevioLogo({
   size = "md"
 }: DinevioLogoProps) {
   const wordmarkSize =
-    size === "lg" ? "text-xl sm:text-2xl" : "text-lg sm:text-xl";
+    size === "lg" ? "text-xl sm:text-[1.6rem]" : "text-xl sm:text-[1.38rem]";
+  const descriptorSize =
+    size === "lg" ? "text-[0.72rem] sm:text-[0.76rem]" : "text-[0.7rem]";
 
   return (
     <span
@@ -26,12 +28,14 @@ export function DinevioLogo({
       </span>
       <span className="inline-flex min-w-0 flex-col">
         <span
-          className={`font-heading font-semibold leading-none tracking-[0.08em] text-warm-white ${wordmarkSize}`}
+          className={`font-heading font-semibold leading-none tracking-[0.1em] text-warm-white ${wordmarkSize}`}
         >
           DINE<span className="text-premium-gold">V</span>IO
         </span>
         {showDescriptor ? (
-          <span className="mt-1 hidden text-[0.64rem] font-semibold uppercase leading-none tracking-[0.18em] text-premium-gold sm:inline">
+          <span
+            className={`mt-1 hidden font-semibold uppercase leading-none tracking-[0.18em] text-premium-gold/95 sm:inline ${descriptorSize}`}
+          >
             Restaurant Digital Solutions
           </span>
         ) : null}

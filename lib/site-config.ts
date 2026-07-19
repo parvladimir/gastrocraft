@@ -11,7 +11,7 @@ export type SiteConfig = {
 export const siteConfig: SiteConfig = {
   defaultUrl: "https://dinevio.de",
   description:
-    "Dinevio entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
+    "DINEVIO entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
   descriptor: "Restaurant Digital Solutions",
   language: "de",
   locale: "de_DE",
