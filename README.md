@@ -58,8 +58,8 @@ CONTACT_FORM_TO_EMAIL
 7. Set `NEXT_PUBLIC_SITE_URL` to the final public URL.
 8. Add `dinevio.de` as the production domain.
 9. Add `www.dinevio.de` as an additional domain.
-10. Set `dinevio.de` as the primary domain.
-11. Verify that `www.dinevio.de` redirects permanently to `https://dinevio.de`.
+10. Set the primary domain in Vercel.
+11. Verify the Vercel-managed redirect direction in the project domain settings.
 12. Add only the DNS records shown by Vercel for this exact project.
 13. Redeploy after adding or changing a custom domain.
 14. Verify:
@@ -139,8 +139,9 @@ verify both success and failure behavior before launch.
 - Verify the Open Graph image.
 - Run Lighthouse.
 - Connect the final custom domain.
-- Set `dinevio.de` as the primary production domain.
-- Add `www.dinevio.de` and verify the permanent redirect to `dinevio.de`.
+- Set the primary production domain in Vercel.
+- Add both `dinevio.de` and `www.dinevio.de`.
+- Keep host redirects managed by Vercel, not by project code.
 - Add only the DNS records shown by Vercel for this exact project.
 - Redeploy after domain changes.
 
@@ -160,7 +161,7 @@ After each production deployment:
 8. Check `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, `/opengraph-image` and `/twitter-image`.
 9. Run Lighthouse on desktop and mobile.
 10. Re-test after connecting or changing the custom domain.
-11. Confirm that `www.dinevio.de` redirects to `https://dinevio.de` without a redirect loop.
+11. Confirm the Vercel-managed domain redirect works without a redirect loop.
 
 ## Reference Screenshots
 
