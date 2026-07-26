@@ -9,7 +9,7 @@ export type SiteConfig = {
 };
 
 export const siteConfig: SiteConfig = {
-  defaultUrl: "https://dinevio.de",
+  defaultUrl: "https://www.dinevio.de",
   description:
     "DINEVIO entwickelt moderne Websites und digitale Lösungen für Restaurants, Cafés, Bars und Gastronomiebetriebe.",
   descriptor: "Restaurant Digital Solutions",
@@ -21,9 +21,7 @@ export const siteConfig: SiteConfig = {
 
 export function getSiteUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  const vercelUrl = process.env.VERCEL_URL?.trim();
-  const deploymentUrl = vercelUrl ? normalizeDeploymentUrl(vercelUrl) : "";
-  const url = configuredUrl || deploymentUrl || siteConfig.defaultUrl;
+  const url = configuredUrl || siteConfig.defaultUrl;
   const normalizedUrl = url.replace(/\/+$/, "");
 
   try {
@@ -37,12 +35,4 @@ export function getAbsoluteUrl(path = "/") {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
   return `${getSiteUrl()}${normalizedPath}`;
-}
-
-function normalizeDeploymentUrl(url: string) {
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-
-  return `https://${url}`;
 }

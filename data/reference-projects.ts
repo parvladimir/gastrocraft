@@ -24,7 +24,7 @@ export const referenceProjects: ReferenceProject[] = [
     mobileImage: "/images/references/restaurant-demo-mobile.webp",
     theme: "restaurant",
     title: "Schnell & Lecker",
-    url: "https://restaurant.metro-gatecontrol.de/index.html"
+    url: "http://schnellundlecker.dinevio.de"
   },
   {
     category: "Griechisches Restaurant",
@@ -37,7 +37,7 @@ export const referenceProjects: ReferenceProject[] = [
     mobileImage: "/images/references/rhodos-grill-mobile.webp",
     theme: "rhodos",
     title: "Rhodos Grill",
-    url: "https://rhodosgrill.metro-gatecontrol.de/index.html"
+    url: "http://rhodosgrill.dinevio.de"
   },
   {
     category: "Grill & Fast Casual",
@@ -50,6 +50,6 @@ export const referenceProjects: ReferenceProject[] = [
     mobileImage: "/images/references/schlemmerhus-mobile.webp",
     theme: "schlemmerhus",
     title: "Schlemmerhus",
-    url: "https://schlemmerhus.metro-gatecontrol.de/index.html"
+    url: "http://schlemmerhus.dinevio.de"
   }
 ];

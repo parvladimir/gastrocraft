@@ -38,6 +38,15 @@ export function Button({
   const classes = `${baseClasses} ${variantClasses[variant]} ${
     variant === "link" ? "text-base" : sizeClasses[size]
   } ${className}`;
+  const isExternal = /^https?:\/\//.test(href);
+
+  if (isExternal) {
+    return (
+      <a href={href} className={classes} {...props}>
+        {children}
+      </a>
+    );
+  }
 
   return (
     <Link href={href} className={classes} {...props}>

@@ -56,8 +56,8 @@ CONTACT_FORM_TO_EMAIL
 ```
 
 7. Set `NEXT_PUBLIC_SITE_URL` to the final public URL.
-8. Add `dinevio.de` as the production domain.
-9. Add `www.dinevio.de` as an additional domain.
+8. Add `www.dinevio.de` as the production domain.
+9. Add `dinevio.de` as an additional Vercel-managed domain.
 10. Set the primary domain in Vercel.
 11. Verify the Vercel-managed redirect direction in the project domain settings.
 12. Add only the DNS records shown by Vercel for this exact project.
@@ -69,7 +69,7 @@ CONTACT_FORM_TO_EMAIL
    - `/opengraph-image`
    - `/twitter-image`
 
-The production domain is `https://dinevio.de`.
+The production domain is `https://www.dinevio.de`.
 
 ### Generic Node Hosting
 
