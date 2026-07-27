@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { DinevioLogo } from "@/components/brand/dinevio-logo";
 import { Container } from "@/components/layout/container";
@@ -19,6 +22,12 @@ const legalLinks = [
 ];
 
 export function Footer() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/sales")) {
+    return null;
+  }
+
   return (
     <footer className="border-t border-white/10 bg-[#0c1424]">
       <Container className="py-14 sm:py-16">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DinevioLogo } from "@/components/brand/dinevio-logo";
 import { Container } from "@/components/layout/container";
@@ -17,6 +18,7 @@ const navigationItems = [
 ];
 
 export function Header() {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -48,6 +50,10 @@ export function Header() {
   }, [isMenuOpen]);
 
   const closeMenu = () => setIsMenuOpen(false);
+
+  if (pathname?.startsWith("/sales")) {
+    return null;
+  }
 
   return (
     <header

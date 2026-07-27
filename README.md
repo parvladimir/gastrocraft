@@ -163,6 +163,28 @@ After each production deployment:
 10. Re-test after connecting or changing the custom domain.
 11. Confirm the Vercel-managed domain redirect works without a redirect loop.
 
+## Sales Manager
+
+The internal sales tool is available at:
+
+```bash
+/sales
+```
+
+It is hidden from the public website navigation and currently runs in a
+localStorage mode so the first mobile workflow can be tested without a database.
+The data model mirrors the planned Supabase tables for restaurants, contact
+history, tours, tour stops, offers and editable package templates.
+
+Temporary local test users:
+
+- `andrii@dinevio.local` / `dinevio`
+- `volodymyr@dinevio.local` / `dinevio`
+
+Before using this as a real protected production tool, replace the temporary
+local login with Supabase Auth and move the localStorage adapter to Supabase
+tables.
+
 ## Reference Screenshots
 
 The `Referenzen` section uses local static screenshots when the following files
