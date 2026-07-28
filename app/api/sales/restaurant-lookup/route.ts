@@ -72,6 +72,12 @@ type NominatimPlace = {
   type?: string;
 };
 
+type LookupQuery = {
+  latitude: number | null;
+  longitude: number | null;
+  text: string;
+};
+
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as { query?: string };
   const rawQuery = body.query?.trim() ?? "";
@@ -89,7 +95,8 @@ export async function POST(request: NextRequest) {
 
   const query = await normalizeLookupQuery(rawQuery);
   const googleCandidates = googlePlacesApiKey ? await searchGooglePlaces(query) : [];
-  const candidates = googleCandidates.length > 0 ? googleCandidates : await searchNominatim(query);
+  const candidates =
+    googleCandidates.length > 0 ? googleCandidates : await searchNominatim(query);
 
   if (candidates.length === 0) {
     return NextResponse.json<RestaurantLookupResponse>({
@@ -109,9 +116,13 @@ export async function POST(request: NextRequest) {
   });
 }
 
-async function normalizeLookupQuery(rawQuery: string) {
+async function normalizeLookupQuery(rawQuery: string): Promise<LookupQuery> {
   if (!isHttpUrl(rawQuery)) {
-    return rawQuery;
+    return {
+      latitude: null,
+      longitude: null,
+      text: rawQuery
+    };
   }
 
   try {
@@ -119,20 +130,123 @@ async function normalizeLookupQuery(rawQuery: string) {
       redirect: "follow",
       signal: AbortSignal.timeout(5000)
     });
-    return decodeURIComponent(response.url || rawQuery);
+    return parseMapsUrl(response.url || rawQuery) ?? {
+      latitude: null,
+      longitude: null,
+      text: rawQuery
+    };
   } catch {
-    return rawQuery;
+    return parseMapsUrl(rawQuery) ?? {
+      latitude: null,
+      longitude: null,
+      text: rawQuery
+    };
   }
 }
 
-async function searchGooglePlaces(query: string): Promise<RestaurantLookupCandidate[]> {
+function parseMapsUrl(rawUrl: string): LookupQuery | null {
+  try {
+    const url = new URL(rawUrl);
+    const continueUrl = url.searchParams.get("continue");
+
+    if (continueUrl) {
+      return parseMapsUrl(continueUrl);
+    }
+
+    const decodedUrl = decodeURIComponent(rawUrl);
+    const placeName = extractMapsPlaceName(decodedUrl);
+    const coordinates = extractMapsCoordinates(decodedUrl);
+
+    if (!placeName && !coordinates) {
+      return null;
+    }
+
+    return {
+      latitude: coordinates?.latitude ?? null,
+      longitude: coordinates?.longitude ?? null,
+      text: placeName || `${coordinates?.latitude}, ${coordinates?.longitude}`
+    };
+  } catch {
+    const decodedUrl = decodeURIComponent(rawUrl);
+    const placeName = extractMapsPlaceName(decodedUrl);
+    const coordinates = extractMapsCoordinates(decodedUrl);
+
+    if (!placeName && !coordinates) {
+      return null;
+    }
+
+    return {
+      latitude: coordinates?.latitude ?? null,
+      longitude: coordinates?.longitude ?? null,
+      text: placeName || `${coordinates?.latitude}, ${coordinates?.longitude}`
+    };
+  }
+}
+
+function extractMapsPlaceName(value: string) {
+  const placeMatch = value.match(/\/maps\/place\/([^/@?]+)/);
+  const queryMatch = value.match(/[?&]q=([^&]+)/);
+  const rawName = placeMatch?.[1] ?? queryMatch?.[1] ?? "";
+
+  return rawName
+    ? decodeURIComponent(rawName)
+        .replace(/\+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    : "";
+}
+
+function extractMapsCoordinates(value: string) {
+  const placeMatch = value.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  const atMatch = value.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  const queryMatch = value.match(/[?&]query=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  const match = placeMatch ?? atMatch ?? queryMatch;
+
+  if (!match?.[1] || !match[2]) {
+    return null;
+  }
+
+  return {
+    latitude: Number(match[1]),
+    longitude: Number(match[2])
+  };
+}
+
+async function searchGooglePlaces(query: LookupQuery): Promise<RestaurantLookupCandidate[]> {
+  const body: {
+    languageCode: string;
+    locationBias?: {
+      circle: {
+        center: {
+          latitude: number;
+          longitude: number;
+        };
+        radius: number;
+      };
+    };
+    regionCode: string;
+    textQuery: string;
+  } = {
+    languageCode: "de",
+    regionCode: "DE",
+    textQuery: query.text
+  };
+
+  if (query.latitude !== null && query.longitude !== null) {
+    body.locationBias = {
+      circle: {
+        center: {
+          latitude: query.latitude,
+          longitude: query.longitude
+        },
+        radius: 900
+      }
+    };
+  }
+
   try {
     const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-      body: JSON.stringify({
-        languageCode: "de",
-        regionCode: "DE",
-        textQuery: query
-      }),
+      body: JSON.stringify(body),
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": googlePlacesApiKey,
@@ -197,9 +311,18 @@ function mapGooglePlace(place: GooglePlace): RestaurantLookupCandidate {
   };
 }
 
-async function searchNominatim(query: string): Promise<RestaurantLookupCandidate[]> {
+async function searchNominatim(query: LookupQuery): Promise<RestaurantLookupCandidate[]> {
+  const reverseCandidate =
+    query.latitude !== null && query.longitude !== null
+      ? await reverseNominatim(query.latitude, query.longitude)
+      : null;
+
+  if (reverseCandidate?.name && namesAreSimilar(reverseCandidate.name, query.text)) {
+    return [reverseCandidate];
+  }
+
   const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", query);
+  url.searchParams.set("q", query.text);
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("addressdetails", "1");
   url.searchParams.set("extratags", "1");
@@ -221,9 +344,39 @@ async function searchNominatim(query: string): Promise<RestaurantLookupCandidate
     }
 
     const places = (await response.json()) as NominatimPlace[];
-    return places.map(mapNominatimPlace);
+    return uniqueCandidates([
+      ...(reverseCandidate ? [reverseCandidate] : []),
+      ...places.map(mapNominatimPlace)
+    ]);
   } catch {
-    return [];
+    return reverseCandidate ? [reverseCandidate] : [];
+  }
+}
+
+async function reverseNominatim(latitude: number, longitude: number) {
+  const url = new URL("https://nominatim.openstreetmap.org/reverse");
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("extratags", "1");
+  url.searchParams.set("lat", String(latitude));
+  url.searchParams.set("lon", String(longitude));
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Referer: siteUrl,
+        "User-Agent": `DINEVIO Sales Manager (${siteUrl})`
+      },
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return mapNominatimPlace((await response.json()) as NominatimPlace);
+  } catch {
+    return null;
   }
 }
 
@@ -264,6 +417,42 @@ function mapNominatimPlace(place: NominatimPlace): RestaurantLookupCandidate {
     tiktok: "",
     website
   };
+}
+
+function uniqueCandidates(candidates: RestaurantLookupCandidate[]) {
+  const seen = new Set<string>();
+
+  return candidates.filter((candidate) => {
+    const key =
+      candidate.id ||
+      `${candidate.name}-${candidate.street}-${candidate.house_number}-${candidate.postal_code}`;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
+function namesAreSimilar(first: string, second: string) {
+  const normalizedFirst = normalizeCandidateText(first);
+  const normalizedSecond = normalizeCandidateText(second);
+
+  return (
+    normalizedFirst === normalizedSecond ||
+    normalizedFirst.includes(normalizedSecond) ||
+    normalizedSecond.includes(normalizedFirst)
+  );
+}
+
+function normalizeCandidateText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9]+/g, "");
 }
 
 async function enrichCandidate(candidate: RestaurantLookupCandidate) {
