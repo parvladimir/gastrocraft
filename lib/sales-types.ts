@@ -69,23 +69,45 @@ export type Restaurant = {
   created_at: string;
   created_by: SalesUserId;
   email: string;
+  facebook: string;
+  google_maps_url: string;
+  google_rating: number | null;
+  google_review_count: number | null;
+  house_number: string;
   id: string;
   instagram: string;
   interest_level: number | null;
+  latitude: string;
+  longitude: string;
   name: string;
   next_contact_at: string;
   next_contact_type: ContactType | "";
   notes: string;
+  opening_hours: string[];
   phone: string;
+  photos: string[];
   planned_visit_at: string;
   postal_code: string;
   responsible_user_id: SalesUserId;
   selected_demo: DemoId;
   status: RestaurantStatus;
   street: string;
+  tiktok: string;
   updated_at: string;
   updated_by: SalesUserId;
   website: string;
+  digital_presence: DigitalPresenceAnalysis | null;
+};
+
+export type DigitalPresenceAnalysis = {
+  has_facebook: boolean | null;
+  has_https: boolean | null;
+  has_instagram: boolean | null;
+  has_mobile_viewport: boolean | null;
+  has_online_booking: boolean | null;
+  has_online_menu: boolean | null;
+  has_website: boolean;
+  score: number;
 };
 
 export type ContactHistoryEntry = {

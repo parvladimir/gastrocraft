@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import {
+  AlertCircle,
   ArrowDown,
   ArrowUp,
   Check,
@@ -19,6 +21,7 @@ import {
   Route,
   Search,
   Settings,
+  Star,
   Trash2,
   Upload
 } from "lucide-react";
@@ -53,6 +56,10 @@ import type {
   SalesUserId,
   ServicePackageTemplate
 } from "@/lib/sales-types";
+import type {
+  RestaurantLookupCandidate,
+  RestaurantLookupResponse
+} from "@/lib/restaurant-lookup-types";
 
 type ViewMode =
   | "dashboard"
@@ -98,20 +105,31 @@ const emptyDraft: RestaurantDraft = {
   city: "",
   contact_person: "",
   contact_position: "",
+  digital_presence: null,
   email: "",
+  facebook: "",
+  google_maps_url: "",
+  google_rating: null,
+  google_review_count: null,
+  house_number: "",
   instagram: "",
   interest_level: null,
+  latitude: "",
+  longitude: "",
   name: "",
   next_contact_at: "",
   next_contact_type: "",
   notes: "",
+  opening_hours: [],
   phone: "",
+  photos: [],
   planned_visit_at: "",
   postal_code: "",
   responsible_user_id: "andrii",
   selected_demo: "none",
   status: "Neu",
   street: "",
+  tiktok: "",
   website: ""
 };
 
@@ -638,7 +656,13 @@ DINEVIO`;
               setView(editingRestaurantId ? "detail" : "restaurants");
               setEditingRestaurantId("");
             }}
+            onOpenRestaurant={(id) => {
+              setSelectedRestaurantId(id);
+              setEditingRestaurantId("");
+              setView("detail");
+            }}
             onSave={(draft) => saveRestaurant(draft, editingRestaurantId)}
+            restaurants={restaurants}
           />
         ) : null}
 
@@ -1082,14 +1106,18 @@ function RestaurantForm({
   initialDraft,
   isEditing,
   onCancel,
+  onOpenRestaurant,
   onSave,
+  restaurants,
   users
 }: {
   currentUser: SalesUser;
   initialDraft: RestaurantDraft | null;
   isEditing: boolean;
   onCancel: () => void;
+  onOpenRestaurant: (id: string) => void;
   onSave: (draft: RestaurantDraft) => void;
+  restaurants: Restaurant[];
   users: SalesUser[];
 }) {
   const [draft, setDraft] = useState<RestaurantDraft>(() => {
@@ -1101,7 +1129,7 @@ function RestaurantForm({
       const storedDraft = window.localStorage.getItem(draftKey);
 
       if (storedDraft) {
-        return JSON.parse(storedDraft) as RestaurantDraft;
+        return normalizeRestaurantDraft(JSON.parse(storedDraft) as Partial<RestaurantDraft>);
       }
     }
 
@@ -1110,6 +1138,12 @@ function RestaurantForm({
       responsible_user_id: currentUser.id
     };
   });
+  const [lookupQuery, setLookupQuery] = useState("");
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+  const [lookupCandidates, setLookupCandidates] = useState<RestaurantLookupCandidate[]>([]);
+  const [postalCodeWarning, setPostalCodeWarning] = useState("");
+  const [duplicateRestaurant, setDuplicateRestaurant] = useState<Restaurant | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -1125,6 +1159,88 @@ function RestaurantForm({
     }));
   }
 
+  async function loadRestaurantInformation() {
+    if (lookupBusy) {
+      return;
+    }
+
+    const query = lookupQuery.trim();
+
+    if (query.length < 3) {
+      setLookupError("Bitte geben Sie einen Google Maps Link oder Restaurantnamen ein.");
+      return;
+    }
+
+    setLookupBusy(true);
+    setLookupError("");
+    setPostalCodeWarning("");
+    setDuplicateRestaurant(null);
+    setLookupCandidates([]);
+
+    try {
+      const response = await fetch("/api/sales/restaurant-lookup", {
+        body: JSON.stringify({ query }),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        method: "POST"
+      });
+      const payload = (await response.json()) as RestaurantLookupResponse;
+
+      if (!response.ok || payload.status === "error" || payload.status === "not_found") {
+        setLookupError(payload.message ?? "Informationen konnten nicht geladen werden.");
+        return;
+      }
+
+      if (payload.candidates.length > 1) {
+        setLookupCandidates(payload.candidates);
+        return;
+      }
+
+      if (payload.candidates[0]) {
+        applyLookupCandidate(payload.candidates[0]);
+      }
+    } catch {
+      setLookupError("Informationen konnten nicht geladen werden.");
+    } finally {
+      setLookupBusy(false);
+    }
+  }
+
+  function applyLookupCandidate(candidate: RestaurantLookupCandidate) {
+    const duplicate = findDuplicateRestaurant(candidate, restaurants);
+
+    setDuplicateRestaurant(duplicate);
+    setPostalCodeWarning(candidate.postal_code ? "" : "PLZ konnte nicht eindeutig bestimmt werden.");
+    setLookupCandidates([]);
+    setLookupError("");
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      category: candidate.category || currentDraft.category,
+      city: candidate.city,
+      digital_presence: candidate.presence,
+      email: candidate.email,
+      facebook: candidate.facebook,
+      google_maps_url: candidate.google_maps_url,
+      google_rating: candidate.google_rating,
+      google_review_count: candidate.google_review_count,
+      house_number: candidate.house_number,
+      instagram: candidate.instagram,
+      latitude: candidate.latitude,
+      longitude: candidate.longitude,
+      name: candidate.name,
+      opening_hours: candidate.opening_hours,
+      phone: candidate.phone,
+      photos: candidate.photo_urls,
+      postal_code: candidate.postal_code,
+      selected_demo:
+        candidate.suggested_demo !== "none" ? candidate.suggested_demo : currentDraft.selected_demo,
+      street: candidate.street,
+      tiktok: candidate.tiktok,
+      website: candidate.website
+    }));
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1135,7 +1251,23 @@ function RestaurantForm({
     setSaving(true);
     onSave({
       ...draft,
+      city: draft.city.trim(),
+      contact_person: draft.contact_person.trim(),
+      contact_position: draft.contact_position.trim(),
+      email: draft.email.trim(),
+      facebook: draft.facebook.trim(),
+      google_maps_url: draft.google_maps_url.trim(),
+      house_number: draft.house_number.trim(),
+      instagram: draft.instagram.trim(),
+      latitude: draft.latitude.trim(),
+      longitude: draft.longitude.trim(),
       name: draft.name.trim(),
+      notes: draft.notes.trim(),
+      phone: draft.phone.trim(),
+      postal_code: draft.postal_code.trim(),
+      street: draft.street.trim(),
+      tiktok: draft.tiktok.trim(),
+      website: draft.website.trim(),
       status: draft.planned_visit_at && draft.status === "Neu" ? "Besuch geplant" : draft.status
     });
   }
@@ -1147,6 +1279,138 @@ function RestaurantForm({
         title={isEditing ? "Daten aktualisieren." : "Restaurant hinzufügen."}
         text="Die wichtigsten Informationen sind für die Nutzung unterwegs optimiert."
       />
+
+      <div className="rounded-xl border border-premium-gold/35 bg-[#101a2c] p-5 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+          <div className="flex-1">
+            <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
+              Restaurant automatisch finden
+            </p>
+            <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-lookup">
+              Google Maps Link oder Restaurantname
+            </label>
+            <input
+              id="restaurant-lookup"
+              value={lookupQuery}
+              onChange={(event) => setLookupQuery(event.target.value)}
+              className={inputClassName}
+              placeholder={"https://maps.app.goo.gl/...\noder\nRhodos Grill Marl"}
+              type="text"
+            />
+          </div>
+          <button
+            className={goldButtonClassName}
+            disabled={lookupBusy}
+            onClick={loadRestaurantInformation}
+            type="button"
+          >
+            {lookupBusy ? (
+              <>
+                <RefreshCw aria-hidden="true" className="h-4 w-4 animate-spin" />
+                Informationen werden geladen
+              </>
+            ) : (
+              "Informationen laden"
+            )}
+          </button>
+        </div>
+
+        {lookupError ? (
+          <p className="mt-4 rounded border border-orange-300/30 bg-orange-400/10 px-4 py-3 text-sm leading-6 text-orange-100">
+            {lookupError}
+          </p>
+        ) : null}
+
+        {postalCodeWarning ? (
+          <p className="mt-4 rounded border border-orange-300/30 bg-orange-400/10 px-4 py-3 text-sm leading-6 text-orange-100">
+            {postalCodeWarning}
+          </p>
+        ) : null}
+
+        {duplicateRestaurant ? (
+          <div className="mt-4 rounded-lg border border-premium-gold/35 bg-midnight/65 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-heading text-lg font-semibold">Möglicher Duplikat gefunden</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {duplicateRestaurant.name} · {formatAddress(duplicateRestaurant)}
+                </p>
+              </div>
+              <button
+                className={outlineButtonClassName}
+                onClick={() => onOpenRestaurant(duplicateRestaurant.id)}
+                type="button"
+              >
+                Bestehenden Eintrag öffnen
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {lookupCandidates.length > 0 ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-midnight/80 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-white/12 bg-[#101a2c] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
+                  Mehrere Ergebnisse
+                </p>
+                <h2 className="mt-2 font-heading text-2xl font-semibold">Restaurant auswählen</h2>
+              </div>
+              <button
+                aria-label="Auswahl schließen"
+                className={iconButtonClassName}
+                onClick={() => setLookupCandidates([])}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {lookupCandidates.map((candidate) => (
+                <div key={`${candidate.source}-${candidate.id}`} className="rounded-lg border border-white/10 bg-midnight/55 p-4">
+                  <div className="flex gap-4">
+                    {candidate.image_url ? (
+                      <Image
+                        alt={`Vorschau von ${candidate.name}`}
+                        className="h-20 w-24 shrink-0 rounded object-cover"
+                        height={80}
+                        src={candidate.image_url}
+                        width={96}
+                      />
+                    ) : (
+                      <div className="flex h-20 w-24 shrink-0 items-center justify-center rounded border border-white/10 text-premium-gold">
+                        <Search aria-hidden="true" className="h-6 w-6" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-heading text-lg font-semibold">{candidate.name}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-400">
+                        {formatCandidateAddress(candidate) || "Keine Adresse"}
+                      </p>
+                      {candidate.google_rating ? (
+                        <p className="mt-2 inline-flex items-center gap-1 text-sm text-premium-gold">
+                          <Star aria-hidden="true" className="h-4 w-4" />
+                          {candidate.google_rating.toFixed(1)}
+                          {candidate.google_review_count ? ` · ${candidate.google_review_count} Bewertungen` : ""}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <button
+                    className={`${goldButtonClassName} mt-4 w-full sm:w-auto`}
+                    onClick={() => applyLookupCandidate(candidate)}
+                    type="button"
+                  >
+                    Auswählen
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className={panelClassName}>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -1163,19 +1427,46 @@ function RestaurantForm({
             options={["", ...restaurantCategories]}
           />
           <TextField label="Straße" value={draft.street} onChange={(value) => updateField("street", value)} />
+          <TextField label="Hausnummer" value={draft.house_number} onChange={(value) => updateField("house_number", value)} />
           <TextField label="PLZ" value={draft.postal_code} onChange={(value) => updateField("postal_code", value)} />
           <TextField label="Ort" value={draft.city} onChange={(value) => updateField("city", value)} />
           <TextField label="Telefon" value={draft.phone} onChange={(value) => updateField("phone", value)} type="tel" />
           <TextField label="E-Mail" value={draft.email} onChange={(value) => updateField("email", value)} type="email" />
           <TextField label="Webseite" value={draft.website} onChange={(value) => updateField("website", value)} type="url" />
+          <TextField label="Google Maps URL" value={draft.google_maps_url} onChange={(value) => updateField("google_maps_url", value)} type="url" />
           <TextField label="Instagram" value={draft.instagram} onChange={(value) => updateField("instagram", value)} />
+          <TextField label="Facebook" value={draft.facebook} onChange={(value) => updateField("facebook", value)} />
+          <TextField label="TikTok" value={draft.tiktok} onChange={(value) => updateField("tiktok", value)} />
           <TextField label="Ansprechpartner" value={draft.contact_person} onChange={(value) => updateField("contact_person", value)} />
           <TextField label="Position des Ansprechpartners" value={draft.contact_position} onChange={(value) => updateField("contact_position", value)} />
+          <TextField label="Latitude" value={draft.latitude} onChange={(value) => updateField("latitude", value)} />
+          <TextField label="Longitude" value={draft.longitude} onChange={(value) => updateField("longitude", value)} />
+          <TextField label="Google Rating" value={draft.google_rating?.toString() ?? ""} onChange={(value) => updateField("google_rating", value ? Number(value) : null)} type="number" />
+          <TextField label="Anzahl Bewertungen" value={draft.google_review_count?.toString() ?? ""} onChange={(value) => updateField("google_review_count", value ? Number(value) : null)} type="number" />
           <DateTimeField label="Geplanter Besuch" value={draft.planned_visit_at} onChange={(value) => updateField("planned_visit_at", value)} />
           <SelectField label="Verantwortlich" value={draft.responsible_user_id} onChange={(value) => updateField("responsible_user_id", value as SalesUserId)} options={users.map((user) => user.id)} labels={Object.fromEntries(users.map((user) => [user.id, user.name]))} />
           <SelectField label="Demo" value={draft.selected_demo} onChange={(value) => updateField("selected_demo", value as DemoId)} options={Object.keys(demoOptions)} labels={Object.fromEntries(Object.entries(demoOptions).map(([id, demo]) => [id, demo.label]))} />
           <SelectField label="Status" value={draft.status} onChange={(value) => updateField("status", value as RestaurantStatus)} options={restaurantStatuses} />
         </div>
+        <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-opening-hours">
+          Öffnungszeiten
+        </label>
+        <textarea
+          id="restaurant-opening-hours"
+          value={draft.opening_hours.join("\n")}
+          onChange={(event) => updateField("opening_hours", event.target.value.split("\n").filter(Boolean))}
+          className={`${inputClassName} min-h-28 py-3`}
+        />
+        <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-photo-urls">
+          Foto-URLs
+        </label>
+        <textarea
+          id="restaurant-photo-urls"
+          value={draft.photos.join("\n")}
+          onChange={(event) => updateField("photos", event.target.value.split("\n").filter(Boolean))}
+          className={`${inputClassName} min-h-24 py-3`}
+        />
+        <PresenceAnalysisPanel presence={draft.digital_presence} />
         <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-notes">
           Notizen
         </label>
@@ -1196,6 +1487,54 @@ function RestaurantForm({
         </div>
       </div>
     </form>
+  );
+}
+
+function PresenceAnalysisPanel({
+  presence
+}: {
+  presence: RestaurantDraft["digital_presence"];
+}) {
+  if (!presence) {
+    return null;
+  }
+
+  const items = [
+    { label: "Offizielle Website", value: presence.has_website },
+    { label: "HTTPS", value: presence.has_https },
+    { label: "Online-Menü", value: presence.has_online_menu },
+    { label: "Instagram-Link", value: presence.has_instagram },
+    { label: "Facebook-Link", value: presence.has_facebook },
+    { label: "Online-Reservierung", value: presence.has_online_booking },
+    { label: "Mobile Version", value: presence.has_mobile_viewport }
+  ];
+
+  return (
+    <div className="mt-5 rounded-lg border border-white/10 bg-midnight/45 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-heading text-lg font-semibold">Online-Analyse</p>
+          <p className="mt-1 text-sm text-slate-400">
+            Schneller Überblick für das Gespräch vor Ort.
+          </p>
+        </div>
+        <div className="rounded border border-premium-gold/45 px-3 py-2 text-sm font-semibold text-premium-gold">
+          {presence.score} / 100
+        </div>
+      </div>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-center gap-2 text-sm text-slate-300">
+            {item.value ? (
+              <Check aria-hidden="true" className="h-4 w-4 shrink-0 text-premium-gold" />
+            ) : (
+              <AlertCircle aria-hidden="true" className="h-4 w-4 shrink-0 text-slate-500" />
+            )}
+            <span>{item.label}: {formatPresenceValue(item.value)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1275,7 +1614,7 @@ function RestaurantDetailView({
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ActionLink href={`tel:${restaurant.phone}`} icon={<Phone />} label="Anrufen" disabled={!restaurant.phone} />
           <ActionLink href={restaurant.phone ? `https://wa.me/${normalizePhone(restaurant.phone)}` : ""} icon={<MessageCircle />} label="WhatsApp" external disabled={!restaurant.phone} />
-          <ActionLink href={getMapsUrl(restaurant)} icon={<Map />} label="Navigation" external disabled={!formatAddress(restaurant)} />
+          <ActionLink href={getMapsUrl(restaurant)} icon={<Map />} label="Navigation" external disabled={!hasNavigationTarget(restaurant)} />
           <ActionLink href={restaurant.website} icon={<ExternalLink />} label="Webseite öffnen" external disabled={!restaurant.website} />
           <button className={mobileActionClassName} type="button" onClick={openDemo}>
             <ExternalLink aria-hidden="true" className="h-5 w-5" />
@@ -1286,6 +1625,8 @@ function RestaurantDetailView({
             Bearbeiten
           </button>
         </div>
+
+        <PresenceAnalysisPanel presence={restaurant.digital_presence} />
 
         {showDemoChooser ? (
           <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4">
@@ -2388,10 +2729,36 @@ function mergeSalesData(partialData: Partial<SalesData>): SalesData {
     contact_history: partialData.contact_history ?? [],
     offers: partialData.offers ?? [],
     package_templates: partialData.package_templates ?? initialPackageTemplates,
-    restaurants: partialData.restaurants ?? [],
+    restaurants: (partialData.restaurants ?? []).map(normalizeRestaurant),
     tour_stops: partialData.tour_stops ?? [],
     tours: partialData.tours ?? [],
     users: partialData.users ?? salesUsers
+  };
+}
+
+function normalizeRestaurantDraft(partialDraft: Partial<RestaurantDraft>): RestaurantDraft {
+  return {
+    ...emptyDraft,
+    ...partialDraft,
+    digital_presence: partialDraft.digital_presence ?? null,
+    google_rating: partialDraft.google_rating ?? null,
+    google_review_count: partialDraft.google_review_count ?? null,
+    interest_level: partialDraft.interest_level ?? null,
+    opening_hours: partialDraft.opening_hours ?? [],
+    photos: partialDraft.photos ?? []
+  };
+}
+
+function normalizeRestaurant(restaurant: Restaurant): Restaurant {
+  return {
+    ...restaurant,
+    ...normalizeRestaurantDraft(restaurant),
+    archived: restaurant.archived,
+    created_at: restaurant.created_at,
+    created_by: restaurant.created_by,
+    id: restaurant.id,
+    updated_at: restaurant.updated_at,
+    updated_by: restaurant.updated_by
   };
 }
 
@@ -2472,17 +2839,86 @@ function normalizePhone(phone: string) {
 }
 
 function formatAddress(restaurant: Restaurant) {
-  return [restaurant.street, restaurant.postal_code, restaurant.city].filter(Boolean).join(", ");
+  const streetLine = [restaurant.street, restaurant.house_number].filter(Boolean).join(" ");
+  return [streetLine, restaurant.postal_code, restaurant.city].filter(Boolean).join(", ");
 }
 
 function getMapsUrl(restaurant: Restaurant) {
+  if (restaurant.google_maps_url) {
+    return restaurant.google_maps_url;
+  }
+
+  if (restaurant.latitude && restaurant.longitude) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${restaurant.latitude},${restaurant.longitude}`
+    )}`;
+  }
+
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     formatAddress(restaurant) || restaurant.name
   )}`;
 }
 
+function hasNavigationTarget(restaurant: Restaurant) {
+  return Boolean(
+    restaurant.google_maps_url ||
+      (restaurant.latitude && restaurant.longitude) ||
+      formatAddress(restaurant)
+  );
+}
+
 function getDemoUrl(demoId: DemoId) {
   return demoOptions[demoId]?.url ?? "";
+}
+
+function formatCandidateAddress(candidate: RestaurantLookupCandidate) {
+  const streetLine = [candidate.street, candidate.house_number].filter(Boolean).join(" ");
+  return [streetLine, candidate.postal_code, candidate.city].filter(Boolean).join(", ");
+}
+
+function findDuplicateRestaurant(
+  candidate: RestaurantLookupCandidate,
+  restaurants: Restaurant[]
+) {
+  const candidateName = normalizeLookupText(candidate.name);
+  const candidateAddress = normalizeLookupText(formatCandidateAddress(candidate));
+  const candidateLat = Number(candidate.latitude);
+  const candidateLng = Number(candidate.longitude);
+
+  return (
+    restaurants.find((restaurant) => {
+      const nameMatches = normalizeLookupText(restaurant.name) === candidateName;
+      const addressMatches =
+        Boolean(candidateAddress) && normalizeLookupText(formatAddress(restaurant)) === candidateAddress;
+      const restaurantLat = Number(restaurant.latitude);
+      const restaurantLng = Number(restaurant.longitude);
+      const coordinateMatches =
+        Number.isFinite(candidateLat) &&
+        Number.isFinite(candidateLng) &&
+        Number.isFinite(restaurantLat) &&
+        Number.isFinite(restaurantLng) &&
+        Math.abs(candidateLat - restaurantLat) < 0.00035 &&
+        Math.abs(candidateLng - restaurantLng) < 0.00035;
+
+      return (nameMatches && addressMatches) || coordinateMatches;
+    }) ?? null
+  );
+}
+
+function normalizeLookupText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function formatPresenceValue(value: boolean | null) {
+  if (value === null) {
+    return "nicht bekannt";
+  }
+
+  return value ? "ja" : "nein";
 }
 
 function getUserName(users: SalesUser[], userId: SalesUserId) {

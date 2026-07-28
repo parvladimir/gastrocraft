@@ -185,6 +185,28 @@ Before using this as a real protected production tool, replace the temporary
 local login with Supabase Auth and move the localStorage adapter to Supabase
 tables.
 
+### Restaurant Lookup
+
+The create/edit restaurant form can prefill restaurant data from a Google Maps
+link or restaurant name.
+
+Set the server-only environment variable:
+
+```bash
+GOOGLE_PLACES_API_KEY=
+```
+
+The key must never be exposed as a `NEXT_PUBLIC` variable. When Google Places is
+not configured or unavailable, the lookup route falls back to
+OpenStreetMap/Nominatim for basic address data. Nominatim is only a reserve for
+manual lookups and must not be used for bulk scraping.
+
+The lookup stores editable fields such as address, phone, website, Google Maps
+URL, coordinates, opening hours, rating, review count, photo URLs and social
+links when they are available. If a restaurant website is found, the server does
+a lightweight homepage scan for e-mail, Instagram, Facebook, TikTok and basic
+digital presence signals.
+
 ## Reference Screenshots
 
 The `Referenzen` section uses local static screenshots when the following files
