@@ -185,6 +185,24 @@ Before using this as a real protected production tool, replace the temporary
 local login with Supabase Auth and move the localStorage adapter to Supabase
 tables.
 
+The Supabase database foundation is documented in:
+
+```bash
+supabase/schema.sql
+```
+
+Future Supabase environment variables:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be exposed in browser
+code. Until the Supabase adapter is connected, use the full JSON backup in the
+`Mehr` screen to move or protect local Sales Manager data.
+
 ### Restaurant Lookup
 
 The create/edit restaurant form can prefill restaurant data from a Google Maps

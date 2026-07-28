@@ -30,6 +30,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import {
@@ -562,6 +563,52 @@ DINEVIO`;
     window.URL.revokeObjectURL(url);
   }
 
+  function exportBackup() {
+    const backup = JSON.stringify(
+      {
+        exported_at: new Date().toISOString(),
+        schema_version: 1,
+        source: "dinevio-sales-manager",
+        data
+      },
+      null,
+      2
+    );
+    const blob = new Blob([backup], { type: "application/json;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `dinevio-sales-backup-${todayInputValue()}.json`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+    setToast("Backup erstellt");
+  }
+
+  function restoreBackup(file: File) {
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      try {
+        const payload = JSON.parse(String(reader.result)) as Partial<{
+          data: Partial<SalesData>;
+          source: string;
+        }>;
+        const backupData = payload.data ?? payload;
+        const restoredData = mergeSalesData(backupData as Partial<SalesData>);
+
+        setData(restoredData);
+        setSelectedRestaurantId("");
+        setEditingRestaurantId("");
+        setView("dashboard");
+        setToast("Backup wiederhergestellt");
+      } catch {
+        setToast("Backup konnte nicht gelesen werden");
+      }
+    });
+
+    reader.readAsText(file);
+  }
+
   function createImportPreview() {
     const rows = importText
       .split(/\r?\n/)
@@ -734,8 +781,10 @@ DINEVIO`;
         {view === "more" ? (
           <MoreView
             data={data}
+            onBackup={exportBackup}
             onExport={exportCsv}
             onImport={() => setView("import")}
+            onRestore={restoreBackup}
             onUpdateData={updateData}
           />
         ) : null}
@@ -2134,15 +2183,21 @@ function TasksView({
 
 function MoreView({
   data,
+  onBackup,
   onExport,
   onImport,
+  onRestore,
   onUpdateData
 }: {
   data: SalesData;
+  onBackup: () => void;
   onExport: () => void;
   onImport: () => void;
+  onRestore: (file: File) => void;
   onUpdateData: (updater: (currentData: SalesData) => SalesData) => void;
 }) {
+  const backupInputRef = useRef<HTMLInputElement | null>(null);
+
   function updatePackage(id: string, patch: Partial<ServicePackageTemplate>) {
     onUpdateData((currentData) => ({
       ...currentData,
@@ -2168,6 +2223,43 @@ function MoreView({
           <Upload aria-hidden="true" className="h-4 w-4" />
           CSV importieren
         </button>
+      </div>
+      <div className={panelClassName}>
+        <h2 className="font-heading text-xl font-semibold">Datensicherung</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-400">
+          Vollständiges Backup für Restaurants, Kontaktverlauf, Touren, Angebote
+          und Paketvorlagen. Wichtig, solange die Daten noch lokal gespeichert
+          werden.
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button className={outlineButtonClassName} type="button" onClick={onBackup}>
+            <Download aria-hidden="true" className="h-4 w-4" />
+            Vollständiges Backup herunterladen
+          </button>
+          <button
+            className={outlineButtonClassName}
+            type="button"
+            onClick={() => backupInputRef.current?.click()}
+          >
+            <Upload aria-hidden="true" className="h-4 w-4" />
+            Backup wiederherstellen
+          </button>
+        </div>
+        <input
+          ref={backupInputRef}
+          accept="application/json"
+          className="sr-only"
+          type="file"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+
+            if (file && window.confirm("Aktuelle lokale Daten durch dieses Backup ersetzen?")) {
+              onRestore(file);
+            }
+
+            event.target.value = "";
+          }}
+        />
       </div>
       <div className={panelClassName}>
         <h2 className="font-heading text-xl font-semibold">Paketvorlagen</h2>
