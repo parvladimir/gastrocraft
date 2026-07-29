@@ -101,9 +101,13 @@ const draftKey = "dinevio-sales-manager-restaurant-draft";
 
 const defaultData: SalesData = {
   contact_history: [],
+  message_templates: [],
   offers: [],
   package_templates: initialPackageTemplates,
+  restaurant_photos: [],
   restaurants: [],
+  sales_settings: [],
+  tasks: [],
   tour_stops: [],
   tours: [],
   users: salesUsers
@@ -347,6 +351,16 @@ export function SalesManager() {
         "postgres_changes",
         { event: "*", schema: "public", table: "offers" },
         () => reloadSalesData("Angebote wurden aktualisiert.")
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks" },
+        () => reloadSalesData("Aufgaben wurden aktualisiert.")
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "restaurant_photos" },
+        () => reloadSalesData("Fotos wurden aktualisiert.")
       )
       .subscribe();
 
@@ -3232,9 +3246,13 @@ const mobileActionClassName =
 function mergeSalesData(partialData: Partial<SalesData>): SalesData {
   return {
     contact_history: partialData.contact_history ?? [],
+    message_templates: partialData.message_templates ?? [],
     offers: partialData.offers ?? [],
     package_templates: partialData.package_templates ?? initialPackageTemplates,
+    restaurant_photos: partialData.restaurant_photos ?? [],
     restaurants: (partialData.restaurants ?? []).map(normalizeRestaurant),
+    sales_settings: partialData.sales_settings ?? [],
+    tasks: partialData.tasks ?? [],
     tour_stops: partialData.tour_stops ?? [],
     tours: partialData.tours ?? [],
     users: partialData.users ?? salesUsers
@@ -3265,7 +3283,9 @@ function hasLegacyLocalSalesData() {
       dataToCheck.restaurants?.length ||
         dataToCheck.contact_history?.length ||
         dataToCheck.tours?.length ||
-        dataToCheck.offers?.length
+        dataToCheck.offers?.length ||
+        dataToCheck.tasks?.length ||
+        dataToCheck.restaurant_photos?.length
     );
   } catch {
     return false;
@@ -3310,6 +3330,16 @@ function remapLegacyUserIds(
       created_by: findUserId(restaurant.created_by),
       responsible_user_id: findUserId(restaurant.responsible_user_id),
       updated_by: findUserId(restaurant.updated_by)
+    })),
+    restaurant_photos: legacyData.restaurant_photos.map((photo) => ({
+      ...photo,
+      uploaded_by: findUserId(photo.uploaded_by)
+    })),
+    tasks: legacyData.tasks.map((task) => ({
+      ...task,
+      assigned_to: findUserId(task.assigned_to),
+      completed_by: task.completed_by ? findUserId(task.completed_by) : "",
+      created_by: findUserId(task.created_by)
     })),
     tours: legacyData.tours.map((tour) => ({
       ...tour,
