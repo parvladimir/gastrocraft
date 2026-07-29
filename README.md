@@ -186,20 +186,29 @@ Required Supabase environment variables:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be exposed in browser
-code. The current browser application uses the anon key with RLS policies.
+The application uses the anon key together with Supabase Auth, RLS policies and
+private Storage signed URLs. Do not expose service role keys in browser code.
 
 ### Supabase Setup Guide
 
 1. Create a Supabase project.
 2. Open the SQL Editor.
 3. Run `supabase/schema.sql`.
-4. Create two users in Authentication for Andrii and Volodymyr.
-5. Copy their Auth user IDs.
-6. Insert matching profiles:
+4. Run all SQL files in `supabase/migrations` in filename order for the CRM
+   extensions:
+   - restaurant coordinates
+   - restaurant photos
+   - private Storage policies
+   - tasks
+   - message templates
+   - extended offers
+   - sales settings
+   - statistics views
+5. Create two users in Authentication for Andrii and Volodymyr.
+6. Copy their Auth user IDs.
+7. Insert matching profiles:
 
 ```sql
 insert into public.profiles (id, name, email, role)
@@ -211,16 +220,71 @@ values
 Replace the placeholders with the real Supabase Auth values.
 Do not write passwords or real private keys into this repository.
 
-7. Add `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and
+8. Add `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and
    `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-8. Start the project and open `/sales/login`.
-9. Test login, restaurant creation, editing, archive, tasks, tours and offers.
-10. Test the second user in another browser or an incognito window.
+9. Start the project and open `/sales/login`.
+10. Test login, restaurant creation, editing, archive, tasks, tours and offers.
+11. Test the second user in another browser or an incognito window.
 
 If older local test data exists, the app shows `Lokale Daten gefunden` after
 login. Use `Jetzt übertragen` to import restaurants, history, tours and offers
 into Supabase. The old local copy is not deleted automatically; it can be
 removed in `Mehr` after checking the import.
+
+### CRM Extensions
+
+The Sales Manager now includes the following Supabase-backed CRM modules:
+
+- restaurant coordinates (`latitude`, `longitude`, `google_maps_url`, `google_place_id`)
+- private restaurant photos in the `restaurant-photos` Storage bucket
+- photo metadata in `restaurant_photos`
+- task management in `tasks`
+- editable message templates in `message_templates`
+- extended commercial offers in `offers`
+- generated offer PDFs in the private `offers` Storage bucket
+- sales settings in `sales_settings`
+- statistics and conversion views
+- protected `/sales/pipeline` and `/sales/statistik` routes
+
+Manual Supabase checks before production use:
+
+1. Confirm RLS is enabled on all Sales Manager tables.
+2. Confirm `restaurant-photos` and `offers` buckets are private.
+3. Confirm authenticated users can upload and read files through signed URLs.
+4. Confirm anon users cannot read tables or Storage objects.
+5. Confirm the offer number function generates unique values.
+
+Photo test:
+
+1. Log in on a mobile device.
+2. Open a restaurant card.
+3. Upload or capture a facade photo.
+4. Confirm the photo appears in the `Fotos` section.
+5. Confirm a `Foto hochgeladen` event appears in `Kontaktverlauf`.
+
+PDF test:
+
+1. Open a restaurant card.
+2. Create or edit an `Angebot`.
+3. Click `PDF erstellen`.
+4. Confirm the PDF path is saved in Supabase.
+5. Open and download the PDF through the signed link.
+6. Confirm a history entry was created.
+
+Tasks test:
+
+1. Finish a visit and set a next contact date.
+2. Confirm a task appears on the Dashboard and in `Aufgaben`.
+3. Confirm overdue tasks are highlighted.
+
+Two-user test:
+
+1. Log in as Volodymyr in one browser.
+2. Log in as Andrii in another browser or incognito window.
+3. Create a restaurant as one user.
+4. Refresh or wait for realtime sync in the other session.
+5. Change the status in `/sales/pipeline`.
+6. Confirm the timeline shows the correct user.
 
 ### Restaurant Lookup
 
