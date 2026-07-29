@@ -59,10 +59,12 @@ export const contactTypes: ContactType[] = [
 ];
 
 export const offerStatuses: OfferStatus[] = [
-  "Entwurf",
-  "Gesendet",
-  "Angenommen",
-  "Abgelehnt"
+  "draft",
+  "generated",
+  "sent",
+  "accepted",
+  "rejected",
+  "expired"
 ];
 
 export const demoOptions: Record<

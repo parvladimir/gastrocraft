@@ -1008,11 +1008,20 @@ function toTourStopRow(stop: TourStop): DbRecord {
 }
 
 function toOfferRow(offer: Offer): DbRecord {
-  return { ...offer };
+  return {
+    ...offer,
+    status: normalizeOfferStatusForDatabase(offer.status)
+  };
 }
 
 function toOfferPatchRow(patch: Partial<Offer>): DbRecord {
-  return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+  const row = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+
+  if ("status" in row) {
+    row.status = normalizeOfferStatusForDatabase(row.status as Offer["status"]);
+  }
+
+  return row;
 }
 
 function toServicePackageRow(
@@ -1096,4 +1105,24 @@ function toNullableNumber(value: unknown) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeOfferStatusForDatabase(status: Offer["status"]) {
+  if (status === "Entwurf") {
+    return "draft";
+  }
+
+  if (status === "Gesendet") {
+    return "sent";
+  }
+
+  if (status === "Angenommen") {
+    return "accepted";
+  }
+
+  if (status === "Abgelehnt") {
+    return "rejected";
+  }
+
+  return status;
 }

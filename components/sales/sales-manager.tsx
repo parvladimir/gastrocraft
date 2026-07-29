@@ -52,6 +52,7 @@ import type {
   ContactHistoryEntry,
   ContactType,
   DemoId,
+  MessageTemplate,
   Offer,
   Restaurant,
   RestaurantCategory,
@@ -71,7 +72,8 @@ import {
   profilesService,
   photosService,
   restaurantsService,
-  salesDataService
+  salesDataService,
+  storageService
 } from "@/lib/sales/services";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
@@ -177,6 +179,19 @@ const resultStatusMap: Record<VisitResult, RestaurantStatus> = {
   "Kein Interesse": "Abgelehnt",
   "Neuer Termin vereinbart": "Besuch geplant",
   "Später erneut kontaktieren": "Rückruf"
+};
+
+const offerStatusLabels: Record<Offer["status"], string> = {
+  accepted: "Angenommen",
+  draft: "Entwurf",
+  expired: "Abgelaufen",
+  generated: "PDF erstellt",
+  rejected: "Abgelehnt",
+  sent: "Gesendet",
+  Angenommen: "Angenommen",
+  Abgelehnt: "Abgelehnt",
+  Entwurf: "Entwurf",
+  Gesendet: "Gesendet"
 };
 
 const contactPersonTypes = [
@@ -2893,6 +2908,175 @@ function MoreView({
           ))}
         </div>
       </div>
+      <MessageTemplatesPanel currentUser={currentUser} data={data} onUpdateData={onUpdateData} />
+    </div>
+  );
+}
+
+function MessageTemplatesPanel({
+  currentUser,
+  data,
+  onUpdateData
+}: {
+  currentUser: SalesUser;
+  data: SalesData;
+  onUpdateData: (updater: (currentData: SalesData) => SalesData) => void;
+}) {
+  const [editingTemplateId, setEditingTemplateId] = useState("");
+  const [draft, setDraft] = useState<MessageTemplate | null>(null);
+  const activeTemplates = data.message_templates.filter((template) => template.is_active);
+
+  function startNewTemplate() {
+    const now = new Date().toISOString();
+    setEditingTemplateId("new");
+    setDraft({
+      body: "Hallo {{contact_person}},\n\nhier ist der Link:\n{{demo_link}}\n\nViele Grüße\n{{user_name}}\nDINEVIO",
+      category: "custom",
+      channel: "whatsapp",
+      created_at: now,
+      created_by: currentUser.id,
+      id: createId(),
+      is_active: true,
+      name: "Neuer Vorlage",
+      subject: "",
+      updated_at: now,
+      updated_by: currentUser.id
+    });
+  }
+
+  function editTemplate(template: MessageTemplate) {
+    setEditingTemplateId(template.id);
+    setDraft(template);
+  }
+
+  function saveTemplate() {
+    if (!draft) {
+      return;
+    }
+
+    const nextTemplate = {
+      ...draft,
+      updated_at: new Date().toISOString(),
+      updated_by: currentUser.id
+    };
+
+    onUpdateData((currentData) => ({
+      ...currentData,
+      message_templates: currentData.message_templates.some((template) => template.id === nextTemplate.id)
+        ? currentData.message_templates.map((template) =>
+            template.id === nextTemplate.id ? nextTemplate : template
+          )
+        : [...currentData.message_templates, nextTemplate]
+    }));
+    setEditingTemplateId("");
+    setDraft(null);
+  }
+
+  function duplicateTemplate(template: MessageTemplate) {
+    const now = new Date().toISOString();
+    onUpdateData((currentData) => ({
+      ...currentData,
+      message_templates: [
+        ...currentData.message_templates,
+        {
+          ...template,
+          created_at: now,
+          created_by: currentUser.id,
+          id: createId(),
+          name: `${template.name} Kopie`,
+          updated_at: now,
+          updated_by: currentUser.id
+        }
+      ]
+    }));
+  }
+
+  function archiveTemplate(templateId: string) {
+    onUpdateData((currentData) => ({
+      ...currentData,
+      message_templates: currentData.message_templates.map((template) =>
+        template.id === templateId
+          ? {
+              ...template,
+              is_active: false,
+              updated_at: new Date().toISOString(),
+              updated_by: currentUser.id
+            }
+          : template
+      )
+    }));
+  }
+
+  return (
+    <div className={panelClassName}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-semibold">Nachrichtenvorlagen</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            WhatsApp- und E-Mail-Texte mit Variablen wie {"{{restaurant_name}}"} oder {"{{demo_link}}"}.
+          </p>
+        </div>
+        <button className={goldButtonClassName} type="button" onClick={startNewTemplate}>
+          Vorlage erstellen
+        </button>
+      </div>
+      <div className="mt-5 grid gap-3">
+        {activeTemplates.length === 0 ? <EmptyState text="Noch keine aktiven Vorlagen vorhanden." /> : null}
+        {activeTemplates.map((template) => (
+          <div key={template.id} className="rounded border border-white/10 bg-midnight/35 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="font-heading text-lg font-semibold">{template.name}</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {template.channel} · {template.category || "custom"}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button className={outlineButtonClassName} type="button" onClick={() => editTemplate(template)}>
+                  Bearbeiten
+                </button>
+                <button className={outlineButtonClassName} type="button" onClick={() => duplicateTemplate(template)}>
+                  Duplizieren
+                </button>
+                <button className="inline-flex min-h-11 items-center justify-center rounded border border-red-400/35 px-3 text-sm font-semibold text-red-200" type="button" onClick={() => archiveTemplate(template.id)}>
+                  Archivieren
+                </button>
+              </div>
+            </div>
+            <pre className="mt-3 whitespace-pre-wrap rounded bg-black/20 p-3 text-xs leading-5 text-slate-300">
+              {renderMessageTemplatePreview(template)}
+            </pre>
+          </div>
+        ))}
+      </div>
+
+      {draft ? (
+        <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/55 p-4">
+          <p className="font-heading text-lg font-semibold">
+            {editingTemplateId === "new" ? "Neue Vorlage" : "Vorlage bearbeiten"}
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <TextField label="Name" value={draft.name} onChange={(value) => setDraft({ ...draft, name: value })} />
+            <TextField label="Betreff" value={draft.subject} onChange={(value) => setDraft({ ...draft, subject: value })} />
+            <SelectField label="Kanal" value={draft.channel} onChange={(value) => setDraft({ ...draft, channel: value as MessageTemplate["channel"] })} options={["whatsapp", "email", "sms", "internal"]} />
+            <SelectField label="Kategorie" value={draft.category} onChange={(value) => setDraft({ ...draft, category: value as MessageTemplate["category"] })} options={["first_contact", "after_visit", "demo", "reminder", "offer", "follow_up", "appointment", "rejection", "custom"]} />
+          </div>
+          <label className="mt-4 block text-sm font-semibold">Text</label>
+          <textarea
+            value={draft.body}
+            onChange={(event) => setDraft({ ...draft, body: event.target.value })}
+            className={`${inputClassName} min-h-44 py-3`}
+          />
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <button className={goldButtonClassName} type="button" onClick={saveTemplate}>
+              Vorlage speichern
+            </button>
+            <button className={outlineButtonClassName} type="button" onClick={() => setDraft(null)}>
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -3203,6 +3387,7 @@ function OfferPanel({
   onUpdateData: (updater: (currentData: SalesData) => SalesData) => void;
   restaurant: Restaurant;
 }) {
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const existingOffer = data.offers.find((offer) => offer.restaurant_id === restaurant.id);
   const [offer, setOffer] = useState<Offer>(
     existingOffer ?? {
@@ -3215,11 +3400,37 @@ function OfferPanel({
       restaurant_id: restaurant.id,
       setup_price: "",
       special_requests: "",
-      status: "Entwurf",
+      status: "draft",
       updated_at: new Date().toISOString(),
       valid_until: "",
     }
   );
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPdfUrl() {
+      if (!supabase || !offer.pdf_storage_path) {
+        setPdfUrl("");
+        return;
+      }
+
+      const result = await storageService.createSignedUrl(supabase, "offers", offer.pdf_storage_path, 60 * 15);
+
+      if (active) {
+        setPdfUrl(result.data ?? "");
+      }
+    }
+
+    void loadPdfUrl();
+
+    return () => {
+      active = false;
+    };
+  }, [offer.pdf_storage_path, supabase]);
 
   function updateField<K extends keyof Offer>(key: K, value: Offer[K]) {
     setOffer((currentOffer) => ({
@@ -3239,7 +3450,7 @@ function OfferPanel({
       return {
         ...currentData,
         contact_history:
-          nextOffer.status === "Gesendet"
+          nextOffer.status === "sent"
             ? [
                 ...currentData.contact_history,
                 createHistoryEntry({
@@ -3258,7 +3469,7 @@ function OfferPanel({
             )
           : [...currentData.offers, nextOffer],
         restaurants:
-          nextOffer.status === "Gesendet"
+          nextOffer.status === "sent"
             ? currentData.restaurants.map((candidate) =>
                 candidate.id === restaurant.id
                   ? {
@@ -3274,12 +3485,55 @@ function OfferPanel({
     });
   }
 
+  async function generatePdf() {
+    saveOffer();
+    setPdfBusy(true);
+    setPdfError("");
+
+    try {
+      const response = await fetch(`/api/sales/offers/${offer.id}/pdf`, {
+        body: JSON.stringify({ offer }),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        method: "POST"
+      });
+      const payload = (await response.json()) as {
+        message?: string;
+        offer?: Partial<Offer>;
+      };
+
+      if (!response.ok || !payload.offer) {
+        setPdfError(payload.message ?? "PDF konnte nicht erstellt werden.");
+        return;
+      }
+
+      const nextOffer = {
+        ...offer,
+        ...payload.offer
+      };
+      setOffer(nextOffer);
+      onUpdateData((currentData) => ({
+        ...currentData,
+        offers: currentData.offers.some((candidate) => candidate.id === nextOffer.id)
+          ? currentData.offers.map((candidate) =>
+              candidate.id === nextOffer.id ? nextOffer : candidate
+            )
+          : [...currentData.offers, nextOffer]
+      }));
+    } catch {
+      setPdfError("PDF konnte nicht erstellt werden.");
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
   return (
     <div className={panelClassName}>
       <h2 className="font-heading text-xl font-semibold">Angebot</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <SelectField label="Paket" value={offer.package_name} onChange={(value) => updateField("package_name", value)} options={data.package_templates.map((packageTemplate) => packageTemplate.name)} />
-        <SelectField label="Status" value={offer.status} onChange={(value) => updateField("status", value as Offer["status"])} options={offerStatuses} />
+        <SelectField label="Status" value={offer.status} onChange={(value) => updateField("status", value as Offer["status"])} options={offerStatuses} labels={offerStatusLabels} />
         <TextField label="Einmalige Erstellungskosten" value={offer.setup_price} onChange={(value) => updateField("setup_price", value)} />
         <TextField label="Monatliche Kosten" value={offer.monthly_price} onChange={(value) => updateField("monthly_price", value)} />
         <TextField label="Angebotsdatum" value={offer.offer_date} onChange={(value) => updateField("offer_date", value)} type="date" />
@@ -3299,6 +3553,31 @@ function OfferPanel({
           Angebotstext kopieren
         </button>
       </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <button className={outlineButtonClassName} type="button" onClick={generatePdf} disabled={pdfBusy}>
+          <FileText aria-hidden="true" className="h-4 w-4" />
+          {pdfBusy ? "PDF wird erstellt ..." : "PDF erstellen"}
+        </button>
+        <button className={outlineButtonClassName} type="button" onClick={() => onCopy(pdfUrl || "PDF noch nicht erstellt")} disabled={!pdfUrl}>
+          <Clipboard aria-hidden="true" className="h-4 w-4" />
+          Link kopieren
+        </button>
+        {pdfUrl ? (
+          <>
+            <a className={outlineButtonClassName} href={pdfUrl} target="_blank" rel="noopener noreferrer">
+              PDF ansehen
+            </a>
+            <a className={outlineButtonClassName} href={pdfUrl} download>
+              PDF herunterladen
+            </a>
+          </>
+        ) : null}
+      </div>
+      {pdfError ? (
+        <p className="mt-3 rounded border border-orange-300/30 bg-orange-400/10 px-4 py-3 text-sm text-orange-100">
+          {pdfError}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -4216,6 +4495,22 @@ function createOfferText(restaurant: Restaurant, offer: Offer) {
     "",
     "DINEVIO"
   ].join("\n");
+}
+
+function renderMessageTemplatePreview(template: MessageTemplate) {
+  const variables: Record<string, string> = {
+    contact_person: "Herr Müller",
+    demo_link: "http://schnellundlecker.dinevio.de",
+    dinevio_website: "https://www.dinevio.de",
+    next_contact_date: "morgen",
+    offer_link: "[Angebotslink]",
+    offer_number: "DV-2026-0001",
+    restaurant_name: "Restaurant Beispiel",
+    user_name: "DINEVIO",
+    user_phone: "+49 ..."
+  };
+
+  return template.body.replace(/\{\{([a-z0-9_]+)\}\}/gi, (_match, key: string) => variables[key] ?? "");
 }
 
 function chunk<T>(items: T[], size: number) {
