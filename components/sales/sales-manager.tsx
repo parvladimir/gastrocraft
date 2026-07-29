@@ -87,6 +87,8 @@ type ViewMode =
   | "finish"
   | "tour"
   | "tasks"
+  | "pipeline"
+  | "statistics"
   | "more"
   | "import";
 
@@ -216,7 +218,7 @@ const summaryStats: Array<{
   { label: "Abgelehnt", predicate: (restaurant) => restaurant.status === "Abgelehnt" }
 ];
 
-export function SalesManager() {
+export function SalesManager({ initialView = "dashboard" }: { initialView?: ViewMode } = {}) {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const supabaseConfig = getSupabaseConfig();
@@ -228,7 +230,7 @@ export function SalesManager() {
   const [lastSyncError, setLastSyncError] = useState("");
   const [migrationSkipped, setMigrationSkipped] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [view, setView] = useState<ViewMode>("dashboard");
+  const [view, setView] = useState<ViewMode>(initialView);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState("");
   const [editingRestaurantId, setEditingRestaurantId] = useState("");
   const [toast, setToast] = useState("");
@@ -1161,6 +1163,23 @@ DINEVIO`;
               setView("detail");
             }}
           />
+        ) : null}
+
+        {view === "pipeline" ? (
+          <PipelineView
+            currentUser={currentUser}
+            data={data}
+            restaurants={restaurants}
+            onOpenRestaurant={(id) => {
+              setSelectedRestaurantId(id);
+              setView("detail");
+            }}
+            onUpdateData={updateData}
+          />
+        ) : null}
+
+        {view === "statistics" ? (
+          <StatisticsView data={data} restaurants={restaurants} />
         ) : null}
 
         {view === "more" ? (
@@ -2746,6 +2765,215 @@ function TasksView({
   );
 }
 
+function PipelineView({
+  currentUser,
+  data,
+  onOpenRestaurant,
+  onUpdateData,
+  restaurants
+}: {
+  currentUser: SalesUser;
+  data: SalesData;
+  onOpenRestaurant: (id: string) => void;
+  onUpdateData: (updater: (currentData: SalesData) => SalesData) => void;
+  restaurants: Restaurant[];
+}) {
+  const columns: RestaurantStatus[] = [
+    "Neu",
+    "Besuch geplant",
+    "Besucht",
+    "Interessiert",
+    "Demo gesendet",
+    "Angebot gesendet",
+    "Kunde gewonnen",
+    "Abgelehnt"
+  ];
+
+  function moveRestaurant(restaurantId: string, nextStatus: RestaurantStatus) {
+    onUpdateData((currentData) => {
+      const restaurant = currentData.restaurants.find((candidate) => candidate.id === restaurantId);
+
+      if (!restaurant || restaurant.status === nextStatus) {
+        return currentData;
+      }
+
+      return {
+        ...currentData,
+        contact_history: [
+          ...currentData.contact_history,
+          createHistoryEntry({
+            action_type: "Status geändert",
+            new_status: nextStatus,
+            note: `Status in Pipeline geändert: ${restaurant.status} → ${nextStatus}.`,
+            old_status: restaurant.status,
+            restaurant_id: restaurant.id,
+            user_id: currentUser.id
+          })
+        ],
+        restaurants: currentData.restaurants.map((candidate) =>
+          candidate.id === restaurantId
+            ? {
+                ...candidate,
+                status: nextStatus,
+                updated_at: new Date().toISOString(),
+                updated_by: currentUser.id
+              }
+            : candidate
+        )
+      };
+    });
+  }
+
+  return (
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Pipeline"
+        title="Sales Pipeline."
+        text="Restaurants nach aktuellem Status verschieben und Fortschritt sichtbar machen."
+      />
+      <div className="overflow-x-auto pb-2">
+        <div className="grid min-w-[1120px] grid-cols-8 gap-3">
+          {columns.map((status) => {
+            const columnRestaurants = restaurants.filter((restaurant) => restaurant.status === status);
+
+            return (
+              <div
+                key={status}
+                className="rounded-lg border border-white/10 bg-[#101a2c] p-3"
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  const restaurantId = event.dataTransfer.getData("text/plain");
+                  moveRestaurant(restaurantId, status);
+                }}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="font-heading text-sm font-semibold">{status}</h2>
+                  <span className="rounded border border-white/10 px-2 py-1 text-xs text-slate-400">
+                    {columnRestaurants.length}
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2">
+                  {columnRestaurants.map((restaurant) => {
+                    const offer = data.offers.find((candidate) => candidate.restaurant_id === restaurant.id);
+                    const overdueTask = getTaskItems([restaurant], data.tasks).some((task) => isOverdue(task.due_at));
+
+                    return (
+                      <button
+                        key={restaurant.id}
+                        draggable
+                        type="button"
+                        onClick={() => onOpenRestaurant(restaurant.id)}
+                        onDragStart={(event) => event.dataTransfer.setData("text/plain", restaurant.id)}
+                        className={`rounded border p-3 text-left text-sm transition-colors hover:border-premium-gold/45 ${
+                          overdueTask ? "border-red-400/35 bg-red-500/10" : "border-white/10 bg-midnight/45"
+                        }`}
+                      >
+                        <p className="font-semibold text-warm-white">{restaurant.name}</p>
+                        <p className="mt-1 text-xs text-slate-400">{restaurant.city || "-"}</p>
+                        <p className="mt-2 text-xs text-premium-gold">
+                          Interesse: {restaurant.interest_level ?? "-"} · {getUserName(data.users, restaurant.responsible_user_id)}
+                        </p>
+                        {offer ? (
+                          <p className="mt-1 text-xs text-slate-400">
+                            Angebot: {offer.setup_price || "-"} / {offer.monthly_price || "-"}
+                          </p>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatisticsView({
+  data,
+  restaurants
+}: {
+  data: SalesData;
+  restaurants: Restaurant[];
+}) {
+  const wonOffers = data.offers.filter((offer) => offer.status === "accepted" || offer.status === "Angenommen");
+  const sentOffers = data.offers.filter((offer) => offer.status === "sent" || offer.status === "Gesendet");
+  const summary = [
+    { label: "Alle Restaurants", value: restaurants.length },
+    { label: "Neue Restaurants", value: restaurants.filter((restaurant) => restaurant.status === "Neu").length },
+    { label: "Durchgeführte Besuche", value: restaurants.filter((restaurant) => restaurant.status === "Besucht").length },
+    { label: "Interessiert", value: restaurants.filter((restaurant) => restaurant.status === "Interessiert").length },
+    { label: "Demo gesendet", value: restaurants.filter((restaurant) => restaurant.status === "Demo gesendet").length },
+    { label: "Angebote gesendet", value: sentOffers.length },
+    { label: "Kunden gewonnen", value: restaurants.filter((restaurant) => restaurant.status === "Kunde gewonnen").length },
+    { label: "Überfällige Aufgaben", value: getDueTasks(restaurants, data.tasks).filter((task) => isOverdue(task.due_at)).length }
+  ];
+  const funnel = [
+    { label: "Neue Restaurants", value: restaurants.length },
+    { label: "Besucht", value: restaurants.filter((restaurant) => ["Besucht", "Interessiert", "Demo gesendet", "Angebot gesendet", "Kunde gewonnen"].includes(restaurant.status)).length },
+    { label: "Interessiert", value: restaurants.filter((restaurant) => ["Interessiert", "Demo gesendet", "Angebot gesendet", "Kunde gewonnen"].includes(restaurant.status)).length },
+    { label: "Angebot gesendet", value: restaurants.filter((restaurant) => ["Angebot gesendet", "Kunde gewonnen"].includes(restaurant.status)).length },
+    { label: "Kunde gewonnen", value: restaurants.filter((restaurant) => restaurant.status === "Kunde gewonnen").length }
+  ];
+  const setupRevenue = wonOffers.reduce((sum, offer) => sum + parseCurrencyValue(offer.setup_price), 0);
+  const monthlyRevenue = wonOffers.reduce((sum, offer) => sum + parseCurrencyValue(offer.monthly_price), 0);
+  const potentialMonthlyRevenue = data.offers
+    .filter((offer) => ["draft", "generated", "sent", "Entwurf", "Gesendet"].includes(offer.status))
+    .reduce((sum, offer) => sum + parseCurrencyValue(offer.monthly_price), 0);
+
+  return (
+    <div className="grid gap-5">
+      <SectionHeader
+        eyebrow="Statistik"
+        title="Vertrieb im Überblick."
+        text="Aktuelle Kennzahlen, Conversion und offene Potenziale."
+      />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {summary.map((item) => (
+          <div key={item.label} className={panelClassName}>
+            <p className="text-sm text-slate-400">{item.label}</p>
+            <p className="mt-2 font-heading text-3xl font-semibold">{item.value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+        <div className={panelClassName}>
+          <h2 className="font-heading text-xl font-semibold">Conversion Funnel</h2>
+          <div className="mt-5 grid gap-3">
+            {funnel.map((step, index) => {
+              const previous = index === 0 ? step.value : funnel[index - 1].value;
+              const total = funnel[0].value || 1;
+
+              return (
+                <div key={step.label} className="rounded border border-white/10 bg-midnight/35 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold">{step.label}</p>
+                    <p className="text-premium-gold">{step.value}</p>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {formatPercent(step.value, previous)} vom vorherigen Schritt · {formatPercent(step.value, total)} gesamt
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className={panelClassName}>
+          <h2 className="font-heading text-xl font-semibold">Umsatz</h2>
+          <div className="mt-5 grid gap-3 text-sm">
+            <MetricRow label="Einmalige Verkäufe" value={`${setupRevenue.toLocaleString("de-DE")} €`} />
+            <MetricRow label="Monatliche Verträge" value={`${monthlyRevenue.toLocaleString("de-DE")} €`} />
+            <MetricRow label="Potenzial monatlich" value={`${potentialMonthlyRevenue.toLocaleString("de-DE")} €`} />
+            <MetricRow label="Angebote angenommen" value={String(wonOffers.length)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MoreView({
   currentUser,
   data,
@@ -2799,6 +3027,12 @@ function MoreView({
           <Upload aria-hidden="true" className="h-4 w-4" />
           CSV importieren
         </button>
+        <a className={outlineButtonClassName} href="/sales/pipeline">
+          Pipeline öffnen
+        </a>
+        <a className={outlineButtonClassName} href="/sales/statistik">
+          Statistik öffnen
+        </a>
       </div>
       <div className={panelClassName}>
         <h2 className="font-heading text-xl font-semibold">Datensicherung</h2>
@@ -4511,6 +4745,32 @@ function renderMessageTemplatePreview(template: MessageTemplate) {
   };
 
   return template.body.replace(/\{\{([a-z0-9_]+)\}\}/gi, (_match, key: string) => variables[key] ?? "");
+}
+
+function MetricRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded border border-white/10 bg-midnight/35 px-3 py-2">
+      <span className="text-slate-400">{label}</span>
+      <span className="font-semibold text-warm-white">{value}</span>
+    </div>
+  );
+}
+
+function parseCurrencyValue(value: string) {
+  const normalized = value.replace(/[^\d,.-]/g, "").replace(",", ".");
+  const amount = Number(normalized);
+
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function formatPercent(value: number, base: number) {
+  if (base <= 0) {
+    return "0 %";
+  }
+
+  return `${((value / base) * 100).toLocaleString("de-DE", {
+    maximumFractionDigits: 1
+  })} %`;
 }
 
 function chunk<T>(items: T[], size: number) {
