@@ -1,4 +1,4 @@
-export type SalesUserId = "andrii" | "volodymyr";
+export type SalesUserId = string;
 
 export type RestaurantStatus =
   | "Neu"
@@ -57,7 +57,8 @@ export type SalesUser = {
   email: string;
   id: SalesUserId;
   name: string;
-  password: string;
+  role: "admin" | "sales";
+  updated_at?: string;
 };
 
 export type Restaurant = {

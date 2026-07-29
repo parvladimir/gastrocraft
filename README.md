@@ -171,19 +171,9 @@ The internal sales tool is available at:
 /sales
 ```
 
-It is hidden from the public website navigation and currently runs in a
-localStorage mode so the first mobile workflow can be tested without a database.
-The data model mirrors the planned Supabase tables for restaurants, contact
-history, tours, tour stops, offers and editable package templates.
-
-Temporary local test users:
-
-- `andrii@dinevio.local` / `dinevio`
-- `volodymyr@dinevio.local` / `dinevio`
-
-Before using this as a real protected production tool, replace the temporary
-local login with Supabase Auth and move the localStorage adapter to Supabase
-tables.
+It is hidden from the public website navigation and uses Supabase Auth plus
+Supabase tables for shared Sales Manager data. `localStorage` is only used for
+unsaved form drafts and one-time migration of older local test data.
 
 The Supabase database foundation is documented in:
 
@@ -191,7 +181,7 @@ The Supabase database foundation is documented in:
 supabase/schema.sql
 ```
 
-Future Supabase environment variables:
+Required Supabase environment variables:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
@@ -200,8 +190,37 @@ SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be exposed in browser
-code. Until the Supabase adapter is connected, use the full JSON backup in the
-`Mehr` screen to move or protect local Sales Manager data.
+code. The current browser application uses the anon key with RLS policies.
+
+### Supabase Setup Guide
+
+1. Create a Supabase project.
+2. Open the SQL Editor.
+3. Run `supabase/schema.sql`.
+4. Create two users in Authentication for Andrii and Volodymyr.
+5. Copy their Auth user IDs.
+6. Insert matching profiles:
+
+```sql
+insert into public.profiles (id, name, email, role)
+values
+  ('AUTH_USER_ID_ANDRII', 'Andrii', 'AUTH_EMAIL_ANDRII', 'admin'),
+  ('AUTH_USER_ID_VOLODYMYR', 'Volodymyr', 'AUTH_EMAIL_VOLODYMYR', 'sales');
+```
+
+Replace the placeholders with the real Supabase Auth values.
+Do not write passwords or real private keys into this repository.
+
+7. Add `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+8. Start the project and open `/sales/login`.
+9. Test login, restaurant creation, editing, archive, tasks, tours and offers.
+10. Test the second user in another browser or an incognito window.
+
+If older local test data exists, the app shows `Lokale Daten gefunden` after
+login. Use `Jetzt übertragen` to import restaurants, history, tours and offers
+into Supabase. The old local copy is not deleted automatically; it can be
+removed in `Mehr` after checking the import.
 
 ### Restaurant Lookup
 

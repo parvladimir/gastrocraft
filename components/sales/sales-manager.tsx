@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   ArrowDown,
@@ -28,6 +29,7 @@ import {
 import {
   type FormEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -61,6 +63,13 @@ import type {
   RestaurantLookupCandidate,
   RestaurantLookupResponse
 } from "@/lib/restaurant-lookup-types";
+import {
+  profilesService,
+  restaurantsService,
+  salesDataService
+} from "@/lib/sales/services";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 
 type ViewMode =
   | "dashboard"
@@ -88,7 +97,6 @@ type VisitResult =
   | "Neuer Termin vereinbart";
 
 const storageKey = "dinevio-sales-manager-data";
-const sessionKey = "dinevio-sales-manager-session";
 const draftKey = "dinevio-sales-manager-restaurant-draft";
 
 const defaultData: SalesData = {
@@ -175,17 +183,17 @@ const summaryStats: Array<{
 ];
 
 export function SalesManager() {
-  const [data, setData] = useState<SalesData>(() => {
-    if (typeof window === "undefined") {
-      return defaultData;
-    }
-
-    const storedData = window.localStorage.getItem(storageKey);
-    return storedData
-      ? mergeSalesData(JSON.parse(storedData) as Partial<SalesData>)
-      : defaultData;
-  });
+  const router = useRouter();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const supabaseConfig = getSupabaseConfig();
+  const [data, setData] = useState<SalesData>(defaultData);
   const [currentUserId, setCurrentUserId] = useState<SalesUserId | null>(null);
+  const [dataError, setDataError] = useState("");
+  const [dataLoading, setDataLoading] = useState(true);
+  const [hasLocalMigrationData, setHasLocalMigrationData] = useState(false);
+  const [lastSyncError, setLastSyncError] = useState("");
+  const [migrationSkipped, setMigrationSkipped] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [view, setView] = useState<ViewMode>("dashboard");
   const [selectedRestaurantId, setSelectedRestaurantId] = useState("");
   const [editingRestaurantId, setEditingRestaurantId] = useState("");
@@ -207,8 +215,77 @@ export function SalesManager() {
     restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null;
 
   useEffect(() => {
-    window.localStorage.setItem(storageKey, JSON.stringify(data));
-  }, [data]);
+    let active = true;
+
+    async function loadSupabaseData() {
+      if (!supabaseConfig.isConfigured || !supabase) {
+        setDataLoading(false);
+        return;
+      }
+
+      setDataLoading(true);
+      setDataError("");
+
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+
+      if (!active) {
+        return;
+      }
+
+      if (!user) {
+        router.replace("/sales/login");
+        return;
+      }
+
+      const profileResult = await profilesService.getCurrentProfile(supabase);
+
+      if (!active) {
+        return;
+      }
+
+      if (profileResult.error || !profileResult.data) {
+        setDataError(profileResult.error ?? "Profil konnte nicht geladen werden.");
+        setDataLoading(false);
+        return;
+      }
+
+      const salesDataResult = await salesDataService.load(supabase);
+
+      if (!active) {
+        return;
+      }
+
+      if (salesDataResult.error || !salesDataResult.data) {
+        setDataError(salesDataResult.error ?? "Daten konnten nicht geladen werden.");
+        setDataLoading(false);
+        return;
+      }
+
+      setCurrentUserId(profileResult.data.id);
+      setData({
+        ...salesDataResult.data,
+        users: mergeUsers(salesDataResult.data.users, profileResult.data)
+      });
+      setHasLocalMigrationData(hasLegacyLocalSalesData());
+      setDataLoading(false);
+    }
+
+    loadSupabaseData();
+
+    const { data: authListener } =
+      supabase?.auth.onAuthStateChange((_event, session) => {
+        if (!session) {
+          router.replace("/sales/login");
+        }
+      }) ?? { data: { subscription: null } };
+
+    return () => {
+      active = false;
+      authListener.subscription?.unsubscribe();
+    };
+  }, [router, supabase, supabaseConfig.isConfigured]);
 
   useEffect(() => {
     if (!toast) {
@@ -219,35 +296,99 @@ export function SalesManager() {
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
-  function login(email: string, password: string) {
-    const user = data.users.find(
-      (candidate) =>
-        candidate.email.toLowerCase() === email.trim().toLowerCase() &&
-        candidate.password === password
-    );
+  const reloadSalesData = useCallback(
+    async (message = "") => {
+      if (!supabase || !currentUser) {
+        return;
+      }
 
-    if (!user) {
-      return false;
+      const result = await salesDataService.load(supabase);
+
+      if (result.error || !result.data) {
+        setLastSyncError(result.error ?? "Daten konnten nicht geladen werden.");
+        return;
+      }
+
+      setData({
+        ...result.data,
+        users: mergeUsers(result.data.users, currentUser)
+      });
+
+      if (message) {
+        setToast(message);
+      }
+    },
+    [currentUser, supabase]
+  );
+
+  useEffect(() => {
+    if (!supabase || !currentUserId) {
+      return;
     }
 
-    window.localStorage.setItem(sessionKey, user.id);
-    setCurrentUserId(user.id);
-    setView("dashboard");
-    return true;
-  }
+    const channel = supabase
+      .channel("sales-manager-data")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "restaurants" },
+        () => reloadSalesData("Die Daten wurden von einem anderen Benutzer aktualisiert.")
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "contact_history" },
+        () => reloadSalesData("Kontaktverlauf wurde aktualisiert.")
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tours" },
+        () => reloadSalesData("Touren wurden aktualisiert.")
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "offers" },
+        () => reloadSalesData("Angebote wurden aktualisiert.")
+      )
+      .subscribe();
 
-  function logout() {
-    window.localStorage.removeItem(sessionKey);
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [currentUserId, reloadSalesData, supabase]);
+
+  async function logout() {
+    await supabase?.auth.signOut();
     setCurrentUserId(null);
     setSelectedRestaurantId("");
     setView("dashboard");
+    router.replace("/sales/login");
   }
 
   function updateData(updater: (currentData: SalesData) => SalesData) {
-    setData((currentData) => updater(currentData));
+    setData((currentData) => {
+      const nextData = updater(currentData);
+      void persistSalesData(nextData);
+      return nextData;
+    });
   }
 
-  function saveRestaurant(draft: RestaurantDraft, editingId = "") {
+  async function persistSalesData(nextData: SalesData) {
+    if (!supabase) {
+      return;
+    }
+
+    setSyncing(true);
+    const result = await salesDataService.saveSnapshot(supabase, nextData);
+    setSyncing(false);
+
+    if (result.error) {
+      setLastSyncError(result.error);
+      return;
+    }
+
+    setLastSyncError("");
+  }
+
+  async function saveRestaurant(draft: RestaurantDraft, editingId = "") {
     if (!currentUser) {
       return;
     }
@@ -306,6 +447,17 @@ export function SalesManager() {
       updated_at: now,
       updated_by: currentUser.id
     };
+
+    if (supabase) {
+      const duplicateResult = await restaurantsService.findDuplicate(supabase, restaurant);
+
+      if (duplicateResult.data) {
+        setToast("Möglicher Duplikat gefunden");
+        setSelectedRestaurantId(duplicateResult.data.id);
+        setView("detail");
+        return;
+      }
+    }
 
     updateData((currentData) => ({
       ...currentData,
@@ -587,7 +739,7 @@ DINEVIO`;
   function restoreBackup(file: File) {
     const reader = new FileReader();
 
-    reader.addEventListener("load", () => {
+    reader.addEventListener("load", async () => {
       try {
         const payload = JSON.parse(String(reader.result)) as Partial<{
           data: Partial<SalesData>;
@@ -595,6 +747,14 @@ DINEVIO`;
         }>;
         const backupData = payload.data ?? payload;
         const restoredData = mergeSalesData(backupData as Partial<SalesData>);
+        const result = supabase
+          ? await salesDataService.saveSnapshot(supabase, restoredData)
+          : { error: "Supabase ist nicht konfiguriert." };
+
+        if (result.error) {
+          setLastSyncError(result.error);
+          return;
+        }
 
         setData(restoredData);
         setSelectedRestaurantId("");
@@ -607,6 +767,93 @@ DINEVIO`;
     });
 
     reader.readAsText(file);
+  }
+
+  function clearLegacyLocalData() {
+    if (!window.confirm("Lokale alte Sales-Daten von diesem Gerät löschen?")) {
+      return;
+    }
+
+    window.localStorage.removeItem(storageKey);
+    window.localStorage.removeItem("supabaseMigrationCompleted");
+    window.localStorage.removeItem("supabaseMigrationDismissed");
+    setHasLocalMigrationData(false);
+    setMigrationSkipped(true);
+    setToast("Lokale Daten gelöscht");
+  }
+
+  async function migrateLegacyLocalData() {
+    if (!supabase || !currentUser) {
+      return;
+    }
+
+    const storedData = window.localStorage.getItem(storageKey);
+
+    if (!storedData) {
+      setHasLocalMigrationData(false);
+      return;
+    }
+
+    try {
+      const legacyData = remapLegacyUserIds(
+        mergeSalesData(JSON.parse(storedData) as Partial<SalesData>),
+        data.users,
+        currentUser.id
+      );
+      const existingKeys = new Set(data.restaurants.map(createRestaurantDuplicateKey));
+      const importedRestaurantIds = new Set<string>();
+      let skippedRestaurants = 0;
+
+      const restaurantsToImport = legacyData.restaurants.filter((restaurant) => {
+        const key = createRestaurantDuplicateKey(restaurant);
+
+        if (existingKeys.has(key)) {
+          skippedRestaurants += 1;
+          return false;
+        }
+
+        existingKeys.add(key);
+        importedRestaurantIds.add(restaurant.id);
+        return true;
+      });
+      const historyToImport = legacyData.contact_history.filter((entry) =>
+        importedRestaurantIds.has(entry.restaurant_id)
+      );
+      const toursToImport = legacyData.tours;
+      const tourIds = new Set(toursToImport.map((tour) => tour.id));
+      const stopsToImport = legacyData.tour_stops.filter(
+        (stop) => tourIds.has(stop.tour_id) && importedRestaurantIds.has(stop.restaurant_id)
+      );
+      const offersToImport = legacyData.offers.filter((offer) =>
+        importedRestaurantIds.has(offer.restaurant_id)
+      );
+      const nextData: SalesData = {
+        ...data,
+        contact_history: [...data.contact_history, ...historyToImport],
+        offers: [...data.offers, ...offersToImport],
+        package_templates: data.package_templates,
+        restaurants: [...data.restaurants, ...restaurantsToImport],
+        tour_stops: [...data.tour_stops, ...stopsToImport],
+        tours: [...data.tours, ...toursToImport],
+        users: data.users
+      };
+      const result = await salesDataService.saveSnapshot(supabase, nextData);
+
+      if (result.error) {
+        setLastSyncError(result.error);
+        return;
+      }
+
+      setData(nextData);
+      window.localStorage.setItem("supabaseMigrationCompleted", new Date().toISOString());
+      setHasLocalMigrationData(false);
+      setMigrationSkipped(true);
+      setToast(
+        `Datenübertragung abgeschlossen: ${restaurantsToImport.length} Restaurants, ${historyToImport.length} Kontakte, ${toursToImport.length} Touren, ${skippedRestaurants} Duplikate übersprungen`
+      );
+    } catch {
+      setLastSyncError("Lokale Daten konnten nicht übertragen werden.");
+    }
   }
 
   function createImportPreview() {
@@ -640,8 +887,32 @@ DINEVIO`;
     setView("restaurants");
   }
 
+  if (!supabaseConfig.isConfigured) {
+    return (
+      <SalesTechnicalState
+        title="Supabase ist nicht konfiguriert."
+        text={`Fehlende Variablen: ${supabaseConfig.missing.join(", ")}`}
+      />
+    );
+  }
+
+  if (dataLoading) {
+    return <SalesTechnicalState title="Daten werden geladen …" text="Sales Manager wird vorbereitet." />;
+  }
+
+  if (dataError) {
+    return (
+      <SalesTechnicalState
+        title="Daten konnten nicht geladen werden."
+        text={dataError}
+        action={<button className={goldButtonClassName} onClick={() => window.location.reload()} type="button">Erneut versuchen</button>}
+      />
+    );
+  }
+
   if (!currentUser) {
-    return <LoginScreen onLogin={login} />;
+    router.replace("/sales/login");
+    return <SalesTechnicalState title="Sitzung wird geprüft …" text="Weiterleitung zur Anmeldung." />;
   }
 
   return (
@@ -649,6 +920,26 @@ DINEVIO`;
       <SalesTopBar currentUser={currentUser} onLogout={logout} />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        {lastSyncError ? (
+          <div className="mb-4 rounded border border-red-300/30 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+            {lastSyncError}
+          </div>
+        ) : null}
+        {syncing ? (
+          <div className="mb-4 rounded border border-premium-gold/25 bg-premium-gold/10 px-4 py-3 text-sm text-premium-gold">
+            Wird gespeichert …
+          </div>
+        ) : null}
+        {hasLocalMigrationData && !migrationSkipped ? (
+          <LocalMigrationNotice
+            onDismiss={() => setMigrationSkipped(true)}
+            onHidePermanently={() => {
+              window.localStorage.setItem("supabaseMigrationDismissed", "true");
+              setMigrationSkipped(true);
+            }}
+            onMigrate={migrateLegacyLocalData}
+          />
+        ) : null}
         {view === "dashboard" ? (
           <DashboardView
             data={data}
@@ -780,8 +1071,10 @@ DINEVIO`;
 
         {view === "more" ? (
           <MoreView
+            currentUser={currentUser}
             data={data}
             onBackup={exportBackup}
+            onClearLegacyData={clearLegacyLocalData}
             onExport={exportCsv}
             onImport={() => setView("import")}
             onRestore={restoreBackup}
@@ -836,9 +1129,67 @@ DINEVIO`;
   );
 }
 
-function LoginScreen({ onLogin }: { onLogin: (email: string, password: string) => boolean }) {
-  const [email, setEmail] = useState("andrii@dinevio.local");
-  const [password, setPassword] = useState("dinevio");
+function SalesTechnicalState({
+  action,
+  text,
+  title
+}: {
+  action?: ReactNode;
+  text: string;
+  title: string;
+}) {
+  return (
+    <main className="grid min-h-screen place-items-center bg-midnight px-4 py-10 text-warm-white">
+      <div className="w-full max-w-md rounded-lg border border-white/10 bg-[#101a2c] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.3)]">
+        <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
+          DINEVIO Sales Manager
+        </p>
+        <h1 className="mt-4 font-heading text-3xl font-semibold">{title}</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-400">{text}</p>
+        {action ? <div className="mt-6">{action}</div> : null}
+      </div>
+    </main>
+  );
+}
+
+function LocalMigrationNotice({
+  onDismiss,
+  onHidePermanently,
+  onMigrate
+}: {
+  onDismiss: () => void;
+  onHidePermanently: () => void;
+  onMigrate: () => void;
+}) {
+  return (
+    <div className="mb-5 rounded-lg border border-premium-gold/35 bg-[#101a2c] p-5">
+      <p className="font-heading text-xl font-semibold">Lokale Daten gefunden</p>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+        Auf diesem Gerät wurden lokale Sales-Daten gefunden. Möchten Sie diese
+        Daten in die gemeinsame Datenbank übertragen?
+      </p>
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <button className={goldButtonClassName} type="button" onClick={onMigrate}>
+          Jetzt übertragen
+        </button>
+        <button className={outlineButtonClassName} type="button" onClick={onDismiss}>
+          Später
+        </button>
+        <button className={outlineButtonClassName} type="button" onClick={onHidePermanently}>
+          Nicht mehr anzeigen
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function LegacyLocalLoginScreen({
+  onLogin
+}: {
+  onLogin: (email: string, password: string) => boolean;
+}) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -899,8 +1250,6 @@ function LoginScreen({ onLogin }: { onLogin: (email: string, password: string) =
 
         <div className="mt-6 rounded border border-white/10 bg-midnight/45 p-4 text-xs leading-5 text-slate-400">
           <p className="font-semibold text-slate-300">Lokale Testzugänge</p>
-          <p>andrii@dinevio.local / dinevio</p>
-          <p>volodymyr@dinevio.local / dinevio</p>
         </div>
       </form>
     </main>
@@ -1653,6 +2002,8 @@ function RestaurantDetailView({
               <span>Telefon: {restaurant.phone || "-"}</span>
               <span>Verantwortlich: {getUserName(data.users, restaurant.responsible_user_id)}</span>
               <span>Demo: {demoOptions[restaurant.selected_demo].label}</span>
+              <span>Erstellt von {getUserName(data.users, restaurant.created_by)}</span>
+              <span>Zuletzt bearbeitet von {getUserName(data.users, restaurant.updated_by)}</span>
             </div>
           </div>
           <button className={goldButtonClassName} type="button" onClick={onStartVisit}>
@@ -2182,21 +2533,32 @@ function TasksView({
 }
 
 function MoreView({
+  currentUser,
   data,
   onBackup,
+  onClearLegacyData,
   onExport,
   onImport,
   onRestore,
   onUpdateData
 }: {
+  currentUser: SalesUser;
   data: SalesData;
   onBackup: () => void;
+  onClearLegacyData: () => void;
   onExport: () => void;
   onImport: () => void;
   onRestore: (file: File) => void;
   onUpdateData: (updater: (currentData: SalesData) => SalesData) => void;
 }) {
   const backupInputRef = useRef<HTMLInputElement | null>(null);
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [backupPreview, setBackupPreview] = useState<{
+    contacts: number;
+    offers: number;
+    restaurants: number;
+    tours: number;
+  } | null>(null);
 
   function updatePackage(id: string, patch: Partial<ServicePackageTemplate>) {
     onUpdateData((currentData) => ({
@@ -2239,12 +2601,44 @@ function MoreView({
           <button
             className={outlineButtonClassName}
             type="button"
+            disabled={currentUser.role !== "admin"}
             onClick={() => backupInputRef.current?.click()}
           >
             <Upload aria-hidden="true" className="h-4 w-4" />
-            Backup wiederherstellen
+            {currentUser.role === "admin" ? "Backup wiederherstellen" : "Restore nur für Admin"}
           </button>
         </div>
+        {backupPreview && backupFile ? (
+          <div className="mt-4 rounded border border-premium-gold/30 bg-midnight/45 p-4 text-sm text-slate-300">
+            <p className="font-heading text-lg font-semibold text-warm-white">Backup-Vorschau</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-4">
+              <span>{backupPreview.restaurants} Restaurants</span>
+              <span>{backupPreview.contacts} Kontakte</span>
+              <span>{backupPreview.tours} Touren</span>
+              <span>{backupPreview.offers} Angebote</span>
+            </div>
+            <button
+              className={`${goldButtonClassName} mt-4`}
+              type="button"
+              onClick={() => {
+                if (window.confirm("Backup in die gemeinsame Datenbank importieren?")) {
+                  onRestore(backupFile);
+                  setBackupFile(null);
+                  setBackupPreview(null);
+                }
+              }}
+            >
+              Import bestätigen
+            </button>
+          </div>
+        ) : null}
+        <button
+          className="mt-3 inline-flex min-h-11 items-center justify-center rounded border border-red-400/35 px-4 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/10"
+          type="button"
+          onClick={onClearLegacyData}
+        >
+          Alte lokale Daten löschen
+        </button>
         <input
           ref={backupInputRef}
           accept="application/json"
@@ -2253,8 +2647,27 @@ function MoreView({
           onChange={(event) => {
             const file = event.target.files?.[0];
 
-            if (file && window.confirm("Aktuelle lokale Daten durch dieses Backup ersetzen?")) {
-              onRestore(file);
+            if (file) {
+              const reader = new FileReader();
+              reader.addEventListener("load", () => {
+                try {
+                  const payload = JSON.parse(String(reader.result)) as Partial<{
+                    data: Partial<SalesData>;
+                  }>;
+                  const backupData = (payload.data ?? payload) as Partial<SalesData>;
+
+                  setBackupFile(file);
+                  setBackupPreview({
+                    contacts: backupData.contact_history?.length ?? 0,
+                    offers: backupData.offers?.length ?? 0,
+                    restaurants: backupData.restaurants?.length ?? 0,
+                    tours: backupData.tours?.length ?? 0
+                  });
+                } catch {
+                  window.alert("Backup konnte nicht gelesen werden.");
+                }
+              });
+              reader.readAsText(file);
             }
 
             event.target.value = "";
@@ -2826,6 +3239,97 @@ function mergeSalesData(partialData: Partial<SalesData>): SalesData {
     tours: partialData.tours ?? [],
     users: partialData.users ?? salesUsers
   };
+}
+
+function hasLegacyLocalSalesData() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (
+    window.localStorage.getItem("supabaseMigrationCompleted") ||
+    window.localStorage.getItem("supabaseMigrationDismissed")
+  ) {
+    return false;
+  }
+
+  const storedData = window.localStorage.getItem(storageKey);
+
+  if (!storedData) {
+    return false;
+  }
+
+  try {
+    const dataToCheck = JSON.parse(storedData) as Partial<SalesData>;
+    return Boolean(
+      dataToCheck.restaurants?.length ||
+        dataToCheck.contact_history?.length ||
+        dataToCheck.tours?.length ||
+        dataToCheck.offers?.length
+    );
+  } catch {
+    return false;
+  }
+}
+
+function mergeUsers(users: SalesUser[], currentUser: SalesUser) {
+  return users.some((user) => user.id === currentUser.id)
+    ? users
+    : [...users, currentUser].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function remapLegacyUserIds(
+  legacyData: SalesData,
+  users: SalesUser[],
+  fallbackUserId: string
+): SalesData {
+  const findUserId = (legacyId: string) => {
+    if (users.some((user) => user.id === legacyId)) {
+      return legacyId;
+    }
+
+    const matchingUser = users.find((user) =>
+      user.name.toLowerCase().startsWith(legacyId.toLowerCase())
+    );
+
+    return matchingUser?.id ?? fallbackUserId;
+  };
+
+  return {
+    ...legacyData,
+    contact_history: legacyData.contact_history.map((entry) => ({
+      ...entry,
+      user_id: findUserId(entry.user_id)
+    })),
+    offers: legacyData.offers.map((offer) => ({
+      ...offer,
+      created_by: findUserId(offer.created_by)
+    })),
+    restaurants: legacyData.restaurants.map((restaurant) => ({
+      ...restaurant,
+      created_by: findUserId(restaurant.created_by),
+      responsible_user_id: findUserId(restaurant.responsible_user_id),
+      updated_by: findUserId(restaurant.updated_by)
+    })),
+    tours: legacyData.tours.map((tour) => ({
+      ...tour,
+      responsible_user_id: findUserId(tour.responsible_user_id)
+    })),
+    users
+  };
+}
+
+function createRestaurantDuplicateKey(restaurant: Restaurant) {
+  return [
+    restaurant.name,
+    restaurant.street,
+    restaurant.house_number,
+    restaurant.postal_code,
+    restaurant.city,
+    restaurant.phone
+  ]
+    .map((value) => normalizeLookupText(value))
+    .join("|");
 }
 
 function normalizeRestaurantDraft(partialDraft: Partial<RestaurantDraft>): RestaurantDraft {

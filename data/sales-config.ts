@@ -11,17 +11,17 @@ import type {
 export const salesUsers: SalesUser[] = [
   {
     created_at: "2026-07-27T00:00:00.000Z",
-    email: "andrii@dinevio.local",
+    email: "",
     id: "andrii",
     name: "Andrii",
-    password: "dinevio"
+    role: "admin"
   },
   {
     created_at: "2026-07-27T00:00:00.000Z",
-    email: "volodymyr@dinevio.local",
+    email: "",
     id: "volodymyr",
     name: "Volodymyr",
-    password: "dinevio"
+    role: "sales"
   }
 ];
 
