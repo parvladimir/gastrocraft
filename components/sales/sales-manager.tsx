@@ -6,15 +6,17 @@ import {
   AlertCircle,
   ArrowDown,
   ArrowUp,
+  Camera,
   Check,
   Clipboard,
   Download,
   ExternalLink,
   FileText,
+  Image as ImageIcon,
   LayoutDashboard,
   ListChecks,
   LogOut,
-  Map,
+  Map as MapIcon,
   MessageCircle,
   Phone,
   Plus,
@@ -53,8 +55,10 @@ import type {
   Offer,
   Restaurant,
   RestaurantCategory,
+  RestaurantPhoto,
   RestaurantStatus,
   SalesData,
+  SalesTask,
   SalesUser,
   SalesUserId,
   ServicePackageTemplate
@@ -65,6 +69,7 @@ import type {
 } from "@/lib/restaurant-lookup-types";
 import {
   profilesService,
+  photosService,
   restaurantsService,
   salesDataService
 } from "@/lib/sales/services";
@@ -95,6 +100,16 @@ type VisitResult =
   | "Demo per WhatsApp senden"
   | "Angebot erstellen"
   | "Neuer Termin vereinbart";
+
+type TaskItem = {
+  assigned_to: SalesUserId;
+  due_at: string;
+  id: string;
+  restaurant: Restaurant;
+  source: "restaurant" | "task";
+  task?: SalesTask;
+  title: string;
+};
 
 const storageKey = "dinevio-sales-manager-data";
 const draftKey = "dinevio-sales-manager-restaurant-draft";
@@ -606,6 +621,47 @@ export function SalesManager() {
           .join("\n")
       }
     );
+
+    if (payload.nextContactAt) {
+      updateData((currentData) => {
+        const taskType = mapContactTypeToTaskType(payload.nextContactType);
+        const duplicateTask = currentData.tasks.some(
+          (task) =>
+            task.restaurant_id === selectedRestaurant.id &&
+            task.due_at === payload.nextContactAt &&
+            task.task_type === taskType &&
+            task.status !== "cancelled"
+        );
+
+        if (duplicateTask) {
+          return currentData;
+        }
+
+        const task = createTaskFromNextContact({
+          currentUserId: currentUser.id,
+          nextContactAt: payload.nextContactAt,
+          nextContactType: payload.nextContactType,
+          restaurant: selectedRestaurant
+        });
+
+        return {
+          ...currentData,
+          contact_history: [
+            ...currentData.contact_history,
+            createHistoryEntry({
+              action_type: "Aufgabe erstellt",
+              next_contact_at: payload.nextContactAt,
+              note: `Aufgabe erstellt: ${task.title}.`,
+              restaurant_id: selectedRestaurant.id,
+              task_id: task.id,
+              user_id: currentUser.id
+            })
+          ],
+          tasks: [...currentData.tasks, task]
+        };
+      });
+    }
+
     setToast("Besuch gespeichert");
     setView("detail");
   }
@@ -841,12 +897,20 @@ DINEVIO`;
       const offersToImport = legacyData.offers.filter((offer) =>
         importedRestaurantIds.has(offer.restaurant_id)
       );
+      const photosToImport = legacyData.restaurant_photos.filter((photo) =>
+        importedRestaurantIds.has(photo.restaurant_id)
+      );
+      const tasksToImport = legacyData.tasks.filter((task) =>
+        importedRestaurantIds.has(task.restaurant_id)
+      );
       const nextData: SalesData = {
         ...data,
         contact_history: [...data.contact_history, ...historyToImport],
         offers: [...data.offers, ...offersToImport],
         package_templates: data.package_templates,
+        restaurant_photos: [...data.restaurant_photos, ...photosToImport],
         restaurants: [...data.restaurants, ...restaurantsToImport],
+        tasks: [...data.tasks, ...tasksToImport],
         tour_stops: [...data.tour_stops, ...stopsToImport],
         tours: [...data.tours, ...toursToImport],
         users: data.users
@@ -1074,6 +1138,7 @@ DINEVIO`;
 
         {view === "tasks" ? (
           <TasksView
+            data={data}
             restaurants={restaurants}
             users={data.users}
             onOpenRestaurant={(id) => {
@@ -1135,7 +1200,7 @@ DINEVIO`;
       ) : null}
 
       <BottomNavigation
-        taskCount={getDueTasks(restaurants).length}
+        taskCount={getDueTasks(restaurants, data.tasks).length}
         view={view}
         onView={setView}
       />
@@ -1317,8 +1382,8 @@ function DashboardView({
   onOpenRestaurant: (id: string) => void;
   restaurants: Restaurant[];
 }) {
-  const dueTasks = getDueTasks(restaurants);
-  const nextTasks = getNextSevenDayTasks(restaurants);
+  const dueTasks = getDueTasks(restaurants, data.tasks);
+  const nextTasks = getNextSevenDayTasks(restaurants, data.tasks);
 
   return (
     <div className="grid gap-6">
@@ -1556,6 +1621,8 @@ function RestaurantForm({
   const [lookupCandidates, setLookupCandidates] = useState<RestaurantLookupCandidate[]>([]);
   const [postalCodeWarning, setPostalCodeWarning] = useState("");
   const [duplicateRestaurant, setDuplicateRestaurant] = useState<Restaurant | null>(null);
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -1682,6 +1749,62 @@ function RestaurantForm({
       website: draft.website.trim(),
       status: draft.planned_visit_at && draft.status === "Neu" ? "Besuch geplant" : draft.status
     });
+  }
+
+  function useCurrentLocation() {
+    setLocationError("");
+
+    if (!navigator.geolocation) {
+      setLocationError("Standort konnte nicht bestimmt werden.");
+      return;
+    }
+
+    setLocationBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationBusy(false);
+        const latitude = position.coords.latitude.toFixed(7);
+        const longitude = position.coords.longitude.toFixed(7);
+
+        if (!window.confirm(`Aktuellen Standort übernehmen?\nBreitengrad: ${latitude}\nLängengrad: ${longitude}`)) {
+          return;
+        }
+
+        setDraft((currentDraft) => ({
+          ...currentDraft,
+          latitude,
+          location_accuracy: position.coords.accuracy
+            ? `${Math.round(position.coords.accuracy)} m`
+            : "browser",
+          location_updated_at: new Date().toISOString(),
+          longitude
+        }));
+      },
+      () => {
+        setLocationBusy(false);
+        setLocationError("Standortzugriff wurde abgelehnt oder ist nicht verfügbar.");
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 12000
+      }
+    );
+  }
+
+  function inferLocationFromAddress() {
+    const mapsUrl = getMapsUrl({
+      ...emptyDraft,
+      ...draft,
+      archived: false,
+      created_at: "",
+      created_by: currentUser.id,
+      id: "",
+      updated_at: "",
+      updated_by: currentUser.id
+    });
+    updateField("google_maps_url", mapsUrl);
+    setLocationError("Adresse wurde als Google-Maps-Link vorbereitet. Koordinaten können anschließend manuell ergänzt oder per aktuellem Standort gesetzt werden.");
   }
 
   return (
@@ -1845,14 +1968,11 @@ function RestaurantForm({
           <TextField label="Telefon" value={draft.phone} onChange={(value) => updateField("phone", value)} type="tel" />
           <TextField label="E-Mail" value={draft.email} onChange={(value) => updateField("email", value)} type="email" />
           <TextField label="Webseite" value={draft.website} onChange={(value) => updateField("website", value)} type="url" />
-          <TextField label="Google Maps URL" value={draft.google_maps_url} onChange={(value) => updateField("google_maps_url", value)} type="url" />
           <TextField label="Instagram" value={draft.instagram} onChange={(value) => updateField("instagram", value)} />
           <TextField label="Facebook" value={draft.facebook} onChange={(value) => updateField("facebook", value)} />
           <TextField label="TikTok" value={draft.tiktok} onChange={(value) => updateField("tiktok", value)} />
           <TextField label="Ansprechpartner" value={draft.contact_person} onChange={(value) => updateField("contact_person", value)} />
           <TextField label="Position des Ansprechpartners" value={draft.contact_position} onChange={(value) => updateField("contact_position", value)} />
-          <TextField label="Latitude" value={draft.latitude} onChange={(value) => updateField("latitude", value)} />
-          <TextField label="Longitude" value={draft.longitude} onChange={(value) => updateField("longitude", value)} />
           <TextField label="Google Rating" value={draft.google_rating?.toString() ?? ""} onChange={(value) => updateField("google_rating", value ? Number(value) : null)} type="number" />
           <TextField label="Anzahl Bewertungen" value={draft.google_review_count?.toString() ?? ""} onChange={(value) => updateField("google_review_count", value ? Number(value) : null)} type="number" />
           <DateTimeField label="Geplanter Besuch" value={draft.planned_visit_at} onChange={(value) => updateField("planned_visit_at", value)} />
@@ -1860,6 +1980,62 @@ function RestaurantForm({
           <SelectField label="Demo" value={draft.selected_demo} onChange={(value) => updateField("selected_demo", value as DemoId)} options={Object.keys(demoOptions)} labels={Object.fromEntries(Object.entries(demoOptions).map(([id, demo]) => [id, demo.label]))} />
           <SelectField label="Status" value={draft.status} onChange={(value) => updateField("status", value as RestaurantStatus)} options={restaurantStatuses} />
         </div>
+        <div className="mt-6 rounded-lg border border-white/10 bg-midnight/45 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="font-heading text-xl font-semibold">Standort</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-400">
+                Koordinaten für Navigation, Tourenplanung und spätere Umkreissuche.
+              </p>
+            </div>
+            {draft.latitude && draft.longitude ? (
+              <span className="rounded border border-premium-gold/35 px-3 py-2 text-xs font-semibold text-premium-gold">
+                Standort gespeichert
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <TextField label="Latitude" value={draft.latitude} onChange={(value) => updateField("latitude", value)} />
+            <TextField label="Longitude" value={draft.longitude} onChange={(value) => updateField("longitude", value)} />
+            <TextField label="Google Maps Link" value={draft.google_maps_url} onChange={(value) => updateField("google_maps_url", value)} type="url" />
+          </div>
+          {draft.latitude && draft.longitude ? (
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Breitengrad: {draft.latitude} · Längengrad: {draft.longitude}
+            </p>
+          ) : null}
+          {locationError ? (
+            <p className="mt-3 rounded border border-orange-300/30 bg-orange-400/10 px-4 py-3 text-sm text-orange-100">
+              {locationError}
+            </p>
+          ) : null}
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <button className={outlineButtonClassName} type="button" onClick={inferLocationFromAddress}>
+              Standort aus Adresse ermitteln
+            </button>
+            <button className={outlineButtonClassName} type="button" onClick={useCurrentLocation} disabled={locationBusy}>
+              {locationBusy ? "Standort wird ermittelt ..." : "Aktuellen Standort verwenden"}
+            </button>
+            <a
+              className={outlineButtonClassName}
+              href={getMapsUrl({
+                ...emptyDraft,
+                ...draft,
+                archived: false,
+                created_at: "",
+                created_by: currentUser.id,
+                id: "",
+                updated_at: "",
+                updated_by: currentUser.id
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              In Google Maps öffnen
+            </a>
+          </div>
+        </div>
+
         <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-opening-hours">
           Öffnungszeiten
         </label>
@@ -2028,7 +2204,7 @@ function RestaurantDetailView({
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ActionLink href={`tel:${restaurant.phone}`} icon={<Phone />} label="Anrufen" disabled={!restaurant.phone} />
           <ActionLink href={restaurant.phone ? `https://wa.me/${normalizePhone(restaurant.phone)}` : ""} icon={<MessageCircle />} label="WhatsApp" external disabled={!restaurant.phone} />
-          <ActionLink href={getMapsUrl(restaurant)} icon={<Map />} label="Navigation" external disabled={!hasNavigationTarget(restaurant)} />
+          <ActionLink href={getMapsUrl(restaurant)} icon={<MapIcon />} label="Navigation" external disabled={!hasNavigationTarget(restaurant)} />
           <ActionLink href={restaurant.website} icon={<ExternalLink />} label="Webseite öffnen" external disabled={!restaurant.website} />
           <button className={mobileActionClassName} type="button" onClick={openDemo}>
             <ExternalLink aria-hidden="true" className="h-5 w-5" />
@@ -2104,6 +2280,13 @@ function RestaurantDetailView({
           restaurant={restaurant}
         />
       </div>
+
+      <RestaurantPhotosPanel
+        currentUser={currentUser}
+        data={data}
+        onUpdateData={onUpdateData}
+        restaurant={restaurant}
+      />
 
       <div className={panelClassName}>
         <h2 className="font-heading text-xl font-semibold">Kontaktverlauf</h2>
@@ -2525,10 +2708,12 @@ function TourView({
 }
 
 function TasksView({
+  data,
   onOpenRestaurant,
   restaurants,
   users
 }: {
+  data: SalesData;
   onOpenRestaurant: (id: string) => void;
   restaurants: Restaurant[];
   users: SalesUser[];
@@ -2540,8 +2725,8 @@ function TasksView({
         title="Offene Kontakte."
         text="Überfällige Aufgaben, heutige Kontakte und die nächsten sieben Tage."
       />
-      <TaskPanel title="Heute und überfällig" tasks={getDueTasks(restaurants)} users={users} onOpenRestaurant={onOpenRestaurant} />
-      <TaskPanel title="Nächste sieben Tage" tasks={getNextSevenDayTasks(restaurants)} users={users} onOpenRestaurant={onOpenRestaurant} />
+      <TaskPanel title="Heute und überfällig" tasks={getDueTasks(restaurants, data.tasks)} users={users} onOpenRestaurant={onOpenRestaurant} />
+      <TaskPanel title="Nächste sieben Tage" tasks={getNextSevenDayTasks(restaurants, data.tasks)} users={users} onOpenRestaurant={onOpenRestaurant} />
     </div>
   );
 }
@@ -2769,6 +2954,242 @@ function ImportView({
   );
 }
 
+function RestaurantPhotosPanel({
+  currentUser,
+  data,
+  onUpdateData,
+  restaurant
+}: {
+  currentUser: SalesUser;
+  data: SalesData;
+  onUpdateData: (updater: (currentData: SalesData) => SalesData) => void;
+  restaurant: Restaurant;
+}) {
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [error, setError] = useState("");
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
+  const photos = data.restaurant_photos
+    .filter((photo) => photo.restaurant_id === restaurant.id)
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || b.created_at.localeCompare(a.created_at));
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSignedUrls() {
+      if (!supabase || photos.length === 0) {
+        setPreviewUrls({});
+        return;
+      }
+
+      const entries = await Promise.all(
+        photos.map(async (photo) => {
+          const result = await photosService.createSignedUrl(supabase, photo.storage_path);
+          return [photo.id, result.data ?? ""] as const;
+        })
+      );
+
+      if (active) {
+        setPreviewUrls(Object.fromEntries(entries.filter(([, url]) => Boolean(url))));
+      }
+    }
+
+    void loadSignedUrls();
+
+    return () => {
+      active = false;
+    };
+  }, [photos, supabase]);
+
+  async function uploadPhotos(files: FileList | null) {
+    if (!files || !supabase || uploading) {
+      return;
+    }
+
+    const acceptedFiles = Array.from(files).filter((file) => {
+      const supported = ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+      const validSize = file.size <= 10 * 1024 * 1024;
+      return supported && validSize;
+    });
+
+    if (acceptedFiles.length !== files.length) {
+      setError("Einige Fotos wurden übersprungen. Erlaubt sind JPG, PNG, WebP bis 10 MB.");
+    } else {
+      setError("");
+    }
+
+    if (acceptedFiles.length === 0) {
+      return;
+    }
+
+    setUploading(true);
+
+    for (const [fileIndex, file] of acceptedFiles.entries()) {
+      const photoId = createId();
+      const safeFileName = file.name.replace(/[^a-z0-9._-]+/gi, "-").toLowerCase();
+      const storagePath = `${restaurant.id}/${photoId}-${safeFileName}`;
+      const uploadResult = await photosService.uploadFile(supabase, storagePath, file);
+
+      if (uploadResult.error || !uploadResult.data) {
+        setError(uploadResult.error ?? "Foto konnte nicht hochgeladen werden.");
+        continue;
+      }
+
+      const now = new Date().toISOString();
+      const photo: RestaurantPhoto = {
+        caption: "",
+        created_at: now,
+        file_name: file.name,
+        file_size: file.size,
+        id: photoId,
+        is_primary: photos.length === 0 && fileIndex === 0,
+        mime_type: file.type,
+        photo_type: "facade",
+        restaurant_id: restaurant.id,
+        storage_path: uploadResult.data,
+        uploaded_by: currentUser.id
+      };
+      const createResult = await photosService.create(supabase, photo);
+
+      if (createResult.error || !createResult.data) {
+        setError(createResult.error ?? "Foto konnte nicht gespeichert werden.");
+        continue;
+      }
+
+      onUpdateData((currentData) => ({
+        ...currentData,
+        contact_history: [
+          ...currentData.contact_history,
+          createHistoryEntry({
+            action_type: "Foto hochgeladen",
+            note: `Foto hochgeladen: ${file.name}.`,
+            restaurant_id: restaurant.id,
+            user_id: currentUser.id
+          })
+        ],
+        restaurant_photos: [...currentData.restaurant_photos, createResult.data]
+      }));
+    }
+
+    setUploading(false);
+  }
+
+  function setPrimaryPhoto(photoId: string) {
+    onUpdateData((currentData) => ({
+      ...currentData,
+      restaurant_photos: currentData.restaurant_photos.map((photo) =>
+        photo.restaurant_id === restaurant.id
+          ? {
+              ...photo,
+              is_primary: photo.id === photoId
+            }
+          : photo
+      )
+    }));
+  }
+
+  async function removePhoto(photo: RestaurantPhoto) {
+    if (!supabase || !window.confirm("Foto wirklich löschen?")) {
+      return;
+    }
+
+    const result = await photosService.remove(supabase, photo);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    onUpdateData((currentData) => ({
+      ...currentData,
+      contact_history: [
+        ...currentData.contact_history,
+        createHistoryEntry({
+          action_type: "Foto gelöscht",
+          note: `Foto gelöscht: ${photo.file_name || photo.storage_path}.`,
+          restaurant_id: restaurant.id,
+          user_id: currentUser.id
+        })
+      ],
+      restaurant_photos: currentData.restaurant_photos.filter((candidate) => candidate.id !== photo.id)
+    }));
+  }
+
+  return (
+    <div className={panelClassName}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-semibold">Fotos</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-400">
+            Fassaden, Innenraum, Speisekarte oder Logo direkt vom Telefon hochladen.
+          </p>
+        </div>
+        <button
+          className={goldButtonClassName}
+          type="button"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Camera aria-hidden="true" className="h-4 w-4" />
+          {uploading ? "Fotos werden hochgeladen ..." : "Fotos hinzufügen"}
+        </button>
+      </div>
+      <input
+        ref={fileInputRef}
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        multiple
+        type="file"
+        onChange={(event) => {
+          void uploadPhotos(event.target.files);
+          event.target.value = "";
+        }}
+      />
+      {error ? (
+        <p className="mt-4 rounded border border-orange-300/30 bg-orange-400/10 px-4 py-3 text-sm text-orange-100">
+          {error}
+        </p>
+      ) : null}
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {photos.length === 0 ? <EmptyState text="Noch keine Fotos vorhanden." /> : null}
+        {photos.map((photo) => {
+          const previewUrl = previewUrls[photo.id];
+
+          return (
+            <div key={photo.id} className="rounded-lg border border-white/10 bg-midnight/40 p-3">
+              {previewUrl ? (
+                <a href={previewUrl} target="_blank" rel="noopener noreferrer">
+                  <Image
+                    alt={`Foto von ${restaurant.name}`}
+                    className="aspect-[4/3] w-full rounded object-cover"
+                    height={240}
+                    src={previewUrl}
+                    width={320}
+                  />
+                </a>
+              ) : (
+                <div className="flex aspect-[4/3] items-center justify-center rounded border border-white/10 text-premium-gold">
+                  <ImageIcon aria-hidden="true" className="h-6 w-6" />
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button className={outlineButtonClassName} type="button" onClick={() => setPrimaryPhoto(photo.id)}>
+                  {photo.is_primary ? "Hauptfoto" : "Als Hauptfoto"}
+                </button>
+                <button className="inline-flex min-h-11 items-center justify-center rounded border border-red-400/35 px-3 text-sm font-semibold text-red-200" type="button" onClick={() => void removePhoto(photo)}>
+                  Löschen
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function OfferPanel({
   currentUser,
   data,
@@ -2889,7 +3310,7 @@ function TaskPanel({
   users
 }: {
   onOpenRestaurant: (id: string) => void;
-  tasks: Restaurant[];
+  tasks: TaskItem[];
   title: string;
   users: SalesUser[];
 }) {
@@ -2898,12 +3319,13 @@ function TaskPanel({
       <h2 className="font-heading text-xl font-semibold">{title}</h2>
       <div className="mt-4 grid gap-3">
         {tasks.length === 0 ? <EmptyState text="Keine offenen Aufgaben." /> : null}
-        {tasks.map((restaurant) => {
-          const overdue = isOverdue(restaurant.next_contact_at);
+        {tasks.map((task) => {
+          const overdue = isOverdue(task.due_at);
+          const restaurant = task.restaurant;
 
           return (
             <button
-              key={`${title}-${restaurant.id}`}
+              key={`${title}-${task.id}`}
               type="button"
               onClick={() => onOpenRestaurant(restaurant.id)}
               className={`rounded border p-4 text-left transition-colors ${
@@ -2919,13 +3341,11 @@ function TaskPanel({
                     {formatAddress(restaurant) || restaurant.city || "-"}
                   </p>
                   <p className={`mt-2 text-sm ${overdue ? "text-red-200" : "text-premium-gold"}`}>
-                    {restaurant.next_contact_at
-                      ? `Nächster Kontakt: ${formatDateTime(restaurant.next_contact_at)}`
-                      : `Geplanter Besuch: ${formatDateTime(restaurant.planned_visit_at)}`}
+                    {task.title}: {formatDateTime(task.due_at)}
                   </p>
                 </div>
                 <span className="text-xs text-slate-500">
-                  {getUserName(users, restaurant.responsible_user_id)}
+                  {getUserName(users, task.assigned_to)}
                 </span>
               </div>
             </button>
@@ -3415,35 +3835,143 @@ function restaurantToDraft(restaurant: Restaurant | undefined): RestaurantDraft 
 
 function createHistoryEntry({
   action_type,
+  channel = "",
+  contact_person = "",
+  direction = "",
+  message_template_id = "",
+  message_text = "",
+  metadata,
   new_status = "",
   next_contact_at = "",
   note = "",
+  offer_id = "",
   old_status = "",
   restaurant_id,
+  task_id = "",
+  title = "",
   user_id
 }: {
   action_type: ContactActionType;
+  channel?: ContactHistoryEntry["channel"];
+  contact_person?: string;
+  direction?: ContactHistoryEntry["direction"];
+  message_template_id?: string;
+  message_text?: string;
+  metadata?: Record<string, unknown>;
   new_status?: RestaurantStatus | "";
   next_contact_at?: string;
   note?: string;
+  offer_id?: string;
   old_status?: RestaurantStatus | "";
   restaurant_id: string;
+  task_id?: string;
+  title?: string;
   user_id: SalesUserId;
 }): ContactHistoryEntry {
   const now = new Date().toISOString();
 
   return {
     action_type,
+    channel,
     contact_at: now,
+    contact_person,
     created_at: now,
+    direction,
     id: createId(),
+    message_template_id,
+    message_text,
+    metadata,
     new_status,
     next_contact_at,
     note,
+    offer_id,
     old_status,
     restaurant_id,
+    task_id,
+    title,
     user_id
   };
+}
+
+function createTaskFromNextContact({
+  currentUserId,
+  nextContactAt,
+  nextContactType,
+  restaurant
+}: {
+  currentUserId: SalesUserId;
+  nextContactAt: string;
+  nextContactType: ContactType | "";
+  restaurant: Restaurant;
+}): SalesTask {
+  const now = new Date().toISOString();
+  const taskType = mapContactTypeToTaskType(nextContactType);
+
+  return {
+    assigned_to: restaurant.responsible_user_id || currentUserId,
+    completed_at: "",
+    completed_by: "",
+    created_at: now,
+    created_by: currentUserId,
+    description: "",
+    due_at: nextContactAt,
+    id: createId(),
+    priority: "normal",
+    related_offer_id: "",
+    restaurant_id: restaurant.id,
+    status: "open",
+    task_type: taskType,
+    title: createTaskTitle(nextContactType),
+    updated_at: now
+  };
+}
+
+function mapContactTypeToTaskType(contactType: ContactType | ""): SalesTask["task_type"] {
+  if (contactType === "Anrufen") {
+    return "call";
+  }
+
+  if (contactType === "WhatsApp") {
+    return "whatsapp";
+  }
+
+  if (contactType === "Erneut besuchen") {
+    return "visit";
+  }
+
+  if (contactType === "Angebot senden") {
+    return "send_offer";
+  }
+
+  if (contactType === "E-Mail senden") {
+    return "email";
+  }
+
+  return "follow_up";
+}
+
+function createTaskTitle(contactType: ContactType | "") {
+  if (contactType === "Anrufen") {
+    return "Restaurant anrufen";
+  }
+
+  if (contactType === "WhatsApp") {
+    return "WhatsApp schreiben";
+  }
+
+  if (contactType === "Erneut besuchen") {
+    return "Erneut besuchen";
+  }
+
+  if (contactType === "Angebot senden") {
+    return "Angebot senden";
+  }
+
+  if (contactType === "E-Mail senden") {
+    return "E-Mail senden";
+  }
+
+  return "Follow-up";
 }
 
 function createId() {
@@ -3588,31 +4116,81 @@ function startOfToday() {
   return date;
 }
 
-function getDueTasks(restaurants: Restaurant[]) {
-  return restaurants
-    .filter((restaurant) => {
-      const hasVisitToday = isSameDay(restaurant.planned_visit_at);
-      const hasNextContactToday = isSameDay(restaurant.next_contact_at);
-      const overdue = isOverdue(restaurant.next_contact_at);
-      return hasVisitToday || hasNextContactToday || overdue;
-    })
-    .sort((a, b) => (a.next_contact_at || a.planned_visit_at).localeCompare(b.next_contact_at || b.planned_visit_at));
+function getDueTasks(restaurants: Restaurant[], tasks: SalesTask[]) {
+  return getTaskItems(restaurants, tasks)
+    .filter((task) => isSameDay(task.due_at) || isOverdue(task.due_at))
+    .sort((a, b) => a.due_at.localeCompare(b.due_at));
 }
 
-function getNextSevenDayTasks(restaurants: Restaurant[]) {
+function getNextSevenDayTasks(restaurants: Restaurant[], tasks: SalesTask[]) {
   const today = startOfToday().getTime();
   const sevenDays = today + 7 * 24 * 60 * 60 * 1000;
 
-  return restaurants
-    .filter((restaurant) => {
-      if (!restaurant.next_contact_at) {
-        return false;
-      }
-
-      const time = new Date(restaurant.next_contact_at).getTime();
+  return getTaskItems(restaurants, tasks)
+    .filter((task) => {
+      const time = new Date(task.due_at).getTime();
       return time >= today && time <= sevenDays;
     })
-    .sort((a, b) => a.next_contact_at.localeCompare(b.next_contact_at));
+    .sort((a, b) => a.due_at.localeCompare(b.due_at));
+}
+
+function getTaskItems(restaurants: Restaurant[], tasks: SalesTask[]): TaskItem[] {
+  const restaurantById = new Map(restaurants.map((restaurant) => [restaurant.id, restaurant]));
+  const taskItems = tasks
+    .filter((task) => task.status !== "completed" && task.status !== "cancelled")
+    .map((task): TaskItem | null => {
+      const restaurant = restaurantById.get(task.restaurant_id);
+
+      if (!restaurant || !task.due_at) {
+        return null;
+      }
+
+      return {
+        assigned_to: task.assigned_to || restaurant.responsible_user_id,
+        due_at: task.due_at,
+        id: task.id,
+        restaurant,
+        source: "task",
+        task,
+        title: task.title || "Aufgabe"
+      };
+    })
+    .filter((task): task is TaskItem => Boolean(task));
+
+  const persistedTaskRestaurantIds = new Set(taskItems.map((task) => task.restaurant.id));
+  const legacyItems = restaurants.flatMap((restaurant): TaskItem[] => {
+    if (persistedTaskRestaurantIds.has(restaurant.id)) {
+      return [];
+    }
+
+    const items: TaskItem[] = [];
+
+    if (restaurant.next_contact_at) {
+      items.push({
+        assigned_to: restaurant.responsible_user_id,
+        due_at: restaurant.next_contact_at,
+        id: `${restaurant.id}-next-contact`,
+        restaurant,
+        source: "restaurant",
+        title: restaurant.next_contact_type || "Nächster Kontakt"
+      });
+    }
+
+    if (restaurant.planned_visit_at) {
+      items.push({
+        assigned_to: restaurant.responsible_user_id,
+        due_at: restaurant.planned_visit_at,
+        id: `${restaurant.id}-planned-visit`,
+        restaurant,
+        source: "restaurant",
+        title: "Geplanter Besuch"
+      });
+    }
+
+    return items;
+  });
+
+  return [...taskItems, ...legacyItems];
 }
 
 function getLastContact(history: ContactHistoryEntry[], restaurantId: string) {

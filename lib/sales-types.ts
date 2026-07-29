@@ -46,6 +46,10 @@ export type ContactActionType =
   | "Angebot gesendet"
   | "Status geändert"
   | "Notiz hinzugefügt"
+  | "Aufgabe erstellt"
+  | "Foto hochgeladen"
+  | "Foto gelöscht"
+  | "Standort aktualisiert"
   | "Restaurant archiviert";
 
 export type TourStatus = "Geplant" | "Aktiv" | "Abgeschlossen";
