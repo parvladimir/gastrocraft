@@ -141,6 +141,7 @@ export const salesDataService = {
     if (data.contact_history.length > 0) {
       operations.push(
         supabase.from("contact_history").upsert(data.contact_history.map(toContactHistoryRow), {
+          ignoreDuplicates: true,
           onConflict: "id"
         })
       );
@@ -189,14 +190,6 @@ export const salesDataService = {
     if (data.tasks.length > 0) {
       operations.push(
         supabase.from("tasks").upsert(data.tasks.map(toSalesTaskRow), {
-          onConflict: "id"
-        })
-      );
-    }
-
-    if (data.message_templates.length > 0) {
-      operations.push(
-        supabase.from("message_templates").upsert(data.message_templates.map(toMessageTemplateRow), {
           onConflict: "id"
         })
       );
@@ -784,6 +777,7 @@ function mapRestaurant(row: DbRecord): Restaurant {
     digital_presence: (row.digital_presence as Restaurant["digital_presence"]) ?? null,
     email: toString(row.email),
     facebook: toString(row.facebook),
+    generated_demo_at: toString(row.generated_demo_at),
     google_maps_url: toString(row.google_maps_url),
     google_place_id: toString(row.google_place_id),
     google_rating: typeof row.google_rating === "number" ? row.google_rating : null,
@@ -810,6 +804,8 @@ function mapRestaurant(row: DbRecord): Restaurant {
     selected_demo: toString(row.selected_demo) as Restaurant["selected_demo"],
     status: (toString(row.status) || "Neu") as Restaurant["status"],
     street: toString(row.street),
+    custom_demo_slug: toString(row.custom_demo_slug),
+    custom_demo_url: toString(row.custom_demo_url),
     tiktok: toString(row.tiktok),
     updated_at: toString(row.updated_at),
     updated_by: toString(row.updated_by),

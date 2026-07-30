@@ -78,6 +78,10 @@ export const demoOptions: Record<
     label: "Noch nicht ausgewählt",
     url: ""
   },
+  custom: {
+    label: "Automatisches Demo",
+    url: ""
+  },
   rhodosgrill: {
     label: "Rhodos Grill",
     url: "http://rhodosgrill.dinevio.de"

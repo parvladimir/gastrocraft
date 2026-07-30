@@ -140,6 +140,7 @@ const emptyDraft: RestaurantDraft = {
   digital_presence: null,
   email: "",
   facebook: "",
+  generated_demo_at: "",
   google_maps_url: "",
   google_rating: null,
   google_review_count: null,
@@ -161,6 +162,8 @@ const emptyDraft: RestaurantDraft = {
   selected_demo: "none",
   status: "Neu",
   street: "",
+  custom_demo_slug: "",
+  custom_demo_url: "",
   tiktok: "",
   website: ""
 };
@@ -684,7 +687,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
   }
 
   function createWhatsappMessage(restaurant: Restaurant, template: "afterVisit" | "reminder") {
-    const demoLink = getDemoUrl(restaurant.selected_demo);
+    const demoLink = getRestaurantDemoUrl(restaurant);
     const recipient = restaurant.contact_person || "Name";
     const sender = currentUser?.name ?? "DINEVIO";
 
@@ -752,6 +755,49 @@ DINEVIO`;
     setWhatsappRestaurantId("");
     setWhatsappText("");
     setToast(sent ? "Versand gespeichert" : "Nicht gespeichert");
+  }
+
+  async function generateAutomaticDemo(restaurantId: string) {
+    setLastSyncError("");
+
+    try {
+      const response = await fetch("/api/sales/demo-pages", {
+        body: JSON.stringify({ restaurantId }),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        method: "POST"
+      });
+      const payload = (await response.json()) as {
+        demoUrl?: string;
+        message?: string;
+        restaurant?: Partial<Restaurant>;
+      };
+
+      if (!response.ok || !payload.restaurant) {
+        setLastSyncError(payload.message ?? "Automatisches Demo konnte nicht erstellt werden.");
+        return;
+      }
+
+      updateData((currentData) => ({
+        ...currentData,
+        restaurants: currentData.restaurants.map((restaurant) =>
+          restaurant.id === restaurantId
+            ? {
+                ...restaurant,
+                ...payload.restaurant
+              }
+            : restaurant
+        )
+      }));
+      setToast("Automatisches Demo erstellt");
+
+      if (payload.demoUrl) {
+        window.open(payload.demoUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch {
+      setLastSyncError("Automatisches Demo konnte nicht erstellt werden.");
+    }
   }
 
   async function copyText(text: string) {
@@ -1117,6 +1163,7 @@ DINEVIO`;
               setWhatsappTemplate(template);
               setWhatsappText(createWhatsappMessage(selectedRestaurant, template));
             }}
+            onGenerateDemo={() => generateAutomaticDemo(selectedRestaurant.id)}
             onPatch={patchRestaurant}
             onShowDemoChooser={setShowDemoChooser}
             onStartVisit={() => setView("visit")}
@@ -2011,7 +2058,7 @@ function RestaurantForm({
           <TextField label="Anzahl Bewertungen" value={draft.google_review_count?.toString() ?? ""} onChange={(value) => updateField("google_review_count", value ? Number(value) : null)} type="number" />
           <DateTimeField label="Geplanter Besuch" value={draft.planned_visit_at} onChange={(value) => updateField("planned_visit_at", value)} />
           <SelectField label="Verantwortlich" value={draft.responsible_user_id} onChange={(value) => updateField("responsible_user_id", value as SalesUserId)} options={users.map((user) => user.id)} labels={Object.fromEntries(users.map((user) => [user.id, user.name]))} />
-          <SelectField label="Demo" value={draft.selected_demo} onChange={(value) => updateField("selected_demo", value as DemoId)} options={Object.keys(demoOptions)} labels={Object.fromEntries(Object.entries(demoOptions).map(([id, demo]) => [id, demo.label]))} />
+          <SelectField label="Demo" value={draft.selected_demo} onChange={(value) => updateField("selected_demo", value as DemoId)} options={["none", "schnellundlecker", "schlemmerhus", "rhodosgrill", "custom"]} labels={Object.fromEntries(Object.entries(demoOptions).map(([id, demo]) => [id, demo.label]))} />
           <SelectField label="Status" value={draft.status} onChange={(value) => updateField("status", value as RestaurantStatus)} options={restaurantStatuses} />
         </div>
         <div className="mt-6 rounded-lg border border-white/10 bg-midnight/45 p-4">
@@ -2167,6 +2214,7 @@ function RestaurantDetailView({
   onBack,
   onCopy,
   onEdit,
+  onGenerateDemo,
   onOpenWhatsapp,
   onPatch,
   onShowDemoChooser,
@@ -2181,6 +2229,7 @@ function RestaurantDetailView({
   onBack: () => void;
   onCopy: (text: string) => void;
   onEdit: () => void;
+  onGenerateDemo: () => void;
   onOpenWhatsapp: (template: "afterVisit" | "reminder") => void;
   onPatch: (
     restaurantId: string,
@@ -2193,7 +2242,7 @@ function RestaurantDetailView({
   restaurant: Restaurant;
   showDemoChooser: boolean;
 }) {
-  const demoUrl = getDemoUrl(restaurant.selected_demo);
+  const demoUrl = getRestaurantDemoUrl(restaurant);
   const history = data.contact_history
     .filter((entry) => entry.restaurant_id === restaurant.id)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -2255,6 +2304,12 @@ function RestaurantDetailView({
         {showDemoChooser ? (
           <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4">
             <p className="font-heading text-lg font-semibold">Demo auswählen</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Automatisches Demo aus aktuellen Restaurantdaten erstellen oder eine bestehende Konzeptdemo öffnen.
+            </p>
+            <button className={`${goldButtonClassName} mt-4 w-full sm:w-auto`} type="button" onClick={onGenerateDemo}>
+              Automatisches Demo erstellen
+            </button>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {(["schnellundlecker", "schlemmerhus", "rhodosgrill"] as DemoId[]).map((demoId) => (
                 <button
@@ -4536,6 +4591,14 @@ function hasNavigationTarget(restaurant: Restaurant) {
 
 function getDemoUrl(demoId: DemoId) {
   return demoOptions[demoId]?.url ?? "";
+}
+
+function getRestaurantDemoUrl(restaurant: Restaurant) {
+  if (restaurant.selected_demo === "custom" && restaurant.custom_demo_url) {
+    return restaurant.custom_demo_url;
+  }
+
+  return getDemoUrl(restaurant.selected_demo);
 }
 
 function formatCandidateAddress(candidate: RestaurantLookupCandidate) {

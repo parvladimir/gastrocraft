@@ -27,6 +27,7 @@ export type DemoId =
   | "schnellundlecker"
   | "schlemmerhus"
   | "rhodosgrill"
+  | "custom"
   | "none";
 
 export type ContactType =
@@ -114,6 +115,7 @@ export type Restaurant = {
   google_place_id?: string;
   google_rating: number | null;
   google_review_count: number | null;
+  generated_demo_at?: string;
   house_number: string;
   id: string;
   instagram: string;
@@ -136,6 +138,8 @@ export type Restaurant = {
   selected_demo: DemoId;
   status: RestaurantStatus;
   street: string;
+  custom_demo_slug?: string;
+  custom_demo_url?: string;
   tiktok: string;
   updated_at: string;
   updated_by: SalesUserId;

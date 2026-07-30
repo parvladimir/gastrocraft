@@ -245,6 +245,7 @@ The Sales Manager now includes the following Supabase-backed CRM modules:
 - sales settings in `sales_settings`
 - statistics and conversion views
 - protected `/sales/pipeline` and `/sales/statistik` routes
+- public restaurant demo pages generated from CRM snapshots at `/demo/[slug]`
 
 Manual Supabase checks before production use:
 
@@ -285,6 +286,16 @@ Two-user test:
 4. Refresh or wait for realtime sync in the other session.
 5. Change the status in `/sales/pipeline`.
 6. Confirm the timeline shows the correct user.
+
+Automatic demo test:
+
+1. Run `supabase/migrations/20260730_001_demo_pages.sql`.
+2. Open a restaurant card in `/sales`.
+3. Click `Demo zeigen`.
+4. Click `Automatisches Demo erstellen`.
+5. Confirm the generated `/demo/...` page opens.
+6. Confirm the restaurant now uses `Automatisches Demo`.
+7. Confirm only the demo snapshot is public, not the CRM record itself.
 
 ### Restaurant Lookup
 
