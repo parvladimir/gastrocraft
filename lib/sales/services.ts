@@ -743,6 +743,10 @@ export const packagesService = {
 };
 
 export function normalizeSalesError(message: string) {
+  if (/column|schema cache|Could not find|does not exist|relation/i.test(message)) {
+    return "Die Datenbankstruktur ist nicht aktuell. Bitte führen Sie die neuesten Supabase-Migrationen aus.";
+  }
+
   if (/jwt|auth|permission|policy|rls/i.test(message)) {
     return "Sie haben keine Berechtigung für diese Aktion.";
   }

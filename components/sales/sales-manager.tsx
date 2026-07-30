@@ -69,6 +69,7 @@ import type {
   RestaurantLookupResponse
 } from "@/lib/restaurant-lookup-types";
 import {
+  contactHistoryService,
   profilesService,
   photosService,
   restaurantsService,
@@ -439,52 +440,66 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
 
   async function saveRestaurant(draft: RestaurantDraft, editingId = "") {
     if (!currentUser) {
-      return;
+      return false;
+    }
+
+    if (!supabase) {
+      setLastSyncError("Supabase ist nicht konfiguriert.");
+      return false;
     }
 
     const now = new Date().toISOString();
 
     if (editingId) {
-      updateData((currentData) => {
-        const currentRestaurant = currentData.restaurants.find(
-          (restaurant) => restaurant.id === editingId
-        );
-        const updatedRestaurants = currentData.restaurants.map((restaurant) =>
-          restaurant.id === editingId
-            ? {
-                ...restaurant,
-                ...draft,
-                updated_at: now,
-                updated_by: currentUser.id
-              }
-            : restaurant
-        );
-        const history =
-          currentRestaurant && currentRestaurant.status !== draft.status
-            ? [
-                ...currentData.contact_history,
-                createHistoryEntry({
-                  action_type: "Status geändert",
-                  next_contact_at: draft.next_contact_at,
-                  new_status: draft.status,
-                  note: "Restaurant aktualisiert.",
-                  old_status: currentRestaurant.status,
-                  restaurant_id: editingId,
-                  user_id: currentUser.id
-                })
-              ]
-            : currentData.contact_history;
-
-        return {
-          ...currentData,
-          contact_history: history,
-          restaurants: updatedRestaurants
-        };
+      const currentRestaurant = data.restaurants.find((restaurant) => restaurant.id === editingId);
+      const updateResult = await restaurantsService.update(supabase, editingId, {
+        ...draft,
+        updated_at: now,
+        updated_by: currentUser.id
       });
+
+      if (updateResult.error || !updateResult.data) {
+        setLastSyncError(updateResult.error || "Die Datenbankaktion konnte nicht abgeschlossen werden.");
+        return false;
+      }
+
+      let historyEntry: ContactHistoryEntry | null = null;
+
+      if (currentRestaurant && currentRestaurant.status !== draft.status) {
+        const historyResult = await contactHistoryService.create(
+          supabase,
+          createHistoryEntry({
+            action_type: "Status geändert",
+            next_contact_at: draft.next_contact_at,
+            new_status: draft.status,
+            note: "Restaurant aktualisiert.",
+            old_status: currentRestaurant.status,
+            restaurant_id: editingId,
+            user_id: currentUser.id
+          })
+        );
+
+        if (historyResult.error) {
+          setLastSyncError(historyResult.error);
+        } else {
+          historyEntry = historyResult.data;
+        }
+      }
+
+      setData((currentData) => ({
+        ...currentData,
+        contact_history: historyEntry
+          ? [...currentData.contact_history, historyEntry]
+          : currentData.contact_history,
+        restaurants: currentData.restaurants.map((restaurant) =>
+          restaurant.id === editingId ? updateResult.data : restaurant
+        )
+      }));
+      setLastSyncError("");
       setToast("Gespeichert");
       setSelectedRestaurantId(editingId);
       setView("detail");
-      return;
+      return true;
     }
 
     const restaurant: Restaurant = {
@@ -497,35 +512,56 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       updated_by: currentUser.id
     };
 
-    if (supabase) {
-      const duplicateResult = await restaurantsService.findDuplicate(supabase, restaurant);
+    const duplicateResult = await restaurantsService.findDuplicate(supabase, restaurant);
 
-      if (duplicateResult.data) {
-        setToast("Möglicher Duplikat gefunden");
-        setSelectedRestaurantId(duplicateResult.data.id);
-        setView("detail");
-        return;
-      }
+    if (duplicateResult.error) {
+      setLastSyncError(duplicateResult.error);
+      return false;
     }
 
-    updateData((currentData) => ({
+    if (duplicateResult.data) {
+      setToast("Möglicher Duplikat gefunden");
+      setSelectedRestaurantId(duplicateResult.data.id);
+      setView("detail");
+      return true;
+    }
+
+    const createResult = await restaurantsService.create(supabase, restaurant);
+
+    if (createResult.error || !createResult.data) {
+      setLastSyncError(createResult.error || "Die Datenbankaktion konnte nicht abgeschlossen werden.");
+      return false;
+    }
+
+    const historyResult = await contactHistoryService.create(
+      supabase,
+      createHistoryEntry({
+        action_type: "Restaurant erstellt",
+        new_status: createResult.data.status,
+        note: "Restaurant wurde angelegt.",
+        restaurant_id: createResult.data.id,
+        user_id: currentUser.id
+      })
+    );
+
+    if (historyResult.error) {
+      setLastSyncError(historyResult.error);
+    } else {
+      setLastSyncError("");
+    }
+
+    setData((currentData) => ({
       ...currentData,
-      contact_history: [
-        ...currentData.contact_history,
-        createHistoryEntry({
-          action_type: "Restaurant erstellt",
-          new_status: restaurant.status,
-          note: "Restaurant wurde angelegt.",
-          restaurant_id: restaurant.id,
-          user_id: currentUser.id
-        })
-      ],
-      restaurants: [...currentData.restaurants, restaurant]
+      contact_history: historyResult.data
+        ? [...currentData.contact_history, historyResult.data]
+        : currentData.contact_history,
+      restaurants: [...currentData.restaurants, createResult.data]
     }));
     window.localStorage.removeItem(draftKey);
     setToast("Restaurant gespeichert");
-    setSelectedRestaurantId(restaurant.id);
+    setSelectedRestaurantId(createResult.data.id);
     setView("detail");
+    return true;
   }
 
   function archiveRestaurant(restaurantId: string) {
@@ -1674,7 +1710,7 @@ function RestaurantForm({
   isEditing: boolean;
   onCancel: () => void;
   onOpenRestaurant: (id: string) => void;
-  onSave: (draft: RestaurantDraft) => void;
+  onSave: (draft: RestaurantDraft) => Promise<boolean>;
   restaurants: Restaurant[];
   users: SalesUser[];
 }) {
@@ -1801,7 +1837,7 @@ function RestaurantForm({
     }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (saving) {
@@ -1809,7 +1845,7 @@ function RestaurantForm({
     }
 
     setSaving(true);
-    onSave({
+    const saved = await onSave({
       ...draft,
       city: draft.city.trim(),
       contact_person: draft.contact_person.trim(),
@@ -1830,6 +1866,10 @@ function RestaurantForm({
       website: draft.website.trim(),
       status: draft.planned_visit_at && draft.status === "Neu" ? "Besuch geplant" : draft.status
     });
+
+    if (!saved) {
+      setSaving(false);
+    }
   }
 
   function useCurrentLocation() {
@@ -4134,7 +4174,7 @@ function DateTimeField({
   onChange: (value: string) => void;
   value: string;
 }) {
-  return <TextField label={label} onChange={onChange} type="datetime-local" value={value} />;
+  return <TextField label={label} onChange={onChange} type="datetime-local" value={toDateTimeLocalValue(value)} />;
 }
 
 function SelectField({
@@ -4667,7 +4707,7 @@ function formatDateTime(value: string) {
 }
 
 function todayInputValue() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateKey(new Date());
 }
 
 function isSameDay(value: string) {
@@ -4675,7 +4715,7 @@ function isSameDay(value: string) {
     return false;
   }
 
-  return value.slice(0, 10) === todayInputValue();
+  return toLocalDateKey(value) === todayInputValue();
 }
 
 function isOverdue(value: string) {
@@ -4690,6 +4730,42 @@ function startOfToday() {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
   return date;
+}
+
+function toDateTimeLocalValue(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return `${toLocalDateKey(date)}T${padDatePart(date.getHours())}:${padDatePart(date.getMinutes())}`;
+}
+
+function toLocalDateKey(value: Date | string) {
+  const date = typeof value === "string" ? new Date(value) : value;
+
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === "string" ? value.slice(0, 10) : "";
+  }
+
+  return [
+    date.getFullYear(),
+    padDatePart(date.getMonth() + 1),
+    padDatePart(date.getDate())
+  ].join("-");
+}
+
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
 }
 
 function getDueTasks(restaurants: Restaurant[], tasks: SalesTask[]) {
