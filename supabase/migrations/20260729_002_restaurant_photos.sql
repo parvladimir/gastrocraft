@@ -24,22 +24,26 @@ create unique index if not exists restaurant_photos_one_primary_idx
 
 alter table public.restaurant_photos enable row level security;
 
+drop policy if exists "Authenticated users can read restaurant photos" on public.restaurant_photos;
 create policy "Authenticated users can read restaurant photos"
   on public.restaurant_photos for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create restaurant photos" on public.restaurant_photos;
 create policy "Authenticated users can create restaurant photos"
   on public.restaurant_photos for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can update restaurant photos" on public.restaurant_photos;
 create policy "Authenticated users can update restaurant photos"
   on public.restaurant_photos for update
   to authenticated
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can delete restaurant photos" on public.restaurant_photos;
 create policy "Admins can delete restaurant photos"
   on public.restaurant_photos for delete
   to authenticated

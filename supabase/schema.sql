@@ -149,144 +149,171 @@ as $$
   );
 $$;
 
+drop policy if exists "Authenticated users can read profiles" on public.profiles;
 create policy "Authenticated users can read profiles"
   on public.profiles for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
   on public.profiles for update
   to authenticated
   using (id = auth.uid())
   with check (id = auth.uid());
 
+drop policy if exists "Admins can manage profiles" on public.profiles;
 create policy "Admins can manage profiles"
   on public.profiles for all
   to authenticated
   using (public.is_sales_admin())
   with check (public.is_sales_admin());
 
+drop policy if exists "Authenticated users can read restaurants" on public.restaurants;
 create policy "Authenticated users can read restaurants"
   on public.restaurants for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create restaurants" on public.restaurants;
 create policy "Authenticated users can create restaurants"
   on public.restaurants for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can update restaurants" on public.restaurants;
 create policy "Authenticated users can update restaurants"
   on public.restaurants for update
   to authenticated
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can delete restaurants" on public.restaurants;
 create policy "Admins can delete restaurants"
   on public.restaurants for delete
   to authenticated
   using (public.is_sales_admin());
 
+drop policy if exists "Authenticated users can read contact history" on public.contact_history;
 create policy "Authenticated users can read contact history"
   on public.contact_history for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create contact history" on public.contact_history;
 create policy "Authenticated users can create contact history"
   on public.contact_history for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can update contact history" on public.contact_history;
 create policy "Authenticated users can update contact history"
   on public.contact_history for update
   to authenticated
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can delete contact history" on public.contact_history;
 create policy "Admins can delete contact history"
   on public.contact_history for delete
   to authenticated
   using (public.is_sales_admin());
 
+drop policy if exists "Authenticated users can read tours" on public.tours;
 create policy "Authenticated users can read tours"
   on public.tours for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create tours" on public.tours;
 create policy "Authenticated users can create tours"
   on public.tours for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can update tours" on public.tours;
 create policy "Authenticated users can update tours"
   on public.tours for update
   to authenticated
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can delete tours" on public.tours;
 create policy "Admins can delete tours"
   on public.tours for delete
   to authenticated
   using (public.is_sales_admin());
 
+drop policy if exists "Authenticated users can read tour stops" on public.tour_stops;
 create policy "Authenticated users can read tour stops"
   on public.tour_stops for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create tour stops" on public.tour_stops;
 create policy "Authenticated users can create tour stops"
   on public.tour_stops for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can update tour stops" on public.tour_stops;
 create policy "Authenticated users can update tour stops"
   on public.tour_stops for update
   to authenticated
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can delete tour stops" on public.tour_stops;
 create policy "Admins can delete tour stops"
   on public.tour_stops for delete
   to authenticated
   using (public.is_sales_admin());
 
+drop policy if exists "Authenticated users can read offers" on public.offers;
 create policy "Authenticated users can read offers"
   on public.offers for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create offers" on public.offers;
 create policy "Authenticated users can create offers"
   on public.offers for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can update offers" on public.offers;
 create policy "Authenticated users can update offers"
   on public.offers for update
   to authenticated
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can delete offers" on public.offers;
 create policy "Admins can delete offers"
   on public.offers for delete
   to authenticated
   using (public.is_sales_admin());
 
+drop policy if exists "Authenticated users can read service packages" on public.service_packages;
 create policy "Authenticated users can read service packages"
   on public.service_packages for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create service packages" on public.service_packages;
 create policy "Authenticated users can create service packages"
   on public.service_packages for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can update service packages" on public.service_packages;
 create policy "Authenticated users can update service packages"
   on public.service_packages for update
   to authenticated
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can delete service packages" on public.service_packages;
 create policy "Admins can delete service packages"
   on public.service_packages for delete
   to authenticated

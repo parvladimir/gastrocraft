@@ -32,22 +32,26 @@ create index if not exists message_templates_active_idx on public.message_templa
 
 alter table public.message_templates enable row level security;
 
+drop policy if exists "Authenticated users can read message templates" on public.message_templates;
 create policy "Authenticated users can read message templates"
   on public.message_templates for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Admins can create message templates" on public.message_templates;
 create policy "Admins can create message templates"
   on public.message_templates for insert
   to authenticated
   with check (public.is_sales_admin());
 
+drop policy if exists "Admins can update message templates" on public.message_templates;
 create policy "Admins can update message templates"
   on public.message_templates for update
   to authenticated
   using (public.is_sales_admin())
   with check (public.is_sales_admin());
 
+drop policy if exists "Admins can delete message templates" on public.message_templates;
 create policy "Admins can delete message templates"
   on public.message_templates for delete
   to authenticated

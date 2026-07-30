@@ -21,27 +21,32 @@ create table if not exists public.offer_share_links (
 alter table public.sales_settings enable row level security;
 alter table public.offer_share_links enable row level security;
 
+drop policy if exists "Authenticated users can read sales settings" on public.sales_settings;
 create policy "Authenticated users can read sales settings"
   on public.sales_settings for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Admins can manage sales settings" on public.sales_settings;
 create policy "Admins can manage sales settings"
   on public.sales_settings for all
   to authenticated
   using (public.is_sales_admin())
   with check (public.is_sales_admin());
 
+drop policy if exists "Authenticated users can read offer share links" on public.offer_share_links;
 create policy "Authenticated users can read offer share links"
   on public.offer_share_links for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create offer share links" on public.offer_share_links;
 create policy "Authenticated users can create offer share links"
   on public.offer_share_links for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can update offer share links" on public.offer_share_links;
 create policy "Admins can update offer share links"
   on public.offer_share_links for update
   to authenticated

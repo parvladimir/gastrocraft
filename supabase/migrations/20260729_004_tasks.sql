@@ -28,22 +28,26 @@ create index if not exists tasks_restaurant_idx on public.tasks (restaurant_id);
 
 alter table public.tasks enable row level security;
 
+drop policy if exists "Authenticated users can read tasks" on public.tasks;
 create policy "Authenticated users can read tasks"
   on public.tasks for select
   to authenticated
   using (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can create tasks" on public.tasks;
 create policy "Authenticated users can create tasks"
   on public.tasks for insert
   to authenticated
   with check (auth.uid() is not null);
 
+drop policy if exists "Authenticated users can update tasks" on public.tasks;
 create policy "Authenticated users can update tasks"
   on public.tasks for update
   to authenticated
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+drop policy if exists "Admins can delete tasks" on public.tasks;
 create policy "Admins can delete tasks"
   on public.tasks for delete
   to authenticated

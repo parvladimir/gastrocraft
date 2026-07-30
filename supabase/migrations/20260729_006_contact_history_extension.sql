@@ -23,6 +23,7 @@ create index if not exists contact_history_action_type_idx
 
 drop policy if exists "Authenticated users can update contact history" on public.contact_history;
 
+drop policy if exists "Admins can append corrective history only by insert" on public.contact_history;
 create policy "Admins can append corrective history only by insert"
   on public.contact_history for update
   to authenticated
