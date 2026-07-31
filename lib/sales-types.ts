@@ -51,7 +51,14 @@ export type ContactActionType =
   | "Foto hochgeladen"
   | "Foto gelöscht"
   | "Standort aktualisiert"
-  | "Restaurant archiviert";
+  | "Restaurant archiviert"
+  | "restaurant_created"
+  | "demo_created"
+  | "demo_updated"
+  | "demo_opened_from_crm"
+  | "demo_link_copied"
+  | "demo_sent"
+  | "demo_archived";
 
 export type TourStatus = "Geplant" | "Aktiv" | "Abgeschlossen";
 export type TourStopStatus = "Geplant" | "Besucht" | "Übersprungen";

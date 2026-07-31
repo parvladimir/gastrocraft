@@ -106,6 +106,13 @@ type VisitResult =
   | "Angebot erstellen"
   | "Neuer Termin vereinbart";
 
+type PersonalDemoOptions = {
+  galleryPhotoIds?: string[];
+  heroPhotoId?: string;
+  logoPhotoId?: string;
+  templateKey?: DemoId | "auto";
+};
+
 type TaskItem = {
   assigned_to: SalesUserId;
   due_at: string;
@@ -444,7 +451,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
     }
 
     if (!supabase) {
-      setLastSyncError("Supabase ist nicht konfiguriert.");
+      setLastSyncError(formatSaveError("Supabase ist nicht konfiguriert."));
       return false;
     }
 
@@ -459,7 +466,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       });
 
       if (updateResult.error || !updateResult.data) {
-        setLastSyncError(updateResult.error || "Die Datenbankaktion konnte nicht abgeschlossen werden.");
+        setLastSyncError(formatSaveError(updateResult.error || "Die Datenbankaktion konnte nicht abgeschlossen werden."));
         return false;
       }
 
@@ -480,7 +487,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
         );
 
         if (historyResult.error) {
-          setLastSyncError(historyResult.error);
+          setLastSyncError(formatSaveError(historyResult.error));
         } else {
           historyEntry = historyResult.data;
         }
@@ -515,7 +522,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
     const duplicateResult = await restaurantsService.findDuplicate(supabase, restaurant);
 
     if (duplicateResult.error) {
-      setLastSyncError(duplicateResult.error);
+      setLastSyncError(formatSaveError(duplicateResult.error));
       return false;
     }
 
@@ -529,34 +536,23 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
     const createResult = await restaurantsService.create(supabase, restaurant);
 
     if (createResult.error || !createResult.data) {
-      setLastSyncError(createResult.error || "Die Datenbankaktion konnte nicht abgeschlossen werden.");
+      setLastSyncError(formatSaveError(createResult.error || "Die Datenbankaktion konnte nicht abgeschlossen werden."));
       return false;
     }
 
-    const historyResult = await contactHistoryService.create(
-      supabase,
-      createHistoryEntry({
-        action_type: "Restaurant erstellt",
-        new_status: createResult.data.status,
-        note: "Restaurant wurde angelegt.",
-        restaurant_id: createResult.data.id,
-        user_id: currentUser.id
-      })
-    );
-
-    if (historyResult.error) {
-      setLastSyncError(historyResult.error);
-    } else {
-      setLastSyncError("");
-    }
+    const historyResult = await contactHistoryService.getByRestaurant(supabase, createResult.data.id);
 
     setData((currentData) => ({
       ...currentData,
-      contact_history: historyResult.data
-        ? [...currentData.contact_history, historyResult.data]
+      contact_history: historyResult.data && historyResult.data.length > 0
+        ? [
+            ...currentData.contact_history.filter((entry) => entry.restaurant_id !== createResult.data.id),
+            ...historyResult.data
+          ]
         : currentData.contact_history,
       restaurants: [...currentData.restaurants, createResult.data]
     }));
+    setLastSyncError(historyResult.error ? formatSaveError(historyResult.error) : "");
     window.localStorage.removeItem(draftKey);
     setToast("Restaurant gespeichert");
     setSelectedRestaurantId(createResult.data.id);
@@ -793,29 +789,35 @@ DINEVIO`;
     setToast(sent ? "Versand gespeichert" : "Nicht gespeichert");
   }
 
-  async function generateAutomaticDemo(restaurantId: string) {
+  async function generateAutomaticDemo(restaurantId: string, options: PersonalDemoOptions = {}) {
     setLastSyncError("");
 
     try {
       const response = await fetch("/api/sales/demo-pages", {
-        body: JSON.stringify({ restaurantId }),
+        body: JSON.stringify({ restaurantId, ...options }),
         headers: {
           "Content-Type": "application/json"
         },
         method: "POST"
       });
       const payload = (await response.json()) as {
+        details?: string;
         demoUrl?: string;
+        hint?: string;
         message?: string;
+        operation?: string;
         restaurant?: Partial<Restaurant>;
+        supabaseCode?: string;
+        technicalMessage?: string;
+        version?: number;
       };
 
       if (!response.ok || !payload.restaurant) {
-        setLastSyncError(payload.message ?? "Automatisches Demo konnte nicht erstellt werden.");
+        setLastSyncError(formatDemoApiError(payload));
         return;
       }
 
-      updateData((currentData) => ({
+      setData((currentData) => ({
         ...currentData,
         restaurants: currentData.restaurants.map((restaurant) =>
           restaurant.id === restaurantId
@@ -826,13 +828,9 @@ DINEVIO`;
             : restaurant
         )
       }));
-      setToast("Automatisches Demo erstellt");
-
-      if (payload.demoUrl) {
-        window.open(payload.demoUrl, "_blank", "noopener,noreferrer");
-      }
+      setToast(payload.version && payload.version > 1 ? "Demo wurde aktualisiert" : "Demo wurde veröffentlicht");
     } catch {
-      setLastSyncError("Automatisches Demo konnte nicht erstellt werden.");
+      setLastSyncError(formatSaveError("Automatisches Demo konnte nicht erstellt werden."));
     }
   }
 
@@ -1098,9 +1096,7 @@ DINEVIO`;
 
       <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
         {lastSyncError ? (
-          <div className="mb-4 whitespace-pre-line rounded border border-red-300/30 bg-red-400/10 px-4 py-3 text-sm leading-6 text-red-100">
-            {lastSyncError}
-          </div>
+          <SalesErrorNotice message={lastSyncError} />
         ) : null}
         {syncing ? (
           <div className="mb-4 rounded border border-premium-gold/25 bg-premium-gold/10 px-4 py-3 text-sm text-premium-gold">
@@ -1199,7 +1195,7 @@ DINEVIO`;
               setWhatsappTemplate(template);
               setWhatsappText(createWhatsappMessage(selectedRestaurant, template));
             }}
-            onGenerateDemo={() => generateAutomaticDemo(selectedRestaurant.id)}
+            onGenerateDemo={(options) => generateAutomaticDemo(selectedRestaurant.id, options)}
             onPatch={patchRestaurant}
             onShowDemoChooser={setShowDemoChooser}
             onStartVisit={() => setView("visit")}
@@ -1345,6 +1341,27 @@ function SalesTechnicalState({
         {action ? <div className="mt-6">{action}</div> : null}
       </div>
     </main>
+  );
+}
+
+function SalesErrorNotice({ message }: { message: string }) {
+  const [summary, ...details] = message.split("\n").filter(Boolean);
+  const technicalDetails = details.join("\n");
+
+  return (
+    <div className="mb-4 rounded border border-red-300/30 bg-red-400/10 px-4 py-3 text-sm leading-6 text-red-100">
+      <p className="font-semibold">{summary}</p>
+      {technicalDetails ? (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-red-100 underline decoration-red-200/40 underline-offset-4">
+            Technische Details anzeigen
+          </summary>
+          <pre className="mt-2 whitespace-pre-wrap rounded border border-red-200/15 bg-midnight/45 p-3 text-xs leading-5 text-red-50">
+            {technicalDetails}
+          </pre>
+        </details>
+      ) : null}
+    </div>
   );
 }
 
@@ -2269,7 +2286,7 @@ function RestaurantDetailView({
   onBack: () => void;
   onCopy: (text: string) => void;
   onEdit: () => void;
-  onGenerateDemo: () => void;
+  onGenerateDemo: (options?: PersonalDemoOptions) => Promise<void>;
   onOpenWhatsapp: (template: "afterVisit" | "reminder") => void;
   onPatch: (
     restaurantId: string,
@@ -2341,13 +2358,20 @@ function RestaurantDetailView({
 
         <PresenceAnalysisPanel presence={restaurant.digital_presence} />
 
+        <PersonalDemoPanel
+          data={data}
+          onCopy={onCopy}
+          onGenerateDemo={onGenerateDemo}
+          restaurant={restaurant}
+        />
+
         {showDemoChooser ? (
           <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4">
             <p className="font-heading text-lg font-semibold">Demo auswählen</p>
             <p className="mt-2 text-sm leading-6 text-slate-400">
               Automatisches Demo aus aktuellen Restaurantdaten erstellen oder eine bestehende Konzeptdemo öffnen.
             </p>
-            <button className={`${goldButtonClassName} mt-4 w-full sm:w-auto`} type="button" onClick={onGenerateDemo}>
+            <button className={`${goldButtonClassName} mt-4 w-full sm:w-auto`} type="button" onClick={() => onGenerateDemo({ templateKey: "auto" })}>
               Automatisches Demo erstellen
             </button>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -2441,6 +2465,297 @@ function RestaurantDetailView({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function PersonalDemoPanel({
+  data,
+  onCopy,
+  onGenerateDemo,
+  restaurant
+}: {
+  data: SalesData;
+  onCopy: (text: string) => void;
+  onGenerateDemo: (options?: PersonalDemoOptions) => Promise<void>;
+  restaurant: Restaurant;
+}) {
+  const [galleryPhotoIds, setGalleryPhotoIds] = useState<string[]>([]);
+  const [heroPhotoId, setHeroPhotoId] = useState("");
+  const [logoPhotoId, setLogoPhotoId] = useState("");
+  const [open, setOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [step, setStep] = useState(1);
+  const [templateKey, setTemplateKey] = useState<DemoId | "auto">("auto");
+  const demoUrl = getRestaurantDemoUrl(restaurant);
+  const photos = data.restaurant_photos
+    .filter((photo) => photo.restaurant_id === restaurant.id)
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.created_at.localeCompare(b.created_at));
+  const suggestedTemplate = suggestPersonalDemoTemplate(restaurant);
+  const selectedTemplate = templateKey === "auto" ? suggestedTemplate : templateKey;
+  const heroPhoto = photos.find((photo) => photo.id === heroPhotoId) ?? photos.find((photo) => photo.is_primary) ?? photos[0];
+  const logoPhoto = photos.find((photo) => photo.id === logoPhotoId) ?? photos.find((photo) => photo.photo_type === "logo");
+  const galleryPhotos = galleryPhotoIds.length > 0
+    ? galleryPhotoIds.map((id) => photos.find((photo) => photo.id === id)).filter((photo): photo is RestaurantPhoto => Boolean(photo))
+    : photos.filter((photo) => photo.id !== heroPhoto?.id).slice(0, 6);
+
+  function openWizard() {
+    setHeroPhotoId(heroPhotoId || photos.find((photo) => photo.is_primary)?.id || photos[0]?.id || "");
+    setGalleryPhotoIds(galleryPhotoIds.length > 0 ? galleryPhotoIds : photos.filter((photo) => !photo.is_primary).slice(0, 6).map((photo) => photo.id));
+    setLogoPhotoId(logoPhotoId || photos.find((photo) => photo.photo_type === "logo")?.id || "");
+    setOpen(true);
+  }
+
+  async function publishDemo() {
+    if (publishing) {
+      return;
+    }
+
+    setPublishing(true);
+    await onGenerateDemo({
+      galleryPhotoIds,
+      heroPhotoId,
+      logoPhotoId,
+      templateKey
+    });
+    setPublishing(false);
+    setOpen(false);
+    setStep(1);
+  }
+
+  function openDemoWhatsappMessage() {
+    if (!demoUrl) {
+      return;
+    }
+
+    const greeting = restaurant.contact_person ? `Hallo ${restaurant.contact_person},` : "Hallo,";
+    const message = `${greeting}
+
+wir haben eine unverbindliche Demo vorbereitet, wie ein moderner Webauftritt für ${restaurant.name} aussehen könnte:
+
+${demoUrl}
+
+Die Demo dient zunächst als visuelle Idee und kann vollständig an Ihre Wünsche angepasst werden.
+
+Viele Grüße
+DINEVIO
+https://www.dinevio.de`;
+    const phone = normalizePhone(restaurant.phone);
+    const href = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+    window.open(href, "_blank", "noopener,noreferrer");
+  }
+
+  function toggleGalleryPhoto(photoId: string) {
+    setGalleryPhotoIds((current) => {
+      if (current.includes(photoId)) {
+        return current.filter((id) => id !== photoId);
+      }
+
+      return [...current, photoId].slice(0, 6);
+    });
+  }
+
+  return (
+    <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-semibold">Persönliches Demo</h2>
+          {demoUrl ? (
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Demo bereit: Version vom {formatDateTime(restaurant.generated_demo_at || "") || "letzten Stand"}.
+            </p>
+          ) : (
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Noch kein persönliches Demo erstellt.
+            </p>
+          )}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:flex">
+          {demoUrl ? (
+            <>
+              <a className={outlineButtonClassName} href={demoUrl} target="_blank" rel="noopener noreferrer">
+                Demo öffnen
+              </a>
+              <button className={outlineButtonClassName} type="button" onClick={() => onCopy(demoUrl)}>
+                Link kopieren
+              </button>
+              <button className={outlineButtonClassName} type="button" onClick={openDemoWhatsappMessage}>
+                WhatsApp-Nachricht erstellen
+              </button>
+            </>
+          ) : null}
+          <button className={goldButtonClassName} type="button" onClick={openWizard}>
+            {demoUrl ? "Demo aktualisieren" : "Persönliches Demo erstellen"}
+          </button>
+        </div>
+      </div>
+
+      {open ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-midnight/85 p-4 backdrop-blur-sm">
+          <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-white/12 bg-[#101a2c] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
+                  Persönliches Demo
+                </p>
+                <h2 className="mt-2 font-heading text-2xl font-semibold">{restaurant.name}</h2>
+              </div>
+              <button className={iconButtonClassName} type="button" aria-label="Demo-Wizard schließen" onClick={() => setOpen(false)}>
+                ×
+              </button>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-slate-400">
+              {["Daten", "Fotos", "Stil", "Preview"].map((label, index) => (
+                <span
+                  key={label}
+                  className={`rounded border px-3 py-1 ${step === index + 1 ? "border-premium-gold text-premium-gold" : "border-white/10"}`}
+                >
+                  {index + 1}. {label}
+                </span>
+              ))}
+            </div>
+
+            {step === 1 ? (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {[
+                  ["Restaurantname", restaurant.name],
+                  ["Kategorie", restaurant.category],
+                  ["Straße", [restaurant.street, restaurant.house_number].filter(Boolean).join(" ")],
+                  ["PLZ", restaurant.postal_code],
+                  ["Ort", restaurant.city],
+                  ["Telefon", restaurant.phone],
+                  ["E-Mail", restaurant.email],
+                  ["Webseite", restaurant.website],
+                  ["Öffnungszeiten", restaurant.opening_hours.join("\n")]
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded border border-white/10 bg-midnight/45 p-3">
+                    <p className="text-xs uppercase tracking-[0.16em] text-premium-gold">{label}</p>
+                    <p className="mt-2 whitespace-pre-line text-sm text-slate-200">{value || "Nicht vorhanden"}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {step === 2 ? (
+              <div className="mt-6 grid gap-5">
+                {photos.length === 0 ? (
+                  <div className="rounded border border-white/10 bg-midnight/45 p-4">
+                    <p className="font-semibold">Keine CRM-Fotos vorhanden.</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Das Demo kann mit einem Beispielbild erstellt werden. Für ein stärkeres Demo laden Sie vorher Fotos im Bereich Fotos hoch.
+                    </p>
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold">Beispielbild</p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-sm font-semibold" htmlFor="hero-photo">Hero-Foto</label>
+                      <select id="hero-photo" className={`${selectClassName} mt-2`} value={heroPhotoId} onChange={(event) => setHeroPhotoId(event.target.value)}>
+                        {photos.map((photo) => (
+                          <option key={photo.id} value={photo.id}>{photo.file_name || photo.photo_type}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Galerie-Fotos</p>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {photos.map((photo) => (
+                          <label key={photo.id} className="flex items-center gap-3 rounded border border-white/10 bg-midnight/45 p-3 text-sm">
+                            <input
+                              checked={galleryPhotoIds.includes(photo.id)}
+                              onChange={() => toggleGalleryPhoto(photo.id)}
+                              type="checkbox"
+                            />
+                            <span>{photo.file_name || photo.photo_type}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold" htmlFor="logo-photo">Logo</label>
+                      <select id="logo-photo" className={`${selectClassName} mt-2`} value={logoPhotoId} onChange={(event) => setLogoPhotoId(event.target.value)}>
+                        <option value="">Nicht vorhanden</option>
+                        {photos.map((photo) => (
+                          <option key={photo.id} value={photo.id}>{photo.file_name || photo.photo_type}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : null}
+
+            {step === 3 ? (
+              <div className="mt-6 grid gap-3">
+                {([
+                  ["auto", "Automatisch auswählen", `Vorschlag: ${demoOptions[suggestedTemplate].label}`],
+                  ["schnellundlecker", "Schnell & Lecker", "Imbiss, Burger, Lieferdienst, Fast Food"],
+                  ["rhodosgrill", "Rhodos Grill", "Griechisch, Grill, mediterrane Küche"],
+                  ["schlemmerhus", "Schlemmerhus", "Restaurant, Pizzeria, Café, klassische Gastronomie"]
+                ] as [DemoId | "auto", string, string][]).map(([value, label, description]) => (
+                  <button
+                    key={value}
+                    className={`rounded border p-4 text-left transition-colors ${templateKey === value ? "border-premium-gold bg-premium-gold/10" : "border-white/10 bg-midnight/45 hover:border-premium-gold/45"}`}
+                    type="button"
+                    onClick={() => setTemplateKey(value)}
+                  >
+                    <span className="font-heading text-lg font-semibold">{label}</span>
+                    <span className="mt-1 block text-sm text-slate-400">{description}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {step === 4 ? (
+              <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+                <div className="rounded border border-white/10 bg-midnight/45 p-4">
+                  <p className="font-heading text-2xl font-semibold">{restaurant.name}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    {restaurant.category || "Gastronomie"}{restaurant.city ? ` in ${restaurant.city}` : ""}
+                  </p>
+                  <div className="mt-4 grid gap-2 text-sm text-slate-300">
+                    <span>Hero: {heroPhoto?.file_name || "Beispielbild"}</span>
+                    <span>Galerie: {galleryPhotos.length > 0 ? `${galleryPhotos.length} Fotos` : "Beispielbilder"}</span>
+                    <span>Logo: {logoPhoto?.file_name || "Nicht vorhanden"}</span>
+                    <span>Stil: {demoOptions[selectedTemplate].label}</span>
+                  </div>
+                </div>
+                <div className="rounded border border-premium-gold/35 bg-midnight p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-premium-gold">Preview</p>
+                  <h3 className="mt-3 font-heading text-3xl font-semibold">{restaurant.name}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-400">
+                    Öffentliche Demo mit echten CRM-Daten. Speisekarte wird nur angezeigt, wenn später echte Daten vorhanden sind.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-300">
+                    {restaurant.phone ? <span className="rounded border border-white/10 px-2 py-1">Anrufen</span> : null}
+                    {formatAddress(restaurant) ? <span className="rounded border border-white/10 px-2 py-1">Route</span> : null}
+                    {restaurant.opening_hours.length > 0 ? <span className="rounded border border-white/10 px-2 py-1">Öffnungszeiten</span> : null}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+              <button className={outlineButtonClassName} type="button" onClick={() => step === 1 ? setOpen(false) : setStep((current) => current - 1)}>
+                {step === 1 ? "Abbrechen" : "Zurück"}
+              </button>
+              {step < 4 ? (
+                <button className={goldButtonClassName} type="button" onClick={() => setStep((current) => current + 1)}>
+                  Weiter
+                </button>
+              ) : (
+                <button className={goldButtonClassName} type="button" disabled={publishing} onClick={publishDemo}>
+                  {publishing ? "Demo wird erstellt …" : "Demo veröffentlichen"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -3951,6 +4266,13 @@ function TaskPanel({
                   <p className={`mt-2 text-sm ${overdue ? "text-red-200" : "text-premium-gold"}`}>
                     {task.title}: {formatDateTime(task.due_at)}
                   </p>
+                  <p className={`mt-2 inline-flex rounded border px-2 py-1 text-xs font-semibold ${
+                    restaurant.selected_demo === "custom" && restaurant.custom_demo_url
+                      ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
+                      : "border-orange-300/30 bg-orange-400/10 text-orange-100"
+                  }`}>
+                    {restaurant.selected_demo === "custom" && restaurant.custom_demo_url ? "Demo bereit" : "Demo fehlt"}
+                  </p>
                 </div>
                 <span className="text-xs text-slate-500">
                   {getUserName(users, task.assigned_to)}
@@ -4499,6 +4821,47 @@ function createHistoryEntry({
     title,
     user_id
   };
+}
+
+function formatSaveError(error: string) {
+  const details = error.replace(/^Restaurant konnte nicht gespeichert werden\.\n?/, "");
+  return `Restaurant konnte nicht gespeichert werden.${details ? `\n${details}` : ""}`;
+}
+
+function suggestPersonalDemoTemplate(restaurant: Restaurant): Exclude<DemoId, "custom" | "none"> {
+  const signals = [restaurant.category, restaurant.name, restaurant.notes].join(" ").toLowerCase();
+
+  if (/imbiss|burger|fast|liefer/.test(signals)) {
+    return "schnellundlecker";
+  }
+
+  if (/griech|grill|mediterran/.test(signals)) {
+    return "rhodosgrill";
+  }
+
+  return "schlemmerhus";
+}
+
+function formatDemoApiError(payload: {
+  details?: string;
+  hint?: string;
+  message?: string;
+  operation?: string;
+  supabaseCode?: string;
+  technicalMessage?: string;
+}) {
+  const details = [
+    payload.operation ? `Operation: ${payload.operation}` : "",
+    payload.supabaseCode ? `Supabase code: ${payload.supabaseCode}` : "",
+    payload.technicalMessage ? `Message: ${payload.technicalMessage}` : "",
+    payload.details ? `Details: ${payload.details}` : "",
+    payload.hint ? `Hint: ${payload.hint}` : ""
+  ].filter(Boolean);
+
+  return [
+    payload.message || "Demo konnte nicht veröffentlicht werden.",
+    ...details
+  ].join("\n");
 }
 
 function createTaskFromNextContact({

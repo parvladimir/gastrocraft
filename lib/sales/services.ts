@@ -211,11 +211,9 @@ export const restaurantsService = {
     supabase: SalesSupabaseClient,
     restaurant: Restaurant
   ): Promise<SalesServiceResult<Restaurant>> {
-    const { data, error } = await supabase
-      .from("restaurants")
-      .insert(toRestaurantRow(restaurant))
-      .select("*")
-      .single();
+    const { data, error } = await supabase.rpc("create_restaurant_with_history", {
+      p_restaurant: toRestaurantRow(restaurant)
+    });
 
     if (error) {
       return { data: null, error: normalizeSalesError(error.message) };

@@ -290,6 +290,47 @@ Two-user test:
 Automatic demo test:
 
 1. Run `supabase/migrations/20260730_001_demo_pages.sql`.
+2. Run `supabase/migrations/20260731_001_demo_pages_v2.sql`.
+3. Wait for the Supabase schema cache to refresh. If a new column or RPC is not
+   visible immediately, wait briefly, reopen the app and retry.
+4. Confirm the `demo-assets` bucket exists and is public.
+5. Confirm `restaurant-photos` remains private.
+6. Open a restaurant card in `/sales`.
+7. Use the `Persönliches Demo` block.
+8. Click `Persönliches Demo erstellen`.
+9. Review data, choose photos, choose a visual style and publish.
+10. Confirm the generated `/demo/...` page opens.
+11. Confirm the restaurant now uses `Automatisches Demo`.
+12. Confirm the public page reads only the published `demo_pages` snapshot and
+    public `demo-assets`, not private CRM tables.
+
+Minimal restaurant save test:
+
+1. Log in to `/sales`.
+2. Add a restaurant with only `Restaurantname`.
+3. Save and wait for the Supabase response.
+4. Hard-refresh with `Ctrl + F5`.
+5. Confirm the restaurant remains in the list.
+6. Open and edit it.
+7. Hard-refresh again and confirm the edit remains.
+
+Restaurant demo with photos:
+
+1. Upload one or more restaurant photos in the `Fotos` section.
+2. Open `Persönliches Demo`.
+3. Select a hero photo and up to six gallery photos.
+4. Publish the demo.
+5. Confirm the selected images were copied to `demo-assets/{demo_page_id}/...`.
+6. Confirm the public demo images still load without private signed URLs.
+
+The restaurant creation flow uses the RPC function
+`create_restaurant_with_history`. It inserts the restaurant and the initial
+`contact_history` entry in one transaction, using `auth.uid()` for audit fields.
+If the history insert fails, the restaurant insert is rolled back.
+
+Legacy quick automatic demo test:
+
+1. Run both demo migrations listed above.
 2. Open a restaurant card in `/sales`.
 3. Click `Demo zeigen`.
 4. Click `Automatisches Demo erstellen`.
