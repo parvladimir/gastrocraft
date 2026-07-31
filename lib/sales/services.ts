@@ -967,7 +967,7 @@ function mapSalesSetting(row: DbRecord): SalesSetting {
 }
 
 function toRestaurantRow(restaurant: Restaurant): DbRecord {
-  return withNullableDateFields({
+  return withNullableFields(withNullableDateFields({
     ...restaurant,
     google_rating: restaurant.google_rating,
     google_review_count: restaurant.google_review_count,
@@ -976,7 +976,7 @@ function toRestaurantRow(restaurant: Restaurant): DbRecord {
     longitude: toNullableNumber(restaurant.longitude),
     opening_hours: restaurant.opening_hours,
     photos: restaurant.photos
-  }, restaurantDateFields);
+  }, restaurantDateFields), restaurantUuidFields);
 }
 
 function toRestaurantPatchRow(patch: Partial<Restaurant>): DbRecord {
@@ -990,33 +990,39 @@ function toRestaurantPatchRow(patch: Partial<Restaurant>): DbRecord {
     row.longitude = toNullableNumber(row.longitude);
   }
 
-  return withNullableDateFields(row, restaurantDateFields);
+  return withNullableFields(withNullableDateFields(row, restaurantDateFields), restaurantUuidFields);
 }
 
 function toContactHistoryRow(entry: ContactHistoryEntry): DbRecord {
-  return withNullableDateFields({ ...entry }, contactHistoryDateFields);
+  return withNullableFields(
+    withNullableDateFields({ ...entry }, contactHistoryDateFields),
+    contactHistoryNullableFields
+  );
 }
 
 function toTourRow(tour: Tour): DbRecord {
-  return withNullableDateFields({ ...tour }, tourDateFields);
+  return withNullableFields(withNullableDateFields({ ...tour }, tourDateFields), tourUuidFields);
 }
 
 function toTourPatchRow(patch: Partial<Tour>): DbRecord {
-  return withNullableDateFields(
-    Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)),
-    tourDateFields
+  return withNullableFields(
+    withNullableDateFields(
+      Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)),
+      tourDateFields
+    ),
+    tourUuidFields
   );
 }
 
 function toTourStopRow(stop: TourStop): DbRecord {
-  return withNullableDateFields({ ...stop }, tourStopDateFields);
+  return withNullableFields(withNullableDateFields({ ...stop }, tourStopDateFields), tourStopUuidFields);
 }
 
 function toOfferRow(offer: Offer): DbRecord {
-  return withNullableDateFields({
+  return withNullableFields(withNullableDateFields({
     ...offer,
     status: normalizeOfferStatusForDatabase(offer.status)
-  }, offerDateFields);
+  }, offerDateFields), offerUuidFields);
 }
 
 function toOfferPatchRow(patch: Partial<Offer>): DbRecord {
@@ -1026,7 +1032,7 @@ function toOfferPatchRow(patch: Partial<Offer>): DbRecord {
     row.status = normalizeOfferStatusForDatabase(row.status as Offer["status"]);
   }
 
-  return withNullableDateFields(row, offerDateFields);
+  return withNullableFields(withNullableDateFields(row, offerDateFields), offerUuidFields);
 }
 
 function toServicePackageRow(
@@ -1049,32 +1055,41 @@ function toServicePackagePatchRow(patch: Partial<ServicePackageTemplate>): DbRec
 function toRestaurantPhotoRow(photo: RestaurantPhoto): DbRecord {
   const row: Partial<RestaurantPhoto> = { ...photo };
   delete row.signed_url;
-  return row;
+  return withNullableFields(row as DbRecord, restaurantPhotoUuidFields);
 }
 
 function toRestaurantPhotoPatchRow(patch: Partial<RestaurantPhoto>): DbRecord {
   const row = { ...patch };
   delete row.signed_url;
-  return Object.fromEntries(Object.entries(row).filter(([, value]) => value !== undefined));
+  return withNullableFields(
+    Object.fromEntries(Object.entries(row).filter(([, value]) => value !== undefined)),
+    restaurantPhotoUuidFields
+  );
 }
 
 function toSalesTaskRow(task: SalesTask): DbRecord {
-  return withNullableDateFields({ ...task }, taskDateFields);
+  return withNullableFields(withNullableDateFields({ ...task }, taskDateFields), taskUuidFields);
 }
 
 function toSalesTaskPatchRow(patch: Partial<SalesTask>): DbRecord {
-  return withNullableDateFields(
-    Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)),
-    taskDateFields
+  return withNullableFields(
+    withNullableDateFields(
+      Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)),
+      taskDateFields
+    ),
+    taskUuidFields
   );
 }
 
 function toMessageTemplateRow(template: MessageTemplate): DbRecord {
-  return { ...template };
+  return withNullableFields({ ...template }, messageTemplateUuidFields);
 }
 
 function toMessageTemplatePatchRow(patch: Partial<MessageTemplate>): DbRecord {
-  return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+  return withNullableFields(
+    Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)),
+    messageTemplateUuidFields
+  );
 }
 
 const restaurantDateFields = [
@@ -1083,9 +1098,21 @@ const restaurantDateFields = [
   "next_contact_at",
   "planned_visit_at"
 ];
+const restaurantUuidFields = ["created_by", "responsible_user_id", "updated_by"];
 const contactHistoryDateFields = ["contact_at", "next_contact_at"];
+const contactHistoryNullableFields = [
+  "channel",
+  "contact_person",
+  "direction",
+  "message_template_id",
+  "offer_id",
+  "task_id",
+  "user_id"
+];
 const tourDateFields = ["tour_date"];
+const tourUuidFields = ["created_by", "responsible_user_id", "updated_by"];
 const tourStopDateFields = ["visited_at"];
+const tourStopUuidFields = ["restaurant_id", "tour_id"];
 const offerDateFields = [
   "accepted_at",
   "offer_date",
@@ -1093,9 +1120,23 @@ const offerDateFields = [
   "sent_at",
   "valid_until"
 ];
+const offerUuidFields = ["created_by", "restaurant_id", "updated_by"];
+const restaurantPhotoUuidFields = ["restaurant_id", "uploaded_by"];
 const taskDateFields = ["completed_at", "due_at"];
+const taskUuidFields = [
+  "assigned_to",
+  "completed_by",
+  "created_by",
+  "related_offer_id",
+  "restaurant_id"
+];
+const messageTemplateUuidFields = ["created_by", "updated_by"];
 
 function withNullableDateFields(row: DbRecord, fields: string[]) {
+  return withNullableFields(row, fields);
+}
+
+function withNullableFields(row: DbRecord, fields: string[]) {
   for (const field of fields) {
     if (row[field] === "") {
       row[field] = null;
