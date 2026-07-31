@@ -1098,7 +1098,7 @@ DINEVIO`;
 
       <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
         {lastSyncError ? (
-          <div className="mb-4 rounded border border-red-300/30 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+          <div className="mb-4 whitespace-pre-line rounded border border-red-300/30 bg-red-400/10 px-4 py-3 text-sm leading-6 text-red-100">
             {lastSyncError}
           </div>
         ) : null}

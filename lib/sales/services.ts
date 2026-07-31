@@ -743,19 +743,21 @@ export const packagesService = {
 };
 
 export function normalizeSalesError(message: string) {
+  const technicalDetails = `Technische Details: ${message}`;
+
   if (/column|schema cache|Could not find|does not exist|relation/i.test(message)) {
-    return "Die Datenbankstruktur ist nicht aktuell. Bitte führen Sie die neuesten Supabase-Migrationen aus.";
+    return `Die Datenbankstruktur ist nicht aktuell. Bitte führen Sie die neuesten Supabase-Migrationen aus.\n${technicalDetails}`;
   }
 
   if (/jwt|auth|permission|policy|rls/i.test(message)) {
-    return "Sie haben keine Berechtigung für diese Aktion.";
+    return `Sie haben keine Berechtigung für diese Aktion.\n${technicalDetails}`;
   }
 
   if (/network|fetch|failed/i.test(message)) {
-    return "Daten konnten nicht geladen werden.";
+    return `Daten konnten nicht geladen werden.\n${technicalDetails}`;
   }
 
-  return "Die Datenbankaktion konnte nicht abgeschlossen werden.";
+  return `Die Datenbankaktion konnte nicht abgeschlossen werden.\n${technicalDetails}`;
 }
 
 function mapProfile(row: DbRecord): SalesUser {
