@@ -383,6 +383,73 @@ the screenshot because the website adds its own browser and phone frames.
 If one of the desktop screenshot assets is unavailable, the section falls back to
 the built-in CSS preview so the build and layout remain stable.
 
+## Restaurant Demo Template
+
+Personal restaurant demos use the shared restaurant template engine adapted from
+`template.zip`. The source template files used were:
+
+- `index.html`
+- `menu.html`
+- `gallery.html`
+- `contact.html`
+- `impressum.html`
+- `datenschutz.html`
+- `404.html`
+- `assets/css/styles.css`
+- `assets/js/main.js`
+- `assets/js/menu.js`
+- `data/site-config.js`
+- `data/menu.js`
+- `assets/img/...`
+
+The static template assets are stored under:
+
+```text
+public/demo-template/assets/
+```
+
+The copied stylesheet is scoped to `.demo-template`, so the restaurant template
+does not affect the DINEVIO homepage or `/sales` CRM UI. Runtime data is not read
+from `window.SITE_CONFIG`; it is normalized into a typed
+`RestaurantDemoConfig` in `lib/demo-template`.
+
+Supported template themes:
+
+- `premium-dark`
+- `cocktail-neon`
+- `imbiss-pro`
+- `cafe-minimal`
+- `german-gasthaus`
+
+Public demo routes:
+
+- `/demo/[slug]`
+- `/demo/[slug]/menu`
+- `/demo/[slug]/gallery`
+- `/demo/[slug]/contact`
+- `/demo/[slug]/impressum`
+- `/demo/[slug]/datenschutz`
+
+Run these demo migrations in order before using the new template wizard in
+production:
+
+1. `supabase/migrations/20260730_001_demo_pages.sql`
+2. `supabase/migrations/20260731_001_demo_pages_v2.sql`
+3. `supabase/migrations/20260801_001_demo_template_config.sql`
+
+After SQL changes, Supabase may need a short moment to refresh the schema cache.
+If a new column is not visible immediately, wait briefly, reopen the app and
+retry.
+
+Existing snapshots keep working through fallback mapping, but freshly published
+demos store `template_config`, `menu_config`, `gallery_config`, `legal_config`,
+`social_links`, `special_offer` and `seo_config`.
+
+If no restaurant photos are selected, the public demo uses the standard local
+template images. Uploaded CRM photos are copied to the public `demo-assets`
+bucket during publication so public demos do not depend on short-lived signed
+URLs from the private `restaurant-photos` bucket.
+
 ## Project Conventions
 
 - The project uses Next.js with the App Router, TypeScript, Tailwind CSS and ESLint.

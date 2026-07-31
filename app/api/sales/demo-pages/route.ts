@@ -1,15 +1,31 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { normalizeTemplateKey, suggestDemoTemplateKey } from "@/lib/demo-template/config";
+import type { DemoTemplateKey } from "@/lib/demo-template/types";
 
 type DemoPagePayload = {
+  cuisineType?: string;
+  deliveryEnabled?: boolean;
   galleryPhotoIds?: string[];
   heroPhotoId?: string;
   logoPhotoId?: string;
+  pickupEnabled?: boolean;
+  reservationEnabled?: boolean;
   restaurantId?: string;
+  slogan?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
+  specialOffer?: {
+    price?: string;
+    text?: string;
+    title?: string;
+  };
   templateKey?: DemoTemplateKey | "auto";
+  useTemplateImages?: boolean;
 };
-
-type DemoTemplateKey = "rhodosgrill" | "schlemmerhus" | "schnellundlecker";
 
 type DbRecord = Record<string, unknown>;
 
@@ -73,16 +89,19 @@ export async function POST(request: Request) {
     .order("is_primary", { ascending: false })
     .order("created_at", { ascending: true });
 
-  const selectedPhotos = selectDemoPhotos((photos ?? []) as DbRecord[], payload);
-  const demoAssets = await publishDemoAssets(supabase, toString(existingDemo?.id) || crypto.randomUUID(), selectedPhotos);
+  const selectedPhotos = payload.useTemplateImages
+    ? { gallery: [], hero: null, logo: null }
+    : selectDemoPhotos((photos ?? []) as DbRecord[], payload);
+  const demoPageId = toString(existingDemo?.id) || crypto.randomUUID();
+  const demoAssets = await publishDemoAssets(supabase, demoPageId, selectedPhotos);
   const address = formatAddress(restaurant);
   const content = createDemoContent({
     assets: demoAssets,
+    payload,
     restaurant,
     templateKey
   });
   const version = Number(existingDemo?.version ?? 0) + 1;
-  const demoPageId = toString(existingDemo?.id) || crypto.randomUUID();
   const demoPageRow = {
     address,
     category: toString(restaurant.category),
@@ -95,7 +114,13 @@ export async function POST(request: Request) {
     hero_photo_path: demoAssets.hero,
     id: demoPageId,
     instagram: toString(restaurant.instagram),
+    legal_config: {},
     logo_photo_path: demoAssets.logo,
+    menu_config: {
+      is_example: true,
+      source: "template"
+    },
+    menu_items: [],
     opening_hours: toArray(restaurant.opening_hours),
     phone: toString(restaurant.phone),
     postal_code: toString(restaurant.postal_code),
@@ -106,7 +131,26 @@ export async function POST(request: Request) {
     slug,
     snapshot: content,
     status: "published",
+    social_links: {
+      facebook: toString(payload.socialLinks?.facebook) || toString(restaurant.facebook),
+      instagram: toString(payload.socialLinks?.instagram) || toString(restaurant.instagram),
+      tiktok: toString(payload.socialLinks?.tiktok) || toString(restaurant.tiktok)
+    },
+    special_offer: {
+      price: toString(payload.specialOffer?.price),
+      text: toString(payload.specialOffer?.text),
+      title: toString(payload.specialOffer?.title)
+    },
     template: templateKey,
+    template_config: {
+      cuisineType: toString(payload.cuisineType) || toString(restaurant.category),
+      deliveryEnabled: Boolean(payload.deliveryEnabled),
+      pickupEnabled: Boolean(payload.pickupEnabled),
+      reservationEnabled: Boolean(payload.reservationEnabled),
+      slogan: toString(payload.slogan),
+      theme: templateKey,
+      useTemplateImages: Boolean(payload.useTemplateImages)
+    },
     template_key: templateKey,
     updated_at: now,
     updated_by: user.id,
@@ -209,20 +253,10 @@ async function slugExists(
 
 function resolveTemplateKey(templateKey: DemoPagePayload["templateKey"], restaurant: DbRecord): DemoTemplateKey {
   if (templateKey && templateKey !== "auto") {
-    return templateKey;
+    return normalizeTemplateKey(templateKey);
   }
 
-  const signals = [restaurant.category, restaurant.name].map(toString).join(" ").toLowerCase();
-
-  if (/imbiss|burger|fast|liefer/.test(signals)) {
-    return "schnellundlecker";
-  }
-
-  if (/griech|grill|mediterran/.test(signals)) {
-    return "rhodosgrill";
-  }
-
-  return "schlemmerhus";
+  return suggestDemoTemplateKey([restaurant.category, restaurant.name].map(toString).join(" "));
 }
 
 function selectDemoPhotos(photos: DbRecord[], payload: DemoPagePayload) {
@@ -303,6 +337,7 @@ async function publishDemoAssets(
 
 function createDemoContent({
   assets,
+  payload,
   restaurant,
   templateKey
 }: {
@@ -311,44 +346,61 @@ function createDemoContent({
     hero: string;
     logo: string;
   };
+  payload: DemoPagePayload;
   restaurant: DbRecord;
   templateKey: DemoTemplateKey;
 }) {
   const name = toString(restaurant.name);
   const category = toString(restaurant.category) || "Gastronomie";
+  const city = toString(restaurant.city);
+  const slogan = toString(payload.slogan) || `Moderner Webauftritt für ${category}${city ? ` in ${city}` : ""}.`;
 
   return {
     accent: getTemplateAccent(templateKey),
     address: formatAddress(restaurant),
     category,
-    city: toString(restaurant.city),
+    city,
     contactPerson: toString(restaurant.contact_person),
+    cuisineType: toString(payload.cuisineType) || category,
+    deliveryEnabled: Boolean(payload.deliveryEnabled),
     email: toString(restaurant.email),
+    facebook: toString(payload.socialLinks?.facebook) || toString(restaurant.facebook),
     galleryPhotos: assets.gallery,
     googleMapsUrl: toString(restaurant.google_maps_url),
     heroPhoto: assets.hero,
-    instagram: toString(restaurant.instagram),
+    instagram: toString(payload.socialLinks?.instagram) || toString(restaurant.instagram),
     logoPhoto: assets.logo,
+    menuItems: [],
     name,
     openingHours: toArray(restaurant.opening_hours),
     phone: toString(restaurant.phone),
+    pickupEnabled: Boolean(payload.pickupEnabled),
     postalCode: toString(restaurant.postal_code),
-    subtitle: `Moderner Webauftritt für ${category}${toString(restaurant.city) ? ` in ${toString(restaurant.city)}` : ""}.`,
+    reservationEnabled: Boolean(payload.reservationEnabled),
+    slogan,
+    specialOffer: {
+      price: toString(payload.specialOffer?.price),
+      text: toString(payload.specialOffer?.text),
+      title: toString(payload.specialOffer?.title)
+    },
+    subtitle: slogan,
     templateKey,
+    tiktok: toString(payload.socialLinks?.tiktok) || toString(restaurant.tiktok),
+    useTemplateImages: Boolean(payload.useTemplateImages),
     website: toString(restaurant.website)
   };
 }
 
 function getTemplateAccent(templateKey: DemoTemplateKey) {
-  if (templateKey === "rhodosgrill") {
-    return "#3B5B86";
-  }
+  const accents: Record<DemoTemplateKey, string> = {
+    "cafe-minimal": "#C69C72",
+    "cocktail-neon": "#54F0FF",
+    "german-gasthaus": "#B8894D",
+    "imbiss-pro": "#FFB703",
+    "premium-dark": "#D6B66C"
+  };
 
-  if (templateKey === "schnellundlecker") {
-    return "#C96F2D";
-  }
-
-  return "#C9A227";
+  return accents[templateKey] ?? "#C9A227";
 }
 
 function formatAddress(restaurant: DbRecord) {

@@ -68,6 +68,8 @@ import type {
   RestaurantLookupCandidate,
   RestaurantLookupResponse
 } from "@/lib/restaurant-lookup-types";
+import { demoTemplateThemes } from "@/lib/demo-template/defaults";
+import type { DemoTemplateKey } from "@/lib/demo-template/types";
 import {
   contactHistoryService,
   profilesService,
@@ -107,10 +109,26 @@ type VisitResult =
   | "Neuer Termin vereinbart";
 
 type PersonalDemoOptions = {
+  cuisineType?: string;
+  deliveryEnabled?: boolean;
   galleryPhotoIds?: string[];
   heroPhotoId?: string;
   logoPhotoId?: string;
-  templateKey?: DemoId | "auto";
+  pickupEnabled?: boolean;
+  reservationEnabled?: boolean;
+  slogan?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
+  specialOffer?: {
+    price?: string;
+    text?: string;
+    title?: string;
+  };
+  templateKey?: DemoTemplateKey | "auto";
+  useTemplateImages?: boolean;
 };
 
 type TaskItem = {
@@ -2480,13 +2498,21 @@ function PersonalDemoPanel({
   onGenerateDemo: (options?: PersonalDemoOptions) => Promise<void>;
   restaurant: Restaurant;
 }) {
+  const [deliveryEnabled, setDeliveryEnabled] = useState(false);
   const [galleryPhotoIds, setGalleryPhotoIds] = useState<string[]>([]);
   const [heroPhotoId, setHeroPhotoId] = useState("");
   const [logoPhotoId, setLogoPhotoId] = useState("");
   const [open, setOpen] = useState(false);
+  const [pickupEnabled, setPickupEnabled] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [reservationEnabled, setReservationEnabled] = useState(false);
+  const [slogan, setSlogan] = useState("");
+  const [specialOfferPrice, setSpecialOfferPrice] = useState("");
+  const [specialOfferText, setSpecialOfferText] = useState("");
+  const [specialOfferTitle, setSpecialOfferTitle] = useState("");
   const [step, setStep] = useState(1);
-  const [templateKey, setTemplateKey] = useState<DemoId | "auto">("auto");
+  const [templateKey, setTemplateKey] = useState<DemoTemplateKey | "auto">("auto");
+  const [useTemplateImages, setUseTemplateImages] = useState(true);
   const demoUrl = getRestaurantDemoUrl(restaurant);
   const photos = data.restaurant_photos
     .filter((photo) => photo.restaurant_id === restaurant.id)
@@ -2498,11 +2524,24 @@ function PersonalDemoPanel({
   const galleryPhotos = galleryPhotoIds.length > 0
     ? galleryPhotoIds.map((id) => photos.find((photo) => photo.id === id)).filter((photo): photo is RestaurantPhoto => Boolean(photo))
     : photos.filter((photo) => photo.id !== heroPhoto?.id).slice(0, 6);
+  const cuisineType = restaurant.category || "Gastronomie";
+  const wizardSteps = ["Daten", "Bilder", "Design", "Inhalte", "Vorschau", "Veröffentlichen"];
+  const themeChoices: [DemoTemplateKey | "auto", string, string][] = [
+    ["auto", "Automatisch auswählen", "Vorschlag: " + demoTemplateThemes[suggestedTemplate].label],
+    ["premium-dark", "Premium Dark", "Fine Dining, Steakhouse, Weinbar, Premium Restaurant"],
+    ["cocktail-neon", "Cocktail Neon", "Cocktailbar, Lounge, Nachtbar, Shisha-Bar"],
+    ["imbiss-pro", "Imbiss Pro", "Döner, Burger, Pizza, Grill, Chicken, Imbiss, Takeaway"],
+    ["cafe-minimal", "Café Minimal", "Café, Bäckerei, Frühstück, Brunch, Eisdiele"],
+    ["german-gasthaus", "German Gasthaus", "Deutsches Restaurant, Biergarten, Familienrestaurant, klassische Küche"]
+  ];
 
   function openWizard() {
-    setHeroPhotoId(heroPhotoId || photos.find((photo) => photo.is_primary)?.id || photos[0]?.id || "");
+    const primaryPhoto = photos.find((photo) => photo.is_primary)?.id || photos[0]?.id || "";
+    setHeroPhotoId(heroPhotoId || primaryPhoto);
     setGalleryPhotoIds(galleryPhotoIds.length > 0 ? galleryPhotoIds : photos.filter((photo) => !photo.is_primary).slice(0, 6).map((photo) => photo.id));
     setLogoPhotoId(logoPhotoId || photos.find((photo) => photo.photo_type === "logo")?.id || "");
+    setUseTemplateImages(photos.length === 0 || useTemplateImages);
+    setSlogan(slogan || "Moderner Webauftritt für " + (restaurant.category || "Gastronomie") + (restaurant.city ? " in " + restaurant.city : "") + ".");
     setOpen(true);
   }
 
@@ -2513,10 +2552,26 @@ function PersonalDemoPanel({
 
     setPublishing(true);
     await onGenerateDemo({
-      galleryPhotoIds,
-      heroPhotoId,
-      logoPhotoId,
-      templateKey
+      cuisineType,
+      deliveryEnabled,
+      galleryPhotoIds: useTemplateImages ? [] : galleryPhotoIds,
+      heroPhotoId: useTemplateImages ? "" : heroPhotoId,
+      logoPhotoId: useTemplateImages ? "" : logoPhotoId,
+      pickupEnabled,
+      reservationEnabled,
+      slogan,
+      socialLinks: {
+        facebook: restaurant.facebook,
+        instagram: restaurant.instagram,
+        tiktok: restaurant.tiktok
+      },
+      specialOffer: {
+        price: specialOfferPrice,
+        text: specialOfferText,
+        title: specialOfferTitle
+      },
+      templateKey,
+      useTemplateImages
     });
     setPublishing(false);
     setOpen(false);
@@ -2528,22 +2583,24 @@ function PersonalDemoPanel({
       return;
     }
 
-    const greeting = restaurant.contact_person ? `Hallo ${restaurant.contact_person},` : "Hallo,";
-    const message = `${greeting}
-
-wir haben eine unverbindliche Demo vorbereitet, wie ein moderner Webauftritt für ${restaurant.name} aussehen könnte:
-
-${demoUrl}
-
-Die Demo dient zunächst als visuelle Idee und kann vollständig an Ihre Wünsche angepasst werden.
-
-Viele Grüße
-DINEVIO
-https://www.dinevio.de`;
+    const greeting = restaurant.contact_person ? "Hallo " + restaurant.contact_person + "," : "Hallo,";
+    const message = [
+      greeting,
+      "",
+      "wir haben eine unverbindliche Demo vorbereitet, wie ein moderner Webauftritt für " + restaurant.name + " aussehen könnte:",
+      "",
+      demoUrl,
+      "",
+      "Die Demo dient zunächst als visuelle Idee und kann vollständig an Ihre Wünsche angepasst werden.",
+      "",
+      "Viele Grüße",
+      "DINEVIO",
+      "https://www.dinevio.de"
+    ].join("\n");
     const phone = normalizePhone(restaurant.phone);
     const href = phone
-      ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
-      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+      ? "https://wa.me/" + phone + "?text=" + encodeURIComponent(message)
+      : "https://wa.me/?text=" + encodeURIComponent(message);
 
     window.open(href, "_blank", "noopener,noreferrer");
   }
@@ -2604,15 +2661,15 @@ https://www.dinevio.de`;
                 <h2 className="mt-2 font-heading text-2xl font-semibold">{restaurant.name}</h2>
               </div>
               <button className={iconButtonClassName} type="button" aria-label="Demo-Wizard schließen" onClick={() => setOpen(false)}>
-                ×
+                ?
               </button>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-slate-400">
-              {["Daten", "Fotos", "Stil", "Preview"].map((label, index) => (
+              {wizardSteps.map((label, index) => (
                 <span
                   key={label}
-                  className={`rounded border px-3 py-1 ${step === index + 1 ? "border-premium-gold text-premium-gold" : "border-white/10"}`}
+                  className={"rounded border px-3 py-1 " + (step === index + 1 ? "border-premium-gold text-premium-gold" : "border-white/10")}
                 >
                   {index + 1}. {label}
                 </span>
@@ -2630,7 +2687,7 @@ https://www.dinevio.de`;
                   ["Telefon", restaurant.phone],
                   ["E-Mail", restaurant.email],
                   ["Webseite", restaurant.website],
-                  ["Öffnungszeiten", restaurant.opening_hours.join("\n")]
+                  ["Öffnungszeiten", restaurant.opening_hours.join("\\n")]
                 ].map(([label, value]) => (
                   <div key={label} className="rounded border border-white/10 bg-midnight/45 p-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-premium-gold">{label}</p>
@@ -2642,64 +2699,62 @@ https://www.dinevio.de`;
 
             {step === 2 ? (
               <div className="mt-6 grid gap-5">
+                <label className="flex items-start gap-3 rounded border border-premium-gold/35 bg-premium-gold/10 p-4 text-sm">
+                  <input checked={useTemplateImages} onChange={(event) => setUseTemplateImages(event.target.checked)} type="checkbox" />
+                  <span>
+                    <strong className="block text-warm-white">Standardbilder des Templates verwenden</strong>
+                    <span className="mt-1 block text-slate-400">Empfohlen, wenn noch keine eigenen Fotos hochgeladen wurden.</span>
+                  </span>
+                </label>
+
                 {photos.length === 0 ? (
                   <div className="rounded border border-white/10 bg-midnight/45 p-4">
                     <p className="font-semibold">Keine CRM-Fotos vorhanden.</p>
                     <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Das Demo kann mit einem Beispielbild erstellt werden. Für ein stärkeres Demo laden Sie vorher Fotos im Bereich Fotos hoch.
+                      Das Demo wird mit Standardbildern des gewählten Templates erstellt. Diese Bilder werden nicht in Supabase kopiert.
                     </p>
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold">Beispielbild</p>
                   </div>
                 ) : (
-                  <>
+                  <div className={useTemplateImages ? "pointer-events-none opacity-45" : ""}>
                     <div>
                       <label className="text-sm font-semibold" htmlFor="hero-photo">Hero-Foto</label>
-                      <select id="hero-photo" className={`${selectClassName} mt-2`} value={heroPhotoId} onChange={(event) => setHeroPhotoId(event.target.value)}>
+                      <select id="hero-photo" className={selectClassName + " mt-2"} value={heroPhotoId} onChange={(event) => setHeroPhotoId(event.target.value)}>
                         {photos.map((photo) => (
                           <option key={photo.id} value={photo.id}>{photo.file_name || photo.photo_type}</option>
                         ))}
                       </select>
                     </div>
-                    <div>
+                    <div className="mt-5">
                       <p className="text-sm font-semibold">Galerie-Fotos</p>
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         {photos.map((photo) => (
                           <label key={photo.id} className="flex items-center gap-3 rounded border border-white/10 bg-midnight/45 p-3 text-sm">
-                            <input
-                              checked={galleryPhotoIds.includes(photo.id)}
-                              onChange={() => toggleGalleryPhoto(photo.id)}
-                              type="checkbox"
-                            />
+                            <input checked={galleryPhotoIds.includes(photo.id)} onChange={() => toggleGalleryPhoto(photo.id)} type="checkbox" />
                             <span>{photo.file_name || photo.photo_type}</span>
                           </label>
                         ))}
                       </div>
                     </div>
-                    <div>
+                    <div className="mt-5">
                       <label className="text-sm font-semibold" htmlFor="logo-photo">Logo</label>
-                      <select id="logo-photo" className={`${selectClassName} mt-2`} value={logoPhotoId} onChange={(event) => setLogoPhotoId(event.target.value)}>
+                      <select id="logo-photo" className={selectClassName + " mt-2"} value={logoPhotoId} onChange={(event) => setLogoPhotoId(event.target.value)}>
                         <option value="">Nicht vorhanden</option>
                         {photos.map((photo) => (
                           <option key={photo.id} value={photo.id}>{photo.file_name || photo.photo_type}</option>
                         ))}
                       </select>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             ) : null}
 
             {step === 3 ? (
-              <div className="mt-6 grid gap-3">
-                {([
-                  ["auto", "Automatisch auswählen", `Vorschlag: ${demoOptions[suggestedTemplate].label}`],
-                  ["schnellundlecker", "Schnell & Lecker", "Imbiss, Burger, Lieferdienst, Fast Food"],
-                  ["rhodosgrill", "Rhodos Grill", "Griechisch, Grill, mediterrane Küche"],
-                  ["schlemmerhus", "Schlemmerhus", "Restaurant, Pizzeria, Café, klassische Gastronomie"]
-                ] as [DemoId | "auto", string, string][]).map(([value, label, description]) => (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {themeChoices.map(([value, label, description]) => (
                   <button
                     key={value}
-                    className={`rounded border p-4 text-left transition-colors ${templateKey === value ? "border-premium-gold bg-premium-gold/10" : "border-white/10 bg-midnight/45 hover:border-premium-gold/45"}`}
+                    className={"rounded border p-4 text-left transition-colors " + (templateKey === value ? "border-premium-gold bg-premium-gold/10" : "border-white/10 bg-midnight/45 hover:border-premium-gold/45")}
                     type="button"
                     onClick={() => setTemplateKey(value)}
                   >
@@ -2711,29 +2766,57 @@ https://www.dinevio.de`;
             ) : null}
 
             {step === 4 ? (
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm font-semibold">
+                  Slogan
+                  <input className={inputClassName} value={slogan} onChange={(event) => setSlogan(event.target.value)} />
+                </label>
+                <label className="block text-sm font-semibold">
+                  Hervorgehobenes Angebot
+                  <input className={inputClassName} value={specialOfferTitle} onChange={(event) => setSpecialOfferTitle(event.target.value)} placeholder="Zum Beispiel: Empfehlung des Hauses" />
+                </label>
+                <label className="block text-sm font-semibold sm:col-span-2">
+                  Angebotstext
+                  <textarea className={inputClassName + " min-h-24 py-3"} value={specialOfferText} onChange={(event) => setSpecialOfferText(event.target.value)} placeholder="Kurzer optionaler Text für den Angebotsbereich." />
+                </label>
+                <label className="block text-sm font-semibold">
+                  Preis
+                  <input className={inputClassName} value={specialOfferPrice} onChange={(event) => setSpecialOfferPrice(event.target.value)} placeholder="Optional" />
+                </label>
+                <div className="grid gap-2 text-sm sm:col-span-2 sm:grid-cols-3">
+                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={deliveryEnabled} onChange={(event) => setDeliveryEnabled(event.target.checked)} type="checkbox" />Lieferung möglich</label>
+                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={pickupEnabled} onChange={(event) => setPickupEnabled(event.target.checked)} type="checkbox" />Abholung möglich</label>
+                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={reservationEnabled} onChange={(event) => setReservationEnabled(event.target.checked)} type="checkbox" />Reservierung möglich</label>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 5 || step === 6 ? (
               <div className="mt-6 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
                 <div className="rounded border border-white/10 bg-midnight/45 p-4">
                   <p className="font-heading text-2xl font-semibold">{restaurant.name}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-400">
-                    {restaurant.category || "Gastronomie"}{restaurant.city ? ` in ${restaurant.city}` : ""}
+                    {restaurant.category || "Gastronomie"}{restaurant.city ? " in " + restaurant.city : ""}
                   </p>
                   <div className="mt-4 grid gap-2 text-sm text-slate-300">
-                    <span>Hero: {heroPhoto?.file_name || "Beispielbild"}</span>
-                    <span>Galerie: {galleryPhotos.length > 0 ? `${galleryPhotos.length} Fotos` : "Beispielbilder"}</span>
-                    <span>Logo: {logoPhoto?.file_name || "Nicht vorhanden"}</span>
-                    <span>Stil: {demoOptions[selectedTemplate].label}</span>
+                    <span>Hero: {useTemplateImages ? "Standardbild des Templates" : heroPhoto?.file_name || "Standardbild des Templates"}</span>
+                    <span>Galerie: {useTemplateImages ? "Standardbilder" : galleryPhotos.length > 0 ? galleryPhotos.length + " Fotos" : "Standardbilder"}</span>
+                    <span>Logo: {logoPhoto?.file_name || "Textmarke / Platzhalter"}</span>
+                    <span>Design: {demoTemplateThemes[selectedTemplate].label}</span>
+                    <span>Speisekarte: Beispiel-Speisekarte</span>
                   </div>
                 </div>
                 <div className="rounded border border-premium-gold/35 bg-midnight p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-premium-gold">Preview</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-premium-gold">Template Preview</p>
                   <h3 className="mt-3 font-heading text-3xl font-semibold">{restaurant.name}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-400">
-                    Öffentliche Demo mit echten CRM-Daten. Speisekarte wird nur angezeigt, wenn später echte Daten vorhanden sind.
+                    Das öffentliche Demo verwendet den gemeinsamen Restaurant-Template-Aufbau mit Header, Hero, Speisekarte, Galerie, Kontakt und Legal-Seiten.
                   </p>
                   <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-300">
                     {restaurant.phone ? <span className="rounded border border-white/10 px-2 py-1">Anrufen</span> : null}
                     {formatAddress(restaurant) ? <span className="rounded border border-white/10 px-2 py-1">Route</span> : null}
-                    {restaurant.opening_hours.length > 0 ? <span className="rounded border border-white/10 px-2 py-1">Öffnungszeiten</span> : null}
+                    <span className="rounded border border-white/10 px-2 py-1">Beispiel-Speisekarte</span>
+                    <span className="rounded border border-white/10 px-2 py-1">{demoTemplateThemes[selectedTemplate].label}</span>
                   </div>
                 </div>
               </div>
@@ -2743,7 +2826,7 @@ https://www.dinevio.de`;
               <button className={outlineButtonClassName} type="button" onClick={() => step === 1 ? setOpen(false) : setStep((current) => current - 1)}>
                 {step === 1 ? "Abbrechen" : "Zurück"}
               </button>
-              {step < 4 ? (
+              {step < 6 ? (
                 <button className={goldButtonClassName} type="button" onClick={() => setStep((current) => current + 1)}>
                   Weiter
                 </button>
@@ -4828,18 +4911,26 @@ function formatSaveError(error: string) {
   return `Restaurant konnte nicht gespeichert werden.${details ? `\n${details}` : ""}`;
 }
 
-function suggestPersonalDemoTemplate(restaurant: Restaurant): Exclude<DemoId, "custom" | "none"> {
+function suggestPersonalDemoTemplate(restaurant: Restaurant): DemoTemplateKey {
   const signals = [restaurant.category, restaurant.name, restaurant.notes].join(" ").toLowerCase();
 
-  if (/imbiss|burger|fast|liefer/.test(signals)) {
-    return "schnellundlecker";
+  if (/imbiss|burger|fast|liefer|döner|doener|grill/.test(signals)) {
+    return "imbiss-pro";
   }
 
-  if (/griech|grill|mediterran/.test(signals)) {
-    return "rhodosgrill";
+  if (/café|cafe|bäckerei|baeckerei|frühstück|fruehstueck|brunch|eisdiele/.test(signals)) {
+    return "cafe-minimal";
   }
 
-  return "schlemmerhus";
+  if (/bar|cocktail|lounge|shisha/.test(signals)) {
+    return "cocktail-neon";
+  }
+
+  if (/fine|steak|premium|weinbar/.test(signals)) {
+    return "premium-dark";
+  }
+
+  return "german-gasthaus";
 }
 
 function formatDemoApiError(payload: {

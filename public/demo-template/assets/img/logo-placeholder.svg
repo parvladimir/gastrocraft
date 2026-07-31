@@ -1,0 +1,9 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Restaurant Logo Platzhalter</title>
+  <desc id="desc">Rundes Logo mit Teller, Gabel und Akzentlinie.</desc>
+  <rect width="160" height="160" rx="32" fill="#173F35"/>
+  <circle cx="80" cy="80" r="48" fill="#FFFAF3"/>
+  <circle cx="80" cy="80" r="31" stroke="#D6A247" stroke-width="8"/>
+  <path d="M48 39V73M58 39V73M53 73V118" stroke="#8A2F1C" stroke-width="7" stroke-linecap="round"/>
+  <path d="M108 41C121 57 120 79 108 91V118" stroke="#8A2F1C" stroke-width="7" stroke-linecap="round"/>
+</svg>

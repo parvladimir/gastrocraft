@@ -1,0 +1,35 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { RestaurantDemoTemplate } from "@/components/demo-template/restaurant-demo-template";
+import { getPublishedRestaurantDemo } from "@/lib/demo-template/data";
+
+type DemoSubPageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
+
+export async function generateMetadata({ params }: DemoSubPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const config = await getPublishedRestaurantDemo(slug);
+
+  return {
+    description: config?.seo.description,
+    robots: {
+      follow: false,
+      index: false
+    },
+    title: config ? `Galerie | ${config.restaurantName}` : "Galerie"
+  };
+}
+
+export default async function RestaurantDemoGalleryPage({ params }: DemoSubPageProps) {
+  const { slug } = await params;
+  const config = await getPublishedRestaurantDemo(slug);
+
+  if (!config) {
+    notFound();
+  }
+
+  return <RestaurantDemoTemplate config={config} page="gallery" slug={slug} />;
+}
