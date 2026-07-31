@@ -745,6 +745,10 @@ export const packagesService = {
 export function normalizeSalesError(message: string) {
   const technicalDetails = `Technische Details: ${message}`;
 
+  if (/not-null constraint|null value/i.test(message)) {
+    return `Ein Pflichtfeld wurde ohne Wert an die Datenbank gesendet.\n${technicalDetails}`;
+  }
+
   if (/column|schema cache|Could not find|does not exist|relation/i.test(message)) {
     return `Die Datenbankstruktur ist nicht aktuell. Bitte führen Sie die neuesten Supabase-Migrationen aus.\n${technicalDetails}`;
   }
@@ -1000,8 +1004,13 @@ function toRestaurantPatchRow(patch: Partial<Restaurant>): DbRecord {
 }
 
 function toContactHistoryRow(entry: ContactHistoryEntry): DbRecord {
+  const row = {
+    ...entry,
+    metadata: entry.metadata ?? {}
+  };
+
   return withNullableFields(
-    withNullableDateFields({ ...entry }, contactHistoryDateFields),
+    withNullableDateFields(row, contactHistoryDateFields),
     contactHistoryNullableFields
   );
 }
