@@ -967,16 +967,19 @@ function mapSalesSetting(row: DbRecord): SalesSetting {
 }
 
 function toRestaurantRow(restaurant: Restaurant): DbRecord {
-  return withNullableFields(withNullableDateFields({
-    ...restaurant,
-    google_rating: restaurant.google_rating,
-    google_review_count: restaurant.google_review_count,
-    interest_level: restaurant.interest_level,
-    latitude: toNullableNumber(restaurant.latitude),
-    longitude: toNullableNumber(restaurant.longitude),
-    opening_hours: restaurant.opening_hours,
-    photos: restaurant.photos
-  }, restaurantDateFields), restaurantUuidFields);
+  return withNullableFields(
+    withNullableFields(withNullableDateFields({
+      ...restaurant,
+      google_rating: restaurant.google_rating,
+      google_review_count: restaurant.google_review_count,
+      interest_level: restaurant.interest_level,
+      latitude: toNullableNumber(restaurant.latitude),
+      longitude: toNullableNumber(restaurant.longitude),
+      opening_hours: restaurant.opening_hours,
+      photos: restaurant.photos
+    }, restaurantDateFields), restaurantUuidFields),
+    restaurantNullableFields
+  );
 }
 
 function toRestaurantPatchRow(patch: Partial<Restaurant>): DbRecord {
@@ -990,7 +993,10 @@ function toRestaurantPatchRow(patch: Partial<Restaurant>): DbRecord {
     row.longitude = toNullableNumber(row.longitude);
   }
 
-  return withNullableFields(withNullableDateFields(row, restaurantDateFields), restaurantUuidFields);
+  return withNullableFields(
+    withNullableFields(withNullableDateFields(row, restaurantDateFields), restaurantUuidFields),
+    restaurantNullableFields
+  );
 }
 
 function toContactHistoryRow(entry: ContactHistoryEntry): DbRecord {
@@ -1098,6 +1104,7 @@ const restaurantDateFields = [
   "next_contact_at",
   "planned_visit_at"
 ];
+const restaurantNullableFields = ["custom_demo_slug", "custom_demo_url"];
 const restaurantUuidFields = ["created_by", "responsible_user_id", "updated_by"];
 const contactHistoryDateFields = ["contact_at", "next_contact_at"];
 const contactHistoryNullableFields = [
