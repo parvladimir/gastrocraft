@@ -967,7 +967,7 @@ function mapSalesSetting(row: DbRecord): SalesSetting {
 }
 
 function toRestaurantRow(restaurant: Restaurant): DbRecord {
-  return {
+  return withNullableDateFields({
     ...restaurant,
     google_rating: restaurant.google_rating,
     google_review_count: restaurant.google_review_count,
@@ -976,7 +976,7 @@ function toRestaurantRow(restaurant: Restaurant): DbRecord {
     longitude: toNullableNumber(restaurant.longitude),
     opening_hours: restaurant.opening_hours,
     photos: restaurant.photos
-  };
+  }, restaurantDateFields);
 }
 
 function toRestaurantPatchRow(patch: Partial<Restaurant>): DbRecord {
@@ -990,30 +990,33 @@ function toRestaurantPatchRow(patch: Partial<Restaurant>): DbRecord {
     row.longitude = toNullableNumber(row.longitude);
   }
 
-  return row;
+  return withNullableDateFields(row, restaurantDateFields);
 }
 
 function toContactHistoryRow(entry: ContactHistoryEntry): DbRecord {
-  return { ...entry };
+  return withNullableDateFields({ ...entry }, contactHistoryDateFields);
 }
 
 function toTourRow(tour: Tour): DbRecord {
-  return { ...tour };
+  return withNullableDateFields({ ...tour }, tourDateFields);
 }
 
 function toTourPatchRow(patch: Partial<Tour>): DbRecord {
-  return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+  return withNullableDateFields(
+    Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)),
+    tourDateFields
+  );
 }
 
 function toTourStopRow(stop: TourStop): DbRecord {
-  return { ...stop };
+  return withNullableDateFields({ ...stop }, tourStopDateFields);
 }
 
 function toOfferRow(offer: Offer): DbRecord {
-  return {
+  return withNullableDateFields({
     ...offer,
     status: normalizeOfferStatusForDatabase(offer.status)
-  };
+  }, offerDateFields);
 }
 
 function toOfferPatchRow(patch: Partial<Offer>): DbRecord {
@@ -1023,7 +1026,7 @@ function toOfferPatchRow(patch: Partial<Offer>): DbRecord {
     row.status = normalizeOfferStatusForDatabase(row.status as Offer["status"]);
   }
 
-  return row;
+  return withNullableDateFields(row, offerDateFields);
 }
 
 function toServicePackageRow(
@@ -1056,11 +1059,14 @@ function toRestaurantPhotoPatchRow(patch: Partial<RestaurantPhoto>): DbRecord {
 }
 
 function toSalesTaskRow(task: SalesTask): DbRecord {
-  return { ...task };
+  return withNullableDateFields({ ...task }, taskDateFields);
 }
 
 function toSalesTaskPatchRow(patch: Partial<SalesTask>): DbRecord {
-  return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+  return withNullableDateFields(
+    Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)),
+    taskDateFields
+  );
 }
 
 function toMessageTemplateRow(template: MessageTemplate): DbRecord {
@@ -1069,6 +1075,34 @@ function toMessageTemplateRow(template: MessageTemplate): DbRecord {
 
 function toMessageTemplatePatchRow(patch: Partial<MessageTemplate>): DbRecord {
   return Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+}
+
+const restaurantDateFields = [
+  "generated_demo_at",
+  "location_updated_at",
+  "next_contact_at",
+  "planned_visit_at"
+];
+const contactHistoryDateFields = ["contact_at", "next_contact_at"];
+const tourDateFields = ["tour_date"];
+const tourStopDateFields = ["visited_at"];
+const offerDateFields = [
+  "accepted_at",
+  "offer_date",
+  "rejected_at",
+  "sent_at",
+  "valid_until"
+];
+const taskDateFields = ["completed_at", "due_at"];
+
+function withNullableDateFields(row: DbRecord, fields: string[]) {
+  for (const field of fields) {
+    if (row[field] === "") {
+      row[field] = null;
+    }
+  }
+
+  return row;
 }
 
 function toString(value: unknown) {
