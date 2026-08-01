@@ -27,7 +27,7 @@ export function RestaurantDemoTemplate({ config, page, slug }: RestaurantDemoTem
         <DemoHeader config={config} page={page} slug={slug} />
         <main id="main">
           {page === "home" ? <HomePage config={config} slug={slug} /> : null}
-          {page === "menu" ? <MenuPage config={config} /> : null}
+          {page === "menu" ? <MenuPage config={config} slug={slug} /> : null}
           {page === "gallery" ? <GalleryPage config={config} /> : null}
           {page === "contact" ? <ContactPage config={config} /> : null}
           {page === "impressum" ? <LegalPage config={config} kind="impressum" /> : null}
@@ -282,31 +282,75 @@ function MenuPreview({ config, slug }: { config: RestaurantDemoConfig; slug: str
   );
 }
 
-function MenuPage({ config }: { config: RestaurantDemoConfig }) {
+function MenuPage({ config, slug }: { config: RestaurantDemoConfig; slug: string }) {
   const grouped = groupMenuItems(config.menuItems);
+  const menuUrl = `${getSiteUrl()}/demo/${slug}/menu`;
+  const whatsappHref = config.whatsappNumber ? whatsAppHref(config.whatsappNumber, config.restaurantName) : "";
 
   return (
-    <section className="section menu-page-section">
-      <div className="container section-heading section-header">
-        <p className="eyebrow">Digitale Speisekarte</p>
-        <h1>Speisekarte</h1>
-        <p>Beispielhafte Darstellung – Inhalte können individuell angepasst werden.</p>
-      </div>
-      <div className="container menu-category-stack">
+    <>
+      <section className="page-hero section menu-page-hero">
+        <div className="container page-hero-grid hero-inner">
+          <div>
+            <p className="eyebrow">Digitale Speisekarte</p>
+            <h1>Speisekarte</h1>
+            <p>Eine beispielhafte Speisekarte für {config.restaurantName}. Inhalte, Preise und Bilder können vollständig angepasst werden.</p>
+            <div className="action-row">
+              {config.whatsappNumber ? (
+                <a className="button button-primary" href={whatsappHref} rel="noopener noreferrer" target="_blank">
+                  Per WhatsApp anfragen
+                </a>
+              ) : null}
+              {config.phone ? (
+                <a className="button button-ghost" href={`tel:${config.phone}`}>
+                  Jetzt anrufen
+                </a>
+              ) : null}
+            </div>
+          </div>
+          <aside className="qr-panel info-card">
+            <Image alt={`QR-Code zur Speisekarte von ${config.restaurantName}`} height={220} src={`/api/demo-qr?data=${encodeURIComponent(menuUrl)}`} width={220} />
+            <div>
+              <h2>QR-Speisekarte öffnen</h2>
+              <p>QR-Code scannen oder die Speisekarte direkt auf dem Smartphone öffnen.</p>
+              <Link className="button button-secondary" href={`/demo/${slug}/menu`}>
+                Speisekarte öffnen
+              </Link>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="section section-compact menu-tools-section">
+        <div className="container menu-tools">
+          <p className="example-menu-badge">Beispiel-Speisekarte</p>
+          <div className="chip-list" aria-label="Speisekarten-Kategorien">
+            {grouped.map(([category]) => (
+              <a className="chip" href={`#${toAnchorId(category)}`} key={category}>
+                {category}
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section menu-page-section">
+        <div className="container menu-category-stack">
         {grouped.map(([category, items]) => (
-          <section className="menu-category" key={category}>
+          <section className="menu-category" id={toAnchorId(category)} key={category}>
             <div className="section-heading">
               <h2>{category}</h2>
             </div>
-            <div className="menu-grid">
+            <div className={`menu-grid menu-grid-count-${Math.min(items.length, 3)}`}>
               {items.map((item) => (
                 <MenuCard item={item} key={`${category}-${item.name}`} />
               ))}
             </div>
           </section>
         ))}
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -660,6 +704,15 @@ function groupMenuItems(items: RestaurantDemoMenuItem[]) {
     const bIndex = categoryOrder.indexOf(b);
     return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
   });
+}
+
+function toAnchorId(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function whatsAppHref(number: string, restaurantName: string) {

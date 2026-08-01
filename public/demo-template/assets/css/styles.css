@@ -3192,6 +3192,48 @@ body:has(.demo-template) > div > main {
   align-items: stretch;
 }
 
+.demo-template .menu-page-hero .page-hero-grid {
+  align-items: center;
+}
+
+.demo-template .menu-tools {
+  display: grid;
+  gap: 16px;
+  align-items: center;
+}
+
+.demo-template .menu-tools .example-menu-badge {
+  margin-top: 0;
+}
+
+.demo-template .menu-tools .chip-list {
+  justify-content: center;
+}
+
+.demo-template .menu-page-section {
+  padding-top: 28px;
+}
+
+.demo-template .menu-page-section .menu-category {
+  scroll-margin-top: calc(var(--header-height) + 22px);
+}
+
+.demo-template .menu-page-section .menu-category .section-heading {
+  margin-inline: auto;
+  max-width: 760px;
+  text-align: center;
+}
+
+.demo-template .menu-grid-count-1 {
+  grid-template-columns: minmax(280px, 430px);
+  justify-content: center;
+}
+
+.demo-template .menu-grid-count-2 {
+  grid-template-columns: repeat(2, minmax(280px, 430px));
+  justify-content: center;
+}
+
 .demo-template .menu-card {
   min-width: 0;
   height: 100%;
@@ -3310,17 +3352,23 @@ body:has(.demo-template) > div > main {
 
 .demo-template .theme-switcher {
   position: fixed;
-  display: block;
+  display: block !important;
   right: 18px;
   bottom: 18px;
   z-index: 90;
   width: min(360px, calc(100vw - 36px));
   color: #fafaf8;
+  pointer-events: none;
 }
 
 .demo-template .theme-switcher details {
   display: grid;
   justify-items: end;
+  pointer-events: auto;
+}
+
+.demo-template .theme-switcher details:not([open]) .theme-switcher-panel {
+  display: none;
 }
 
 .demo-template .theme-switcher summary {
@@ -3335,6 +3383,11 @@ body:has(.demo-template) > div > main {
   font-weight: 900;
   cursor: pointer;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+  list-style: none;
+}
+
+.demo-template .theme-switcher summary::-webkit-details-marker {
+  display: none;
 }
 
 .demo-template .theme-switcher-panel {
@@ -3412,6 +3465,11 @@ body:has(.demo-template) > div > main {
   .demo-template .menu-grid,
   .demo-template .trust-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .demo-template .menu-grid-count-1 {
+    grid-template-columns: minmax(260px, 430px);
+    justify-content: center;
   }
 }
 
