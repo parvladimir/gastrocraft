@@ -172,6 +172,40 @@ export const defaultMenuItems: RestaurantDemoMenuItem[] = [
   }
 ];
 
+export function getMenuFallbackImage(category: string) {
+  const normalized = category.toLowerCase();
+
+  if (/burger/.test(normalized)) {
+    return `${assetBase}/food/photos/burger.jpg`;
+  }
+
+  if (/pizza/.test(normalized)) {
+    return `${assetBase}/food/photos/pizza.jpg`;
+  }
+
+  if (/döner|doener/.test(normalized)) {
+    return `${assetBase}/food/photos/doener.jpg`;
+  }
+
+  if (/salat|salad/.test(normalized)) {
+    return `${assetBase}/food/photos/salad.jpg`;
+  }
+
+  if (/dessert|nachtisch|süß|suess/.test(normalized)) {
+    return `${assetBase}/food/photos/tiramisu.jpg`;
+  }
+
+  if (/getränk|getraenk|drink/.test(normalized)) {
+    return `${assetBase}/food/photos/lemonade.jpg`;
+  }
+
+  if (/vorspeise|starter/.test(normalized)) {
+    return `${assetBase}/food/photos/bruschetta.jpg`;
+  }
+
+  return `${assetBase}/food/photos/grill-plate.jpg`;
+}
+
 export const defaultRestaurantDemoConfig: RestaurantDemoConfig = {
   accentColor: demoTemplateThemes["german-gasthaus"].accentColor,
   address: "",

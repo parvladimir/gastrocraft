@@ -1,5 +1,5 @@
 import { getSiteUrl } from "@/lib/site-config";
-import { defaultGalleryImages, defaultMenuItems, defaultRestaurantDemoConfig, demoTemplateThemes } from "./defaults";
+import { defaultGalleryImages, defaultMenuItems, defaultRestaurantDemoConfig, demoTemplateThemes, getMenuFallbackImage } from "./defaults";
 import type {
   DemoPageSnapshot,
   DemoTemplateKey,
@@ -197,7 +197,7 @@ function normalizeMenuItems(value: unknown): RestaurantDemoMenuItem[] {
       available: item.available !== false,
       category: toString(item.category),
       description: toString(item.description),
-      image: toString(item.image),
+      image: toString(item.image) || getMenuFallbackImage(toString(item.category)),
       isExample: Boolean(item.isExample),
       name: toString(item.name),
       price: toString(item.price),

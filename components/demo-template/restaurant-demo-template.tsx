@@ -1,5 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getMenuFallbackImage } from "@/lib/demo-template/defaults";
+import { getSiteUrl } from "@/lib/site-config";
+import { ThemeSwitcher } from "./theme-switcher";
 import type { RestaurantDemoConfig, RestaurantDemoMenuItem } from "@/lib/demo-template/types";
 
 export type RestaurantDemoPageKind = "home" | "menu" | "gallery" | "contact" | "impressum" | "datenschutz";
@@ -32,6 +35,7 @@ export function RestaurantDemoTemplate({ config, page, slug }: RestaurantDemoTem
         </main>
         <MobileOrderBar config={config} slug={slug} />
         <DemoFooter config={config} slug={slug} />
+        <ThemeSwitcher initialTheme={config.theme} slug={slug} />
       </div>
     </>
   );
@@ -82,6 +86,7 @@ function DemoNavLink({ active, href, label }: { active: boolean; href: string; l
 
 function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string }) {
   const base = `/demo/${slug}`;
+  const menuUrl = `${getSiteUrl()}${base}/menu`;
   const badges = [
     "Unverbindliche Design-Demo",
     config.pickupEnabled ? "Abholung möglich" : "",
@@ -122,8 +127,10 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
             </div>
           </div>
 
-          <div className="hero-media order-hero-media">
-            <DemoImage alt={`Beispielansicht für ${config.restaurantName}`} height={760} priority src={config.heroImagePath} width={980} />
+          <div className={`hero-media order-hero-media ${isTemplateHero(config.heroImagePath) ? "hero-theme-media" : ""}`} data-demo-hero-image>
+            {isTemplateHero(config.heroImagePath) ? null : (
+              <DemoImage alt={`Beispielansicht für ${config.restaurantName}`} height={760} priority src={config.heroImagePath} width={980} />
+            )}
             {(config.specialOffer.title || config.specialOffer.text) ? (
               <div className="hero-order-card" aria-label="Hervorgehobener Bereich">
                 <span>Heute empfohlen</span>
@@ -145,38 +152,42 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
           ) : null}
           <div className="trust-item">
             <strong>Mobil</strong>
-            <span>Schnell erreichbar</span>
+            <span>Für Smartphone und Tablet</span>
           </div>
           <div className="trust-item">
             <strong>Kontakt</strong>
-            <span>Direkte Aktionen</span>
+            <span>Anrufen oder WhatsApp</span>
           </div>
-          {config.city ? (
-            <div className="trust-item">
-              <strong>Lokal</strong>
-              <span>{config.city}</span>
-            </div>
-          ) : null}
+          <div className="trust-item">
+            <strong>Lokal sichtbar</strong>
+            <span>{config.city ? `${config.city} und Route auf einen Blick` : "Adresse und Route auf einen Blick"}</span>
+          </div>
         </div>
       </section>
 
-      {(config.specialOffer.title || config.specialOffer.text) ? (
-        <section className="section section-compact offer-section">
+      <section className="section section-compact offer-section">
           <div className="container special-band offer-card order-offer">
             <div>
               <p className="eyebrow">Hervorgehoben</p>
-              <h2>{config.specialOffer.title}</h2>
-              <p>{config.specialOffer.text}</p>
+              <h2>{config.specialOffer.title || "Individuell anpassbar"}</h2>
+              <p>{config.specialOffer.text || "Speisekarte, Angebote und Aktionen können später direkt nach Ihren Wünschen ergänzt werden."}</p>
             </div>
             {config.specialOffer.price ? <strong>{config.specialOffer.price}</strong> : null}
             {config.whatsappNumber ? (
               <a className="button button-primary" href={whatsAppHref(config.whatsappNumber, config.restaurantName)} target="_blank" rel="noopener noreferrer">
                 Per WhatsApp schreiben
               </a>
+            ) : config.phone ? (
+              <a className="button button-primary" href={`tel:${config.phone}`}>
+                Kontakt aufnehmen
+              </a>
+            ) : config.email ? (
+              <a className="button button-primary" href={`mailto:${config.email}`}>
+                Kontakt aufnehmen
+              </a>
             ) : null}
           </div>
-        </section>
-      ) : null}
+      </section>
 
       <MenuPreview config={config} slug={slug} />
 
@@ -185,7 +196,7 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
           <div>
             <p className="eyebrow">Digitale Speisekarte</p>
             <h2>Schnell wählen, einfach Kontakt aufnehmen</h2>
-            <p>Adresse, Öffnungszeiten, Speisekarte und Kontakt sind mobil sofort erreichbar.</p>
+            <p>Ihre Gäste können Speisekarte, Öffnungszeiten und Kontakt direkt auf dem Smartphone öffnen.</p>
             <div className="action-row">
               <Link className="button button-primary" href={`${base}/menu`}>
                 QR-Speisekarte öffnen
@@ -198,11 +209,11 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
             </div>
           </div>
           <aside className="qr-panel order-qr-panel" aria-labelledby="qr-title">
-            <DemoImage alt="QR-Code Platzhalter für die digitale Speisekarte" height={180} src="/demo-template/assets/img/qr-menu-placeholder.png" width={180} />
+            <Image alt={`QR-Code zur Speisekarte von ${config.restaurantName}`} height={220} src={`/api/demo-qr?data=${encodeURIComponent(menuUrl)}`} width={220} />
             <div>
               <h3 id="qr-title">Digitale Speisekarte</h3>
               <p>Der QR-Code führt direkt zur mobilen Speisekarte und kann auf Tischen, Flyern oder Schaufenstern verwendet werden.</p>
-              <small>Beispielhafte Darstellung für das persönliche Demo.</small>
+              <small>{menuUrl}</small>
             </div>
           </aside>
         </div>
@@ -211,7 +222,7 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
       {(config.address || config.openingHours.length > 0) ? (
         <section className="section">
           <div className="container info-layout">
-            {config.address ? (
+            {config.address || config.phone || config.email || config.website ? (
               <div className="info-card business-card">
                 <p className="eyebrow">Google Business</p>
                 <h2>Restaurant-Informationen</h2>
@@ -219,6 +230,9 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
                   <InfoRow label="Name" value={config.restaurantName} />
                   <InfoRow label="Kategorie" value={config.cuisineType} />
                   <InfoRow label="Adresse" value={formatFullAddress(config)} />
+                  <InfoRow href={config.phone ? `tel:${config.phone}` : undefined} label="Telefon" value={config.phone} />
+                  <InfoRow href={config.email ? `mailto:${config.email}` : undefined} label="E-Mail" value={config.email} />
+                  <InfoRow href={config.website || undefined} label="Webseite" value={config.website ? "Website öffnen" : ""} />
                   {config.googleMapsLink ? <InfoRow href={config.googleMapsLink} label="Route" value="In Google Maps öffnen" /> : null}
                 </div>
               </div>
@@ -251,7 +265,8 @@ function MenuPreview({ config, slug }: { config: RestaurantDemoConfig; slug: str
       <div className="container section-heading section-header">
         <p className="eyebrow">Speisekarte</p>
         <h2>Bestseller, die sofort Orientierung geben</h2>
-        <p>Große Food-Cards, klare Preise und direkte Wege zur Kontaktaufnahme.</p>
+        <p>Eine beispielhafte Auswahl – Inhalte, Preise und Bilder können vollständig angepasst werden.</p>
+        <span className="example-menu-badge">Beispiel-Speisekarte</span>
       </div>
       <div className="container menu-grid preview-grid menu-preview bestseller-grid">
         {previewItems.map((item) => (
@@ -296,9 +311,11 @@ function MenuPage({ config }: { config: RestaurantDemoConfig }) {
 }
 
 function MenuCard({ item }: { item: RestaurantDemoMenuItem }) {
+  const image = item.image || getMenuFallbackImage(item.category);
+
   return (
     <article className="menu-card">
-      {item.image ? <DemoImage alt={item.name} height={380} src={item.image} width={560} /> : null}
+      <DemoImage alt={item.name} height={380} src={image} width={560} />
       <div className="menu-card-content">
         <div className="menu-card-title">
           <h3>{item.name}</h3>
@@ -368,13 +385,7 @@ function ContactPage({ config }: { config: RestaurantDemoConfig }) {
             <InfoRow href={config.socialLinks.instagram || undefined} label="Instagram" value={config.socialLinks.instagram ? "Instagram öffnen" : ""} />
           </div>
         </div>
-        <div className="map-frame info-card">
-          {config.googleMapsEmbedUrl ? (
-            <iframe title={`Karte ${config.restaurantName}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={config.googleMapsEmbedUrl} />
-          ) : (
-            <p>Standortdaten sind für diese Demo noch nicht hinterlegt.</p>
-          )}
-        </div>
+        <MapCard config={config} />
       </div>
       <div className="container section-compact">
         <div className="info-card">
@@ -451,13 +462,36 @@ function ContactTeaser({ config, slug }: { config: RestaurantDemoConfig; slug: s
             </Link>
           </div>
         </div>
-        {config.googleMapsEmbedUrl ? (
-          <div className="map-frame info-card">
-            <iframe title={`Karte ${config.restaurantName}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={config.googleMapsEmbedUrl} />
-          </div>
-        ) : null}
+        <MapCard config={config} />
       </div>
     </section>
+  );
+}
+
+function MapCard({ config }: { config: RestaurantDemoConfig }) {
+  if (config.googleMapsEmbedUrl) {
+    return (
+      <div className="map-frame info-card">
+        <iframe title={`Karte ${config.restaurantName}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={config.googleMapsEmbedUrl} />
+      </div>
+    );
+  }
+
+  if (!config.googleMapsLink && !formatFullAddress(config)) {
+    return null;
+  }
+
+  return (
+    <div className="map-frame map-placeholder info-card">
+      <p className="eyebrow">Standort</p>
+      <h3>{config.restaurantName}</h3>
+      {formatFullAddress(config) ? <p>{formatFullAddress(config)}</p> : null}
+      {config.googleMapsLink ? (
+        <a className="button button-primary" href={config.googleMapsLink} target="_blank" rel="noopener noreferrer">
+          Route in Google Maps öffnen
+        </a>
+      ) : null}
+    </div>
   );
 }
 
@@ -609,12 +643,16 @@ function DemoImage({
   return <Image alt={alt} className={className} height={height} priority={priority} src={src} unoptimized width={width} />;
 }
 
+function isTemplateHero(src: string) {
+  return src.startsWith("/demo-template/assets/img/hero-");
+}
+
 function groupMenuItems(items: RestaurantDemoMenuItem[]) {
   const grouped = new Map<string, RestaurantDemoMenuItem[]>();
 
   for (const item of items.filter((entry) => entry.available !== false)) {
     const category = item.category || "Speisekarte";
-    grouped.set(category, [...(grouped.get(category) ?? []), item]);
+    grouped.set(category, [...(grouped.get(category) || []), item]);
   }
 
   return [...grouped.entries()].sort(([a], [b]) => {

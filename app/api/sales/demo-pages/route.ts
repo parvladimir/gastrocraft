@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   }
 
   const payload = (await request.json().catch(() => ({}))) as DemoPagePayload;
-  const restaurantId = payload.restaurantId ?? "";
+  const restaurantId = payload.restaurantId?.trim() || "";
 
   if (!restaurantId) {
     return NextResponse.json({ message: "Restaurant fehlt." }, { status: 400 });
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
   const selectedPhotos = payload.useTemplateImages
     ? { gallery: [], hero: null, logo: null }
-    : selectDemoPhotos((photos ?? []) as DbRecord[], payload);
+    : selectDemoPhotos((photos || []) as DbRecord[], payload);
   const demoPageId = toString(existingDemo?.id) || crypto.randomUUID();
   const demoAssets = await publishDemoAssets(supabase, demoPageId, selectedPhotos);
   const address = formatAddress(restaurant);
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     restaurant,
     templateKey
   });
-  const version = Number(existingDemo?.version ?? 0) + 1;
+  const version = Number(existingDemo?.version || 0) + 1;
   const demoPageRow = {
     address,
     category: toString(restaurant.category),
@@ -261,9 +261,9 @@ function resolveTemplateKey(templateKey: DemoPagePayload["templateKey"], restaur
 
 function selectDemoPhotos(photos: DbRecord[], payload: DemoPagePayload) {
   const byId = new Map(photos.map((photo) => [toString(photo.id), photo]));
-  const primary = photos.find((photo) => Boolean(photo.is_primary)) ?? photos[0];
+  const primary = photos.find((photo) => Boolean(photo.is_primary)) || photos[0] || null;
   const hero = payload.heroPhotoId ? byId.get(payload.heroPhotoId) : primary;
-  const gallery = (payload.galleryPhotoIds ?? [])
+  const gallery = (payload.galleryPhotoIds || [])
     .map((id) => byId.get(id))
     .filter((photo): photo is DbRecord => Boolean(photo))
     .slice(0, 6);
@@ -274,8 +274,8 @@ function selectDemoPhotos(photos: DbRecord[], payload: DemoPagePayload) {
 
   return {
     gallery: gallery.length > 0 ? gallery : fallbackGallery,
-    hero: hero ?? null,
-    logo: logo ?? null
+    hero: hero || null,
+    logo: logo || null
   };
 }
 
@@ -298,7 +298,7 @@ async function publishDemoAssets(
     const id = toString(photo.id);
 
     if (copied.has(id)) {
-      return copied.get(id) ?? "";
+      return copied.get(id) || "";
     }
 
     const storagePath = toString(photo.storage_path);
@@ -400,7 +400,7 @@ function getTemplateAccent(templateKey: DemoTemplateKey) {
     "premium-dark": "#D6B66C"
   };
 
-  return accents[templateKey] ?? "#C9A227";
+  return accents[templateKey] || "#C9A227";
 }
 
 function formatAddress(restaurant: DbRecord) {

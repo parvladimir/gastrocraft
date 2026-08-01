@@ -58,7 +58,8 @@ export type ContactActionType =
   | "demo_opened_from_crm"
   | "demo_link_copied"
   | "demo_sent"
-  | "demo_archived";
+  | "demo_archived"
+  | "demo_theme_changed";
 
 export type TourStatus = "Geplant" | "Aktiv" | "Abgeschlossen";
 export type TourStopStatus = "Geplant" | "Besucht" | "Übersprungen";

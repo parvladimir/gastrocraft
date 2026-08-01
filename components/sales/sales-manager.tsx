@@ -274,10 +274,10 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
   const [importText, setImportText] = useState("");
   const [importPreview, setImportPreview] = useState<RestaurantDraft[]>([]);
 
-  const currentUser = data.users.find((user) => user.id === currentUserId) ?? null;
+  const currentUser = data.users.find((user) => user.id === currentUserId) || null;
   const restaurants = data.restaurants.filter((restaurant) => !restaurant.archived);
   const selectedRestaurant =
-    restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null;
+    restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) || null;
 
   useEffect(() => {
     let active = true;
@@ -311,7 +311,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       }
 
       if (profileResult.error || !profileResult.data) {
-        setDataError(profileResult.error ?? "Profil konnte nicht geladen werden.");
+        setDataError(profileResult.error || "Profil konnte nicht geladen werden.");
         setDataLoading(false);
         return;
       }
@@ -323,7 +323,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       }
 
       if (salesDataResult.error || !salesDataResult.data) {
-        setDataError(salesDataResult.error ?? "Daten konnten nicht geladen werden.");
+        setDataError(salesDataResult.error || "Daten konnten nicht geladen werden.");
         setDataLoading(false);
         return;
       }
@@ -339,12 +339,13 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
 
     loadSupabaseData();
 
-    const { data: authListener } =
-      supabase?.auth.onAuthStateChange((_event, session) => {
-        if (!session) {
-          router.replace("/sales/login");
-        }
-      }) ?? { data: { subscription: null } };
+    const { data: authListener } = supabase
+      ? supabase.auth.onAuthStateChange((_event, session) => {
+          if (!session) {
+            router.replace("/sales/login");
+          }
+        })
+      : { data: { subscription: null } };
 
     return () => {
       active = false;
@@ -370,7 +371,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       const result = await salesDataService.load(supabase);
 
       if (result.error || !result.data) {
-        setLastSyncError(result.error ?? "Daten konnten nicht geladen werden.");
+        setLastSyncError(result.error || "Daten konnten nicht geladen werden.");
         return;
       }
 
@@ -644,8 +645,8 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
                 ...currentData.contact_history,
                 createHistoryEntry({
                   action_type: history.action_type,
-                  next_contact_at: patch.next_contact_at ?? oldRestaurant.next_contact_at,
-                  new_status: patch.status ?? oldRestaurant.status,
+                  next_contact_at: patch.next_contact_at || oldRestaurant.next_contact_at,
+                  new_status: patch.status || oldRestaurant.status,
                   note: history.note,
                   old_status: oldRestaurant.status,
                   restaurant_id: restaurantId,
@@ -739,7 +740,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
   function createWhatsappMessage(restaurant: Restaurant, template: "afterVisit" | "reminder") {
     const demoLink = getRestaurantDemoUrl(restaurant);
     const recipient = restaurant.contact_person || "Name";
-    const sender = currentUser?.name ?? "DINEVIO";
+    const sender = currentUser?.name || "DINEVIO";
 
     if (template === "reminder") {
       return `Hallo ${recipient},
@@ -880,7 +881,7 @@ DINEVIO`;
         restaurant.phone,
         restaurant.contact_person,
         restaurant.status,
-        restaurant.interest_level?.toString() ?? "",
+        restaurant.interest_level?.toString() || "",
         getLastContact(data.contact_history, restaurant.id),
         formatDateTime(restaurant.next_contact_at),
         getUserName(data.users, restaurant.responsible_user_id),
@@ -930,7 +931,7 @@ DINEVIO`;
           data: Partial<SalesData>;
           source: string;
         }>;
-        const backupData = payload.data ?? payload;
+        const backupData = (payload.data || payload) as Partial<SalesData>;
         const restoredData = mergeSalesData(backupData as Partial<SalesData>);
         const result = supabase
           ? await salesDataService.saveSnapshot(supabase, restoredData)
@@ -1058,16 +1059,16 @@ DINEVIO`;
     const [, ...bodyRows] = rows;
     const preview = bodyRows.map((row) => ({
       ...emptyDraft,
-      city: row[2] ?? "",
-      contact_person: row[4] ?? "",
-      name: row[0] ?? "",
-      notes: row[11] ?? "",
-      phone: row[3] ?? "",
-      responsible_user_id: currentUser?.id ?? "andrii",
+      city: row[2] || "",
+      contact_person: row[4] || "",
+      name: row[0] || "",
+      notes: row[11] || "",
+      phone: row[3] || "",
+      responsible_user_id: currentUser?.id || "andrii",
       status: (restaurantStatuses.includes(row[5] as RestaurantStatus)
         ? row[5]
         : "Neu") as RestaurantStatus,
-      street: row[1] ?? ""
+      street: row[1] || ""
     }));
 
     setImportPreview(preview);
@@ -1819,7 +1820,7 @@ function RestaurantForm({
       const payload = (await response.json()) as RestaurantLookupResponse;
 
       if (!response.ok || payload.status === "error" || payload.status === "not_found") {
-        setLookupError(payload.message ?? "Informationen konnten nicht geladen werden.");
+        setLookupError(payload.message || "Informationen konnten nicht geladen werden.");
         return;
       }
 
@@ -2129,8 +2130,8 @@ function RestaurantForm({
           <TextField label="TikTok" value={draft.tiktok} onChange={(value) => updateField("tiktok", value)} />
           <TextField label="Ansprechpartner" value={draft.contact_person} onChange={(value) => updateField("contact_person", value)} />
           <TextField label="Position des Ansprechpartners" value={draft.contact_position} onChange={(value) => updateField("contact_position", value)} />
-          <TextField label="Google Rating" value={draft.google_rating?.toString() ?? ""} onChange={(value) => updateField("google_rating", value ? Number(value) : null)} type="number" />
-          <TextField label="Anzahl Bewertungen" value={draft.google_review_count?.toString() ?? ""} onChange={(value) => updateField("google_review_count", value ? Number(value) : null)} type="number" />
+          <TextField label="Google Rating" value={draft.google_rating?.toString() || ""} onChange={(value) => updateField("google_rating", value ? Number(value) : null)} type="number" />
+          <TextField label="Anzahl Bewertungen" value={draft.google_review_count?.toString() || ""} onChange={(value) => updateField("google_review_count", value ? Number(value) : null)} type="number" />
           <DateTimeField label="Geplanter Besuch" value={draft.planned_visit_at} onChange={(value) => updateField("planned_visit_at", value)} />
           <SelectField label="Verantwortlich" value={draft.responsible_user_id} onChange={(value) => updateField("responsible_user_id", value as SalesUserId)} options={users.map((user) => user.id)} labels={Object.fromEntries(users.map((user) => [user.id, user.name]))} />
           <SelectField label="Demo" value={draft.selected_demo} onChange={(value) => updateField("selected_demo", value as DemoId)} options={["none", "schnellundlecker", "schlemmerhus", "rhodosgrill", "custom"]} labels={Object.fromEntries(Object.entries(demoOptions).map(([id, demo]) => [id, demo.label]))} />
@@ -2519,8 +2520,8 @@ function PersonalDemoPanel({
     .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.created_at.localeCompare(b.created_at));
   const suggestedTemplate = suggestPersonalDemoTemplate(restaurant);
   const selectedTemplate = templateKey === "auto" ? suggestedTemplate : templateKey;
-  const heroPhoto = photos.find((photo) => photo.id === heroPhotoId) ?? photos.find((photo) => photo.is_primary) ?? photos[0];
-  const logoPhoto = photos.find((photo) => photo.id === logoPhotoId) ?? photos.find((photo) => photo.photo_type === "logo");
+  const heroPhoto = photos.find((photo) => photo.id === heroPhotoId) || photos.find((photo) => photo.is_primary) || photos[0];
+  const logoPhoto = photos.find((photo) => photo.id === logoPhotoId) || photos.find((photo) => photo.photo_type === "logo");
   const galleryPhotos = galleryPhotoIds.length > 0
     ? galleryPhotoIds.map((id) => photos.find((photo) => photo.id === id)).filter((photo): photo is RestaurantPhoto => Boolean(photo))
     : photos.filter((photo) => photo.id !== heroPhoto?.id).slice(0, 6);
@@ -2751,17 +2752,40 @@ function PersonalDemoPanel({
 
             {step === 3 ? (
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {themeChoices.map(([value, label, description]) => (
-                  <button
-                    key={value}
-                    className={"rounded border p-4 text-left transition-colors " + (templateKey === value ? "border-premium-gold bg-premium-gold/10" : "border-white/10 bg-midnight/45 hover:border-premium-gold/45")}
-                    type="button"
-                    onClick={() => setTemplateKey(value)}
-                  >
-                    <span className="font-heading text-lg font-semibold">{label}</span>
-                    <span className="mt-1 block text-sm text-slate-400">{description}</span>
-                  </button>
-                ))}
+                {themeChoices.map(([value, label, description]) => {
+                  const previewTheme = value === "auto" ? suggestedTemplate : value;
+
+                  return (
+                    <div
+                      key={value}
+                      className={"rounded border p-4 transition-colors " + (templateKey === value ? "border-premium-gold bg-premium-gold/10" : "border-white/10 bg-midnight/45 hover:border-premium-gold/45")}
+                    >
+                      <button className="block w-full text-left" type="button" onClick={() => setTemplateKey(value)}>
+                        <span className="relative mb-4 block aspect-[16/9] overflow-hidden rounded border border-white/10">
+                          <Image
+                            alt={`${label} Vorschau`}
+                            className="object-cover"
+                            fill
+                            sizes="(min-width: 640px) 360px, 100vw"
+                            src={demoTemplateThemes[previewTheme].heroImage}
+                          />
+                        </span>
+                        <span className="font-heading text-lg font-semibold">{label}</span>
+                        <span className="mt-1 block text-sm text-slate-400">{description}</span>
+                      </button>
+                      {demoUrl ? (
+                        <a
+                          className={outlineButtonClassName + " mt-3 w-full justify-center"}
+                          href={`${demoUrl}?previewTheme=${previewTheme}`}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          Vorschau
+                        </a>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             ) : null}
 
@@ -3043,7 +3067,7 @@ function TourView({
         candidate.tour_date === tourDate &&
         candidate.responsible_user_id === responsibleUserId &&
         candidate.status !== "Abgeschlossen"
-    ) ?? null;
+    ) || null;
   const stops = tour
     ? data.tour_stops
         .filter((stop) => stop.tour_id === tour.id)
@@ -3364,7 +3388,7 @@ function PipelineView({
                         <p className="font-semibold text-warm-white">{restaurant.name}</p>
                         <p className="mt-1 text-xs text-slate-400">{restaurant.city || "-"}</p>
                         <p className="mt-2 text-xs text-premium-gold">
-                          Interesse: {restaurant.interest_level ?? "-"} · {getUserName(data.users, restaurant.responsible_user_id)}
+                          Interesse: {restaurant.interest_level || "-"} · {getUserName(data.users, restaurant.responsible_user_id)}
                         </p>
                         {offer ? (
                           <p className="mt-1 text-xs text-slate-400">
@@ -3595,14 +3619,14 @@ function MoreView({
                   const payload = JSON.parse(String(reader.result)) as Partial<{
                     data: Partial<SalesData>;
                   }>;
-                  const backupData = (payload.data ?? payload) as Partial<SalesData>;
+                  const backupData = (payload.data || payload) as Partial<SalesData>;
 
                   setBackupFile(file);
                   setBackupPreview({
-                    contacts: backupData.contact_history?.length ?? 0,
-                    offers: backupData.offers?.length ?? 0,
-                    restaurants: backupData.restaurants?.length ?? 0,
-                    tours: backupData.tours?.length ?? 0
+                    contacts: backupData.contact_history?.length || 0,
+                    offers: backupData.offers?.length || 0,
+                    restaurants: backupData.restaurants?.length || 0,
+                    tours: backupData.tours?.length || 0
                   });
                 } catch {
                   window.alert("Backup konnte nicht gelesen werden.");
@@ -3897,7 +3921,7 @@ function RestaurantPhotosPanel({
       const entries = await Promise.all(
         photos.map(async (photo) => {
           const result = await photosService.createSignedUrl(supabase, photo.storage_path);
-          return [photo.id, result.data ?? ""] as const;
+          return [photo.id, result.data || ""] as const;
         })
       );
 
@@ -3943,7 +3967,7 @@ function RestaurantPhotosPanel({
       const uploadResult = await photosService.uploadFile(supabase, storagePath, file);
 
       if (uploadResult.error || !uploadResult.data) {
-        setError(uploadResult.error ?? "Foto konnte nicht hochgeladen werden.");
+        setError(uploadResult.error || "Foto konnte nicht hochgeladen werden.");
         continue;
       }
 
@@ -3964,7 +3988,7 @@ function RestaurantPhotosPanel({
       const createResult = await photosService.create(supabase, photo);
 
       if (createResult.error || !createResult.data) {
-        setError(createResult.error ?? "Foto konnte nicht gespeichert werden.");
+        setError(createResult.error || "Foto konnte nicht gespeichert werden.");
         continue;
       }
 
@@ -4117,13 +4141,13 @@ function OfferPanel({
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const existingOffer = data.offers.find((offer) => offer.restaurant_id === restaurant.id);
   const [offer, setOffer] = useState<Offer>(
-    existingOffer ?? {
+    existingOffer || {
       created_at: new Date().toISOString(),
       created_by: currentUser.id,
       id: createId(),
       monthly_price: "",
       offer_date: todayInputValue(),
-      package_name: data.package_templates[0]?.name ?? "",
+      package_name: data.package_templates[0]?.name || "",
       restaurant_id: restaurant.id,
       setup_price: "",
       special_requests: "",
@@ -4148,7 +4172,7 @@ function OfferPanel({
       const result = await storageService.createSignedUrl(supabase, "offers", offer.pdf_storage_path, 60 * 15);
 
       if (active) {
-        setPdfUrl(result.data ?? "");
+        setPdfUrl(result.data || "");
       }
     }
 
@@ -4231,7 +4255,7 @@ function OfferPanel({
       };
 
       if (!response.ok || !payload.offer) {
-        setPdfError(payload.message ?? "PDF konnte nicht erstellt werden.");
+        setPdfError(payload.message || "PDF konnte nicht erstellt werden.");
         return;
       }
 
@@ -4610,7 +4634,7 @@ function SelectField({
       >
         {options.map((option) => (
           <option key={option || "empty"} value={option}>
-            {labels[option] ?? option}
+            {labels[option] || option}
           </option>
         ))}
       </select>
@@ -4678,17 +4702,17 @@ const mobileActionClassName =
 
 function mergeSalesData(partialData: Partial<SalesData>): SalesData {
   return {
-    contact_history: partialData.contact_history ?? [],
-    message_templates: partialData.message_templates ?? [],
-    offers: partialData.offers ?? [],
-    package_templates: partialData.package_templates ?? initialPackageTemplates,
-    restaurant_photos: partialData.restaurant_photos ?? [],
-    restaurants: (partialData.restaurants ?? []).map(normalizeRestaurant),
-    sales_settings: partialData.sales_settings ?? [],
-    tasks: partialData.tasks ?? [],
-    tour_stops: partialData.tour_stops ?? [],
-    tours: partialData.tours ?? [],
-    users: partialData.users ?? salesUsers
+    contact_history: partialData.contact_history || [],
+    message_templates: partialData.message_templates || [],
+    offers: partialData.offers || [],
+    package_templates: partialData.package_templates || initialPackageTemplates,
+    restaurant_photos: partialData.restaurant_photos || [],
+    restaurants: (partialData.restaurants || []).map(normalizeRestaurant),
+    sales_settings: partialData.sales_settings || [],
+    tasks: partialData.tasks || [],
+    tour_stops: partialData.tour_stops || [],
+    tours: partialData.tours || [],
+    users: partialData.users || salesUsers
   };
 }
 
@@ -4745,7 +4769,7 @@ function remapLegacyUserIds(
       user.name.toLowerCase().startsWith(legacyId.toLowerCase())
     );
 
-    return matchingUser?.id ?? fallbackUserId;
+    return matchingUser?.id || fallbackUserId;
   };
 
   return {
@@ -4799,12 +4823,12 @@ function normalizeRestaurantDraft(partialDraft: Partial<RestaurantDraft>): Resta
   return {
     ...emptyDraft,
     ...partialDraft,
-    digital_presence: partialDraft.digital_presence ?? null,
-    google_rating: partialDraft.google_rating ?? null,
-    google_review_count: partialDraft.google_review_count ?? null,
-    interest_level: partialDraft.interest_level ?? null,
-    opening_hours: partialDraft.opening_hours ?? [],
-    photos: partialDraft.photos ?? []
+    digital_presence: partialDraft.digital_presence || null,
+    google_rating: partialDraft.google_rating || null,
+    google_review_count: partialDraft.google_review_count || null,
+    interest_level: partialDraft.interest_level || null,
+    opening_hours: partialDraft.opening_hours || [],
+    photos: partialDraft.photos || []
   };
 }
 
@@ -5037,7 +5061,7 @@ function createTaskTitle(contactType: ContactType | "") {
 }
 
 function createId() {
-  return globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
+  return globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
 }
 
 function normalizePhone(phone: string) {
@@ -5084,7 +5108,7 @@ function hasNavigationTarget(restaurant: Restaurant) {
 }
 
 function getDemoUrl(demoId: DemoId) {
-  return demoOptions[demoId]?.url ?? "";
+  return demoOptions[demoId]?.url || "";
 }
 
 function getRestaurantDemoUrl(restaurant: Restaurant) {
@@ -5125,7 +5149,7 @@ function findDuplicateRestaurant(
         Math.abs(candidateLng - restaurantLng) < 0.00035;
 
       return (nameMatches && addressMatches) || coordinateMatches;
-    }) ?? null
+    }) || null
   );
 }
 
@@ -5146,7 +5170,7 @@ function formatPresenceValue(value: boolean | null) {
 }
 
 function getUserName(users: SalesUser[], userId: SalesUserId) {
-  return users.find((user) => user.id === userId)?.name ?? userId;
+  return users.find((user) => user.id === userId)?.name || userId;
 }
 
 function formatDateTime(value: string) {
@@ -5337,7 +5361,7 @@ function renderMessageTemplatePreview(template: MessageTemplate) {
     user_phone: "+49 ..."
   };
 
-  return template.body.replace(/\{\{([a-z0-9_]+)\}\}/gi, (_match, key: string) => variables[key] ?? "");
+  return template.body.replace(/\{\{([a-z0-9_]+)\}\}/gi, (_match, key: string) => variables[key] || "");
 }
 
 function MetricRow({ label, value }: { label: string; value: string }) {
