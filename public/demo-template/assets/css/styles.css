@@ -3550,6 +3550,7 @@ body:has(.demo-template) > div > main {
 }
 
 .demo-template .theme-switcher details {
+  position: relative;
   width: fit-content;
   max-width: 100%;
 }
@@ -3564,6 +3565,10 @@ body:has(.demo-template) > div > main {
 }
 
 .demo-template .theme-switcher-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  width: min(360px, calc(100vw - 36px));
   max-height: min(70vh, 560px);
   overflow-y: auto;
 }
@@ -3610,6 +3615,10 @@ body:has(.demo-template) > div > main {
   }
 
   .demo-template .theme-switcher details[open] {
+    width: min(340px, calc(100vw - 24px));
+  }
+
+  .demo-template .theme-switcher-panel {
     width: min(340px, calc(100vw - 24px));
   }
 }
