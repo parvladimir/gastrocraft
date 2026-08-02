@@ -20,7 +20,7 @@ export function RestaurantDemoTemplate({ config, page, slug }: RestaurantDemoTem
     <>
       {/* eslint-disable-next-line @next/next/no-css-tags */}
       <link rel="stylesheet" href="/demo-template/assets/css/styles.css" />
-      <div className={`demo-template theme-${config.theme}`}>
+      <div className={`demo-template${page === "home" ? " home-page" : ""} theme-${config.theme}`}>
         <a className="skip-link" href="#main">
           Zum Inhalt springen
         </a>
