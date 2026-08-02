@@ -20,22 +20,24 @@ export function RestaurantDemoTemplate({ config, page, slug }: RestaurantDemoTem
     <>
       {/* eslint-disable-next-line @next/next/no-css-tags */}
       <link rel="stylesheet" href="/demo-template/assets/css/styles.css" />
-      <div className={`demo-template${page === "home" ? " home-page" : ""} theme-${config.theme}`}>
-        <a className="skip-link" href="#main">
-          Zum Inhalt springen
-        </a>
-        <DemoHeader config={config} page={page} slug={slug} />
-        <main id="main">
-          {page === "home" ? <HomePage config={config} slug={slug} /> : null}
-          {page === "menu" ? <MenuPage config={config} slug={slug} /> : null}
-          {page === "gallery" ? <GalleryPage config={config} /> : null}
-          {page === "contact" ? <ContactPage config={config} /> : null}
-          {page === "impressum" ? <LegalPage config={config} kind="impressum" /> : null}
-          {page === "datenschutz" ? <LegalPage config={config} kind="datenschutz" /> : null}
-        </main>
-        <MobileOrderBar config={config} slug={slug} />
-        <DemoFooter config={config} slug={slug} />
-        <ThemeSwitcher initialTheme={config.theme} slug={slug} />
+      <div className={`demo-template theme-${config.theme}`}>
+        <div className={page === "home" ? "home-page" : undefined}>
+          <a className="skip-link" href="#main">
+            Zum Inhalt springen
+          </a>
+          <DemoHeader config={config} page={page} slug={slug} />
+          <main id="main">
+            {page === "home" ? <HomePage config={config} slug={slug} /> : null}
+            {page === "menu" ? <MenuPage config={config} slug={slug} /> : null}
+            {page === "gallery" ? <GalleryPage config={config} /> : null}
+            {page === "contact" ? <ContactPage config={config} /> : null}
+            {page === "impressum" ? <LegalPage config={config} kind="impressum" /> : null}
+            {page === "datenschutz" ? <LegalPage config={config} kind="datenschutz" /> : null}
+          </main>
+          <MobileOrderBar config={config} slug={slug} />
+          <DemoFooter config={config} slug={slug} />
+          <ThemeSwitcher initialTheme={config.theme} slug={slug} />
+        </div>
       </div>
     </>
   );
