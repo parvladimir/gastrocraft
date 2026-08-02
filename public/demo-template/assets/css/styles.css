@@ -3525,3 +3525,91 @@ body:has(.demo-template) > div > main {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Final interaction layer: keep the preview controls and mobile navigation independent. */
+.demo-template .hero-theme-media::before,
+.demo-template .hero-theme-media::after {
+  content: none !important;
+}
+
+.demo-template .theme-switcher {
+  right: 18px;
+  bottom: 18px;
+  z-index: 120;
+  width: fit-content;
+  max-width: calc(100vw - 36px);
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.demo-template .theme-switcher details {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.demo-template .theme-switcher details[open] {
+  width: min(360px, calc(100vw - 36px));
+}
+
+.demo-template .theme-switcher summary {
+  margin-left: auto;
+  touch-action: manipulation;
+}
+
+.demo-template .theme-switcher-panel {
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+}
+
+@media (max-width: 760px) {
+  .demo-template .site-nav {
+    display: none;
+    align-content: start;
+    grid-auto-rows: min-content;
+    gap: 10px;
+    min-height: calc(100dvh - var(--header-height));
+    padding: 24px 18px calc(32px + env(safe-area-inset-bottom));
+    background: var(--color-bg);
+    opacity: 1;
+  }
+
+  .demo-template .demo-nav-checkbox:checked ~ .site-nav {
+    display: grid;
+  }
+
+  .demo-template .site-nav a,
+  .demo-template .site-nav a[aria-current="page"] {
+    min-height: 52px;
+    align-self: start;
+    padding: 14px 16px;
+    border-radius: 14px;
+    box-shadow: none;
+  }
+
+  .demo-template .site-nav a[aria-current="page"] {
+    background: var(--color-secondary);
+    color: var(--color-bg);
+  }
+
+  body:has(.demo-template #demo-nav-toggle:checked) .demo-template .mobile-order-bar,
+  body:has(.demo-template #demo-nav-toggle:checked) .demo-template .theme-switcher {
+    display: none !important;
+  }
+
+  .demo-template .theme-switcher {
+    right: 12px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 24px);
+  }
+
+  .demo-template .theme-switcher details[open] {
+    width: min(340px, calc(100vw - 24px));
+  }
+}
