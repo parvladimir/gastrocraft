@@ -2234,9 +2234,9 @@ h1,
     url("../img/hero-food-order.jpg") center / cover no-repeat;
 }
 
-.demo-template .home-page.theme-imbiss-pro .order-hero,
-.demo-template .home-page.theme-cafe-minimal .order-hero,
-.demo-template .home-page.theme-german-gasthaus .order-hero{
+.demo-template.theme-imbiss-pro .home-page .order-hero,
+.demo-template.theme-cafe-minimal .home-page .order-hero,
+.demo-template.theme-german-gasthaus .home-page .order-hero{
   background:
     linear-gradient(90deg, rgba(255, 248, 235, 0.96), rgba(255, 248, 235, 0.76) 44%, rgba(255, 248, 235, 0.28)),
     url("../img/hero-food-order.jpg") center / cover no-repeat;
@@ -2261,14 +2261,14 @@ h1,
   backdrop-filter: blur(18px);
 }
 
-.demo-template .home-page.theme-imbiss-pro .order-hero-content,
-.demo-template .home-page.theme-cafe-minimal .order-hero-content,
-.demo-template .home-page.theme-german-gasthaus .order-hero-content{
+.demo-template.theme-imbiss-pro .home-page .order-hero-content,
+.demo-template.theme-cafe-minimal .home-page .order-hero-content,
+.demo-template.theme-german-gasthaus .home-page .order-hero-content{
   background: rgba(255, 253, 246, 0.84);
   border-color: rgba(255, 255, 255, 0.6);
 }
 
-.demo-template .home-page.theme-german-gasthaus .order-hero-content{
+.demo-template.theme-german-gasthaus .home-page .order-hero-content{
   background:
     linear-gradient(135deg, rgba(255, 249, 235, 0.96), rgba(255, 244, 223, 0.88)),
     color-mix(in srgb, var(--color-surface) 92%, transparent);
@@ -2276,32 +2276,32 @@ h1,
   color: #2d241c;
 }
 
-.demo-template .home-page.theme-german-gasthaus .order-hero h1{
+.demo-template.theme-german-gasthaus .home-page .order-hero h1{
   color: #183f2f;
   text-shadow: none;
 }
 
-.demo-template .home-page.theme-german-gasthaus .order-hero .hero-slogan{
+.demo-template.theme-german-gasthaus .home-page .order-hero .hero-slogan{
   color: #7c2d2d;
 }
 
-.demo-template .home-page.theme-german-gasthaus .order-hero p:not(.eyebrow){
+.demo-template.theme-german-gasthaus .home-page .order-hero p:not(.eyebrow){
   color: #5f4f3e;
 }
 
-.demo-template .home-page.theme-german-gasthaus .order-hero .eyebrow{
+.demo-template.theme-german-gasthaus .home-page .order-hero .eyebrow{
   border-color: rgba(184, 137, 77, 0.58);
   background: rgba(255, 249, 235, 0.86);
   color: #9a6a2f;
 }
 
-.demo-template .home-page.theme-german-gasthaus .order-hero .button-ghost{
+.demo-template.theme-german-gasthaus .home-page .order-hero .button-ghost{
   border-color: rgba(184, 137, 77, 0.5);
   background: rgba(255, 249, 235, 0.94);
   color: #183f2f;
 }
 
-.demo-template .home-page.theme-german-gasthaus .order-hero .button-ghost:hover{
+.demo-template.theme-german-gasthaus .home-page .order-hero .button-ghost:hover{
   color: #183f2f;
 }
 
@@ -2311,7 +2311,7 @@ h1,
   line-height: 0.9;
 }
 
-.demo-template .home-page.theme-imbiss-pro .order-hero h1{
+.demo-template.theme-imbiss-pro .home-page .order-hero h1{
   font-family: var(--font-body);
   max-width: 100%;
   font-size: clamp(2.2rem, 3vw, 2.85rem);
@@ -2321,11 +2321,11 @@ h1,
   text-transform: uppercase;
 }
 
-.demo-template .home-page.theme-imbiss-pro .order-hero .action-row{
+.demo-template.theme-imbiss-pro .home-page .order-hero .action-row{
   grid-template-columns: minmax(0, 1fr);
 }
 
-.demo-template .home-page.theme-imbiss-pro .order-hero-content{
+.demo-template.theme-imbiss-pro .home-page .order-hero-content{
   overflow: visible;
 }
 
@@ -2353,9 +2353,9 @@ h1,
   font-weight: 900;
 }
 
-.demo-template .home-page.theme-imbiss-pro .hero-trust-row span,
-.demo-template .home-page.theme-cafe-minimal .hero-trust-row span,
-.demo-template .home-page.theme-german-gasthaus .hero-trust-row span{
+.demo-template.theme-imbiss-pro .home-page .hero-trust-row span,
+.demo-template.theme-cafe-minimal .home-page .hero-trust-row span,
+.demo-template.theme-german-gasthaus .home-page .hero-trust-row span{
   color: var(--color-text);
 }
 
@@ -3530,6 +3530,14 @@ body:has(.demo-template) > div > main {
 .demo-template .hero-theme-media::before,
 .demo-template .hero-theme-media::after {
   content: none !important;
+}
+
+.demo-template .home-page .hero-theme-media {
+  background-color: transparent;
+  background-image: var(--demo-hero-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .demo-template .theme-switcher {
