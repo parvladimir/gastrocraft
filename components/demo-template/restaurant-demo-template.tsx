@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import QRCode from "qrcode";
 import { getMenuFallbackImage } from "@/lib/demo-template/defaults";
 import { getSiteUrl } from "@/lib/site-config";
 import { ThemeSwitcher } from "./theme-switcher";
@@ -216,13 +217,9 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
             </div>
           </div>
           <aside className="qr-panel order-qr-panel" aria-labelledby="qr-title">
-            <Image
+            <DemoQrImage
               alt={`QR-Code zur Speisekarte von ${config.restaurantName}`}
-              className="qr-code-image"
-              height={220}
-              src={`/api/demo-qr?data=${encodeURIComponent(menuUrl)}`}
-              unoptimized
-              width={220}
+              data={menuUrl}
             />
             <div>
               <h3 id="qr-title">Digitale Speisekarte</h3>
@@ -323,13 +320,9 @@ function MenuPage({ config, slug }: { config: RestaurantDemoConfig; slug: string
             </div>
           </div>
           <aside className="qr-panel info-card">
-            <Image
+            <DemoQrImage
               alt={`QR-Code zur Speisekarte von ${config.restaurantName}`}
-              className="qr-code-image"
-              height={220}
-              src={`/api/demo-qr?data=${encodeURIComponent(menuUrl)}`}
-              unoptimized
-              width={220}
+              data={menuUrl}
             />
             <div>
               <h2>QR-Speisekarte öffnen</h2>
@@ -706,6 +699,20 @@ function DemoImage({
   }
 
   return <Image alt={alt} className={className} height={height} priority={priority} src={src} unoptimized width={width} />;
+}
+
+async function DemoQrImage({ alt, data }: { alt: string; data: string }) {
+  const src = await QRCode.toDataURL(data, {
+    color: {
+      dark: "#0F172A",
+      light: "#FAFAF8"
+    },
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 220
+  });
+
+  return <Image alt={alt} className="qr-code-image" height={220} src={src} unoptimized width={220} />;
 }
 
 function groupMenuItems(items: RestaurantDemoMenuItem[]) {

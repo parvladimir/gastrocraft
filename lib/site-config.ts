@@ -25,7 +25,14 @@ export function getSiteUrl() {
   const normalizedUrl = url.replace(/\/+$/, "");
 
   try {
-    return new URL(normalizedUrl).toString().replace(/\/+$/, "");
+    const resolvedUrl = new URL(normalizedUrl);
+
+    // Preview deployment URLs must never become production canonicals or QR targets.
+    if (resolvedUrl.hostname.endsWith(".vercel.app")) {
+      return siteConfig.defaultUrl;
+    }
+
+    return resolvedUrl.toString().replace(/\/+$/, "");
   } catch {
     return siteConfig.defaultUrl;
   }
