@@ -3683,6 +3683,18 @@ body:has(.demo-template) > div > main {
   opacity: 1;
 }
 
+.demo-template .home-page .theme-switcher:hover,
+.demo-template .home-page .theme-switcher:focus-within {
+  width: fit-content;
+  max-height: none;
+  opacity: 1;
+  transform: none;
+}
+
+.demo-template .theme-switcher details[open] {
+  width: fit-content;
+}
+
 .demo-template .home-page .theme-switcher summary {
   min-height: 42px;
   padding: 0 15px;
@@ -3694,6 +3706,14 @@ body:has(.demo-template) > div > main {
   font-size: 0.84rem;
   line-height: 1;
   white-space: nowrap;
+}
+
+.demo-template .qr-code-image {
+  display: block;
+  width: 172px;
+  height: 172px;
+  max-width: 100%;
+  background: #fafaf8;
 }
 
 .demo-template .home-page .theme-switcher-panel {

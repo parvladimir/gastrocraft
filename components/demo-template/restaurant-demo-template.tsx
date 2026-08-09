@@ -216,7 +216,14 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
             </div>
           </div>
           <aside className="qr-panel order-qr-panel" aria-labelledby="qr-title">
-            <Image alt={`QR-Code zur Speisekarte von ${config.restaurantName}`} height={220} src={`/api/demo-qr?data=${encodeURIComponent(menuUrl)}`} width={220} />
+            <Image
+              alt={`QR-Code zur Speisekarte von ${config.restaurantName}`}
+              className="qr-code-image"
+              height={220}
+              src={`/api/demo-qr?data=${encodeURIComponent(menuUrl)}`}
+              unoptimized
+              width={220}
+            />
             <div>
               <h3 id="qr-title">Digitale Speisekarte</h3>
               <p>Der QR-Code führt direkt zur mobilen Speisekarte und kann auf Tischen, Flyern oder Schaufenstern verwendet werden.</p>
@@ -316,7 +323,14 @@ function MenuPage({ config, slug }: { config: RestaurantDemoConfig; slug: string
             </div>
           </div>
           <aside className="qr-panel info-card">
-            <Image alt={`QR-Code zur Speisekarte von ${config.restaurantName}`} height={220} src={`/api/demo-qr?data=${encodeURIComponent(menuUrl)}`} width={220} />
+            <Image
+              alt={`QR-Code zur Speisekarte von ${config.restaurantName}`}
+              className="qr-code-image"
+              height={220}
+              src={`/api/demo-qr?data=${encodeURIComponent(menuUrl)}`}
+              unoptimized
+              width={220}
+            />
             <div>
               <h2>QR-Speisekarte öffnen</h2>
               <p>QR-Code scannen oder die Speisekarte direkt auf dem Smartphone öffnen.</p>
