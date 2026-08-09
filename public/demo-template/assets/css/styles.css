@@ -3645,3 +3645,97 @@ body:has(.demo-template) > div > main {
     width: min(340px, calc(100vw - 24px));
   }
 }
+
+/* Keep the public restaurant preview aligned with the selected template theme. */
+.demo-template .home-page .order-hero-media {
+  background: transparent var(--demo-hero-image) center / cover no-repeat !important;
+  overflow: hidden;
+}
+
+.demo-template .home-page .order-hero-media .hero-media-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+  opacity: 1 !important;
+}
+
+.demo-template .home-page .order-hero .action-row {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.demo-template .home-page .theme-switcher {
+  width: fit-content;
+  max-width: calc(100vw - 36px);
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.demo-template .home-page .theme-switcher summary {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface-strong) 94%, transparent);
+  color: var(--color-secondary);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-secondary) 14%, transparent);
+  font-size: 0.84rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.demo-template .home-page .theme-switcher-panel {
+  border-color: color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+  background: color-mix(in srgb, var(--color-surface-strong) 97%, transparent);
+  color: var(--color-text);
+  box-shadow: 0 20px 44px color-mix(in srgb, var(--color-secondary) 22%, transparent);
+}
+
+.demo-template .home-page .theme-switcher-panel p,
+.demo-template .home-page .theme-status {
+  color: color-mix(in srgb, var(--color-text) 68%, transparent);
+}
+
+.demo-template .home-page .theme-option-grid button {
+  border-color: color-mix(in srgb, var(--color-secondary) 20%, var(--color-border));
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.demo-template .home-page .theme-option-grid button.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-secondary);
+}
+
+.demo-template .home-page .theme-save-button {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-bg);
+}
+
+@media (max-width: 760px) {
+  .demo-template .home-page .theme-switcher {
+    top: calc(var(--header-height) + 12px);
+    right: 12px;
+    bottom: auto;
+    max-width: calc(100vw - 24px);
+  }
+
+  .demo-template .home-page .theme-switcher summary {
+    min-height: 40px;
+    padding-inline: 13px;
+    font-size: 0.78rem;
+  }
+}

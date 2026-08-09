@@ -129,10 +129,15 @@ function HomePage({ config, slug }: { config: RestaurantDemoConfig; slug: string
             </div>
           </div>
 
-          <div className={`hero-media order-hero-media ${isTemplateHero(config.heroImagePath) ? "hero-theme-media" : ""}`} data-demo-hero-image>
-            {isTemplateHero(config.heroImagePath) ? null : (
-              <DemoImage alt={`Beispielansicht für ${config.restaurantName}`} height={760} priority src={config.heroImagePath} width={980} />
-            )}
+          <div className="hero-media order-hero-media hero-theme-media" data-demo-hero-image>
+            <DemoImage
+              alt={`Beispielansicht für ${config.restaurantName}`}
+              className="hero-media-image"
+              height={760}
+              priority
+              src={config.heroImagePath}
+              width={980}
+            />
             {(config.specialOffer.title || config.specialOffer.text) ? (
               <div className="hero-order-card" aria-label="Hervorgehobener Bereich">
                 <span>Heute empfohlen</span>
@@ -687,10 +692,6 @@ function DemoImage({
   }
 
   return <Image alt={alt} className={className} height={height} priority={priority} src={src} unoptimized width={width} />;
-}
-
-function isTemplateHero(src: string) {
-  return src.startsWith("/demo-template/assets/img/hero-");
 }
 
 function groupMenuItems(items: RestaurantDemoMenuItem[]) {
