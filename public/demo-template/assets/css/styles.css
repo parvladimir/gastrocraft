@@ -3811,3 +3811,18 @@ body:has(.demo-template) > div > main {
     white-space: nowrap;
   }
 }
+
+@media (min-width: 1080px) {
+  .demo-template .home-page .order-hero-content {
+    gap: 18px;
+    padding: 32px;
+  }
+
+  .demo-template .home-page .order-hero h1 {
+    font-size: clamp(4rem, 5.2vw, 5.8rem);
+  }
+
+  .demo-template .home-page .order-hero .button {
+    min-height: 54px;
+  }
+}
