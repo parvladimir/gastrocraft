@@ -3830,7 +3830,35 @@ body:has(.demo-template) > div > main {
 /* Imbiss Pro keeps its bright, high-energy presentation on small screens. */
 @media (max-width: 839px) {
   .demo-template .home-page .theme-switcher {
-    display: none !important;
+    position: absolute;
+    top: calc(var(--header-height) + 12px);
+    right: 12px;
+    bottom: auto;
+    z-index: 46;
+    display: block !important;
+    width: fit-content;
+    max-width: calc(100vw - 24px);
+  }
+
+  .demo-template .home-page .theme-switcher summary {
+    min-width: 44px;
+    min-height: 40px;
+    padding-inline: 13px;
+  }
+
+  .demo-template .home-page .theme-switcher-label {
+    font-size: 0;
+  }
+
+  .demo-template .home-page .theme-switcher-label::after {
+    content: "Design";
+    font-size: 0.78rem;
+  }
+
+  .demo-template .home-page .theme-switcher-panel {
+    top: calc(100% + 8px);
+    right: 0;
+    bottom: auto;
   }
 
   .demo-template.theme-imbiss-pro .home-page .order-hero {

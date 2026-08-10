@@ -80,7 +80,9 @@ export function ThemeSwitcher({ initialTheme, slug }: ThemeSwitcherProps) {
   return (
     <aside className="theme-switcher" aria-label="Design-Theme Vorschau">
       <details>
-        <summary>Design wechseln</summary>
+        <summary>
+          <span className="theme-switcher-label">Design wechseln</span>
+        </summary>
         <div className="theme-switcher-panel">
           <p>Unverbindliche Design-Demo – Theme kann gewechselt werden.</p>
           <div className="theme-option-grid">
