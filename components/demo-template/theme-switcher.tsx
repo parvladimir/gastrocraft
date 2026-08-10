@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { demoTemplateThemes } from "@/lib/demo-template/defaults";
 import type { DemoTemplateKey } from "@/lib/demo-template/types";
 
@@ -16,8 +16,6 @@ export function ThemeSwitcher({ initialTheme, slug }: ThemeSwitcherProps) {
   const [canSave, setCanSave] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
-  const storageKey = useMemo(() => `dinevio-demo-preview-theme-${slug}`, [slug]);
-
   const applyTheme = useCallback((theme: DemoTemplateKey) => {
     const root = document.querySelector(".demo-template");
 
@@ -31,14 +29,12 @@ export function ThemeSwitcher({ initialTheme, slug }: ThemeSwitcherProps) {
 
     root.classList.add(`theme-${theme}`);
     root.setAttribute("data-theme", theme);
-    window.localStorage.setItem(storageKey, theme);
-  }, [storageKey]);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const queryTheme = params.get("previewTheme");
-    const storedTheme = window.localStorage.getItem(storageKey);
-    const nextTheme = normalizeTheme(queryTheme) || normalizeTheme(storedTheme) || initialTheme;
+    const nextTheme = normalizeTheme(queryTheme) || initialTheme;
 
     applyTheme(nextTheme);
     queueMicrotask(() => setActiveTheme(nextTheme));
@@ -47,7 +43,7 @@ export function ThemeSwitcher({ initialTheme, slug }: ThemeSwitcherProps) {
       .then((response) => response.json())
       .then((payload: { canSave?: boolean }) => setCanSave(Boolean(payload.canSave)))
       .catch(() => setCanSave(false));
-  }, [applyTheme, initialTheme, slug, storageKey]);
+  }, [applyTheme, initialTheme, slug]);
 
   function handleThemeChange(theme: DemoTemplateKey) {
     setActiveTheme(theme);
