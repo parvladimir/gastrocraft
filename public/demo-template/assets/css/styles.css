@@ -3759,3 +3759,55 @@ body:has(.demo-template) > div > main {
     font-size: 0.78rem;
   }
 }
+
+/* Mobile controls stay centred in the visual viewport and never cover later sections. */
+@media (max-width: 839px) {
+  .demo-template .home-page {
+    position: relative;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .demo-template .home-page .theme-switcher {
+    position: absolute;
+    top: calc(var(--header-height) + 12px);
+    right: 12px;
+    bottom: auto;
+    z-index: 45;
+  }
+
+  .demo-template .mobile-order-bar {
+    position: fixed;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 90;
+    width: auto;
+    max-width: none;
+    min-height: 64px;
+    padding: 8px;
+    transform: none;
+    border-color: color-mix(in srgb, var(--color-border) 74%, transparent);
+    background: color-mix(in srgb, var(--color-surface-strong) 94%, transparent);
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.2);
+  }
+
+  .demo-template .mobile-order-bar--1 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .demo-template .mobile-order-bar--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .demo-template .mobile-order-bar--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .demo-template .mobile-order-bar a {
+    min-width: 0;
+    min-height: 48px;
+    padding-inline: 8px;
+    font-size: 0.86rem;
+    white-space: nowrap;
+  }
+}

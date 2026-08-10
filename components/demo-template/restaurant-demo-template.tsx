@@ -630,8 +630,10 @@ function DemoFooter({ config, slug }: { config: RestaurantDemoConfig; slug: stri
 }
 
 function MobileOrderBar({ config, slug }: { config: RestaurantDemoConfig; slug: string }) {
+  const actionCount = 1 + Number(Boolean(config.phone)) + Number(Boolean(config.whatsappNumber));
+
   return (
-    <nav className="mobile-order-bar" aria-label="Schnellzugriff">
+    <nav className={`mobile-order-bar mobile-order-bar--${actionCount}`} aria-label="Schnellzugriff">
       {config.phone ? <a href={`tel:${config.phone}`}>Anrufen</a> : null}
       <Link href={`/demo/${slug}/menu`}>Menü</Link>
       {config.whatsappNumber ? (
