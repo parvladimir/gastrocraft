@@ -3826,3 +3826,39 @@ body:has(.demo-template) > div > main {
     min-height: 54px;
   }
 }
+
+/* Imbiss Pro keeps its bright, high-energy presentation on small screens. */
+@media (max-width: 839px) {
+  .demo-template .home-page .theme-switcher {
+    display: none !important;
+  }
+
+  .demo-template.theme-imbiss-pro .home-page .order-hero {
+    background:
+      linear-gradient(180deg, rgba(255, 248, 235, 0.98), rgba(255, 248, 235, 0.86) 58%, rgba(255, 248, 235, 0.54)),
+      url("../img/hero-food-order.jpg") center / cover no-repeat;
+  }
+
+  .demo-template.theme-imbiss-pro .home-page .order-hero::before {
+    opacity: 0;
+  }
+
+  .demo-template.theme-imbiss-pro .home-page .order-hero-content {
+    background: #fffdf6;
+    border-color: rgba(255, 255, 255, 0.96);
+    color: #201814;
+    box-shadow: 0 18px 42px rgba(32, 24, 20, 0.16);
+    backdrop-filter: none;
+  }
+
+  .demo-template.theme-imbiss-pro .home-page .order-hero h1,
+  .demo-template.theme-imbiss-pro .home-page .order-hero .hero-slogan,
+  .demo-template.theme-imbiss-pro .home-page .order-hero p:not(.eyebrow),
+  .demo-template.theme-imbiss-pro .home-page .hero-trust-row span {
+    color: #201814;
+  }
+
+  .demo-template.theme-imbiss-pro .home-page .order-hero-media::before {
+    background: linear-gradient(180deg, transparent 54%, rgba(32, 24, 20, 0.18));
+  }
+}
