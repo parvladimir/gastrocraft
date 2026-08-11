@@ -73,6 +73,7 @@ import type { DemoTemplateKey } from "@/lib/demo-template/types";
 import { RestaurantPresentationPanel, VisitReadinessBadge } from "@/components/sales/restaurant-presentation-panel";
 import {
   contactHistoryService,
+  offersService,
   profilesService,
   photosService,
   restaurantsService,
@@ -2393,6 +2394,7 @@ function RestaurantDetailView({
           initialResponsibleUserId={restaurant.responsible_user_id}
           restaurantId={restaurant.id}
           restaurantName={restaurant.name}
+          demoUrl={getRestaurantDemoUrl(restaurant)}
           users={data.users}
         />
 
@@ -4202,13 +4204,29 @@ function OfferPanel({
     }));
   }
 
-  function saveOffer() {
+  async function saveOffer() {
+    if (!supabase) {
+      setPdfError("Supabase ist nicht konfiguriert.");
+      return null;
+    }
+
+    const nextOffer = {
+      ...offer,
+      updated_at: new Date().toISOString()
+    };
+    const offerExists = data.offers.some((candidate) => candidate.id === nextOffer.id);
+    const result = offerExists
+      ? await offersService.updateOffer(supabase, nextOffer.id, nextOffer)
+      : await offersService.createOffer(supabase, nextOffer);
+
+    if (result.error || !result.data) {
+      setPdfError(result.error || "Angebot konnte nicht gespeichert werden.");
+      return null;
+    }
+
+    setOffer(result.data);
     onUpdateData((currentData) => {
-      const nextOffer = {
-        ...offer,
-        updated_at: new Date().toISOString()
-      };
-      const offerExists = currentData.offers.some((candidate) => candidate.id === offer.id);
+      const alreadyExists = currentData.offers.some((candidate) => candidate.id === result.data.id);
 
       return {
         ...currentData,
@@ -4226,11 +4244,11 @@ function OfferPanel({
                 })
               ]
             : currentData.contact_history,
-        offers: offerExists
+        offers: alreadyExists
           ? currentData.offers.map((candidate) =>
-              candidate.id === offer.id ? nextOffer : candidate
+              candidate.id === result.data.id ? result.data : candidate
             )
-          : [...currentData.offers, nextOffer],
+          : [...currentData.offers, result.data],
         restaurants:
           nextOffer.status === "sent"
             ? currentData.restaurants.map((candidate) =>
@@ -4246,16 +4264,21 @@ function OfferPanel({
             : currentData.restaurants
       };
     });
+    setPdfError("");
+    return result.data;
   }
 
   async function generatePdf() {
-    saveOffer();
+    const savedOffer = await saveOffer();
+    if (!savedOffer) {
+      return;
+    }
     setPdfBusy(true);
     setPdfError("");
 
     try {
-      const response = await fetch(`/api/sales/offers/${offer.id}/pdf`, {
-        body: JSON.stringify({ offer }),
+      const response = await fetch(`/api/sales/offers/${savedOffer.id}/pdf`, {
+        body: JSON.stringify({ offer: savedOffer }),
         headers: {
           "Content-Type": "application/json"
         },
@@ -4272,7 +4295,7 @@ function OfferPanel({
       }
 
       const nextOffer = {
-        ...offer,
+        ...savedOffer,
         ...payload.offer
       };
       setOffer(nextOffer);
@@ -4309,7 +4332,7 @@ function OfferPanel({
         className={`${inputClassName} min-h-28 py-3`}
       />
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <button className={goldButtonClassName} type="button" onClick={saveOffer}>
+        <button className={goldButtonClassName} type="button" onClick={() => void saveOffer()}>
           Angebot speichern
         </button>
         <button className={outlineButtonClassName} type="button" onClick={() => onCopy(createOfferText(restaurant, offer))}>

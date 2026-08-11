@@ -45,6 +45,7 @@ export function RestaurantPresentationPanel({
   initialResponsibleUserId,
   restaurantId,
   restaurantName,
+  demoUrl: initialDemoUrl,
   users
 }: {
   currentUser: SalesUser;
@@ -53,9 +54,10 @@ export function RestaurantPresentationPanel({
   initialResponsibleUserId: string;
   restaurantId: string;
   restaurantName: string;
+  demoUrl: string;
   users: SalesUser[];
 }) {
-  const [demo, setDemo] = useState<DemoState | null>(null);
+  const [demo, setDemo] = useState<DemoState | null>(() => createFallbackDemo(initialDemoUrl));
   const [error, setError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +68,7 @@ export function RestaurantPresentationPanel({
 
   const activeResponsibleId = responsibleUserId || currentUser.id;
   const responsibleName = users.find((user) => user.id === activeResponsibleId)?.name || currentUser.name;
+  const activeDemo = demo || createFallbackDemo(initialDemoUrl);
 
   async function load() {
     setIsLoading(true);
@@ -123,7 +126,7 @@ export function RestaurantPresentationPanel({
         setError(payload.message || "Präsentationsblatt konnte nicht erstellt werden.");
         return;
       }
-      setPresentation({ ...payload.presentation, downloadUrl: payload.downloadUrl || "", isStale: false, presentationDemoVersion: demo?.version || 0 });
+      setPresentation({ ...payload.presentation, downloadUrl: payload.downloadUrl || "", isStale: false, presentationDemoVersion: activeDemo?.version || 0 });
       setPreviewOpen(false);
       await load();
     } catch {
@@ -159,7 +162,7 @@ export function RestaurantPresentationPanel({
   }
 
   function shareDemo() {
-    if (!demo) {
+    if (!activeDemo) {
       return;
     }
     const message = [
@@ -167,7 +170,7 @@ export function RestaurantPresentationPanel({
       "",
       `wir haben eine unverbindliche digitale Demo speziell für ${restaurantName} vorbereitet:`,
       "",
-      demo.url,
+      activeDemo.url,
       "",
       "Zusätzlich haben wir eine kurze Übersicht vorbereitet, wie wir Ihren digitalen Auftritt modernisieren könnten.",
       "",
@@ -181,7 +184,7 @@ export function RestaurantPresentationPanel({
   }
 
   const status = useMemo(() => {
-    if (!demo) {
+    if (!activeDemo) {
       return { label: "DEMO FEHLT", tone: "text-orange-200" };
     }
     if (!presentation) {
@@ -191,7 +194,7 @@ export function RestaurantPresentationPanel({
       return { label: "PRÄSENTATION NICHT AKTUELL", tone: "text-amber-200" };
     }
     return { label: "BESUCHSBEREIT", tone: "text-emerald-200" };
-  }, [demo, presentation]);
+  }, [activeDemo, presentation]);
 
   return (
     <section className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4" aria-labelledby="presentation-heading">
@@ -200,7 +203,7 @@ export function RestaurantPresentationPanel({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold">Präsentationsmaterial</p>
           <h2 id="presentation-heading" className="mt-1 font-heading text-xl font-semibold">Persönliche Präsentation</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-            {demo
+            {activeDemo
               ? "Ein druckbares A4-Blatt mit persönlicher Live-Demo und QR-Code für den Besuch vor Ort."
               : "Für dieses Restaurant muss zuerst ein persönliches Demo erstellt werden."}
           </p>
@@ -211,14 +214,14 @@ export function RestaurantPresentationPanel({
       {error ? <p className="mt-4 rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-100">{error}</p> : null}
       {isLoading ? <p className="mt-4 text-sm text-slate-400">Präsentationsmaterial wird geladen …</p> : null}
 
-      {!isLoading && !demo ? (
+      {!isLoading && !activeDemo ? (
         <button className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded bg-premium-gold px-4 text-sm font-semibold text-midnight transition-colors hover:bg-[#e0b936]" type="button" onClick={onCreateDemo}>
           <FileText aria-hidden="true" className="h-4 w-4" />
           Demo erstellen
         </button>
       ) : null}
 
-      {!isLoading && demo ? (
+      {!isLoading && activeDemo ? (
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded bg-premium-gold px-4 text-sm font-semibold text-midnight transition-colors hover:bg-[#e0b936]" type="button" onClick={() => setPreviewOpen(true)}>
             <FileText aria-hidden="true" className="h-4 w-4" />
@@ -233,7 +236,7 @@ export function RestaurantPresentationPanel({
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold disabled:cursor-not-allowed disabled:opacity-45" type="button" disabled={!presentation?.downloadUrl} onClick={() => openPdf("print")}>
             <Printer aria-hidden="true" className="h-4 w-4" /> Drucken
           </button>
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold" type="button" onClick={() => onCopy(demo.url)}>
+          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold" type="button" onClick={() => onCopy(activeDemo.url)}>
             <Clipboard aria-hidden="true" className="h-4 w-4" /> Link kopieren
           </button>
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold" type="button" onClick={shareDemo}>
@@ -269,7 +272,7 @@ export function RestaurantPresentationPanel({
                   </div>
                   <div className="rounded border border-premium-gold/45 bg-warm-white p-3 text-midnight">
                     <div className="aspect-square bg-white p-1">
-                      <Image src={`/api/demo-qr?data=${encodeURIComponent(demo?.url || "")}`} alt="QR-Code zur persönlichen Live-Demo" width={144} height={144} unoptimized className="h-full w-full" />
+                      <Image src={`/api/demo-qr?data=${encodeURIComponent(activeDemo?.url || "")}`} alt="QR-Code zur persönlichen Live-Demo" width={144} height={144} unoptimized className="h-full w-full" />
                     </div>
                     <p className="mt-2 text-center text-[0.55rem] font-semibold">QR-Code scannen</p>
                   </div>
@@ -353,4 +356,13 @@ function formatDate(value: string) {
   }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+function createFallbackDemo(url: string): DemoState | null {
+  if (!url) {
+    return null;
+  }
+
+  const slug = url.split("/demo/")[1]?.split(/[?#]/)[0] || "";
+  return { id: "", slug, url, version: 0 };
 }
