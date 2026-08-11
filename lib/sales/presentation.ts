@@ -215,10 +215,10 @@ function drawDemoVisual(
     x: mockup.x,
     y: mockup.y
   });
-  page.drawRectangle({ color: colors.gold, height: 12, width: mockup.w, x: mockup.x, y: mockup.y + mockup.h - 12 });
-  page.drawCircle({ color: colors.navy, size: 2.2, x: mockup.x + 9, y: mockup.y + mockup.h - 6 });
-  page.drawCircle({ color: colors.navy, size: 2.2, x: mockup.x + 16, y: mockup.y + mockup.h - 6 });
-  page.drawCircle({ color: colors.navy, size: 2.2, x: mockup.x + 23, y: mockup.y + mockup.h - 6 });
+  page.drawRectangle({ color: colors.gold, height: 9, width: mockup.w, x: mockup.x, y: mockup.y + mockup.h - 9 });
+  page.drawCircle({ color: colors.navy, size: 1.8, x: mockup.x + 9, y: mockup.y + mockup.h - 4.5 });
+  page.drawCircle({ color: colors.navy, size: 1.8, x: mockup.x + 15, y: mockup.y + mockup.h - 4.5 });
+  page.drawCircle({ color: colors.navy, size: 1.8, x: mockup.x + 21, y: mockup.y + mockup.h - 4.5 });
 
   if (hero) {
     page.drawRectangle({ color: colors.navy, height: 118, width: mockup.w - 24, x: mockup.x + 12, y: mockup.y + 75 });
@@ -229,13 +229,11 @@ function drawDemoVisual(
     page.drawText("für Ihr Restaurant", { color: colors.navyCard, font: serif, size: 18, x: mockup.x + 28, y: mockup.y + 102 });
   }
 
-  page.drawText(truncate(input.restaurantName, 28), { color: colors.white, font: bold, size: 12, x: mockup.x + 12, y: mockup.y + 53 });
-  page.drawText(truncate(input.category || "Restaurant", 38), { color: colors.slate, font, size: 8, x: mockup.x + 12, y: mockup.y + 39 });
-  if (input.restaurantAddress) {
-    page.drawText(truncate(input.restaurantAddress, 54), { color: colors.slate, font, size: 6.7, x: mockup.x + 12, y: mockup.y + 28 });
-  }
-  page.drawRectangle({ color: colors.gold, height: 16, width: 102, x: mockup.x + 12, y: mockup.y + 14 });
-  page.drawText("DEMO ÖFFNEN", { color: colors.navy, font: bold, size: 7, x: mockup.x + 29, y: mockup.y + 19 });
+  page.drawText(truncate(input.restaurantName, 28), { color: colors.white, font: bold, size: 12.5, x: mockup.x + 12, y: mockup.y + 53 });
+  const mockupContext = [input.category || "Restaurant", input.restaurantAddress].filter(Boolean).join(" - ");
+  page.drawText(truncate(mockupContext, 51), { color: colors.slate, font, size: 7.2, x: mockup.x + 12, y: mockup.y + 35 });
+  page.drawRectangle({ color: colors.gold, height: 14, width: 96, x: mockup.x + 12, y: mockup.y + 12 });
+  page.drawText("LIVE-DEMO ÖFFNEN", { color: colors.navy, font: bold, size: 6.2, x: mockup.x + 25, y: mockup.y + 16.3 });
 
   page.drawRectangle({
     borderColor: colors.gold,
