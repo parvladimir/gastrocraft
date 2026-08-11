@@ -247,6 +247,39 @@ The Sales Manager now includes the following Supabase-backed CRM modules:
 - protected `/sales/pipeline` and `/sales/statistik` routes
 - public restaurant demo pages generated from CRM snapshots at `/demo/[slug]`
 
+### Personalised A4 Presentations
+
+`supabase/migrations/20260811_001_restaurant_presentations.sql` adds the
+private `presentations` Storage bucket and the versioned
+`restaurant_presentations` table. Run it after the existing migrations before
+using the sales-sheet controls in a restaurant card.
+
+The PDF is generated on the authenticated Node.js server route
+`/api/sales/restaurants/[restaurantId]/presentation`. It contains the current
+published demo URL, a high-contrast QR code and a versioned snapshot of the
+chosen content. Files are private and the CRM returns short-lived signed URLs
+only after authentication.
+
+Set the CRM contact data in `sales_settings` before the first printout. The
+generator reads the active responsible person from `profiles` and looks for
+their optional phone/WhatsApp values in the `contact_data` setting; it never
+hardcodes a private number in the PDF route. One compatible value is:
+
+```sql
+insert into public.sales_settings (key, value)
+values (
+  'contact_data',
+  '{"contacts":[{"name":"Andrii","phone":"+49 ...","whatsapp":"+49 ..."},{"name":"Volodymyr","phone":"+49 ...","whatsapp":"+49 ..."}]}'::jsonb
+)
+on conflict (key) do update set value = excluded.value, updated_at = now();
+```
+
+Use the restaurant card to create an A4 preview, generate the versioned PDF,
+open/download/print it and share the demo link through WhatsApp. After a demo
+is changed, its previous presentation is marked `Präsentation nicht aktuell`
+until regenerated. Test the printed QR code from a real phone before using a
+sheet during visits.
+
 Manual Supabase checks before production use:
 
 1. Confirm RLS is enabled on all Sales Manager tables.

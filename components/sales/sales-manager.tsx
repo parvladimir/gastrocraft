@@ -70,6 +70,7 @@ import type {
 } from "@/lib/restaurant-lookup-types";
 import { demoTemplateThemes } from "@/lib/demo-template/defaults";
 import type { DemoTemplateKey } from "@/lib/demo-template/types";
+import { RestaurantPresentationPanel, VisitReadinessBadge } from "@/components/sales/restaurant-presentation-panel";
 import {
   contactHistoryService,
   profilesService,
@@ -2384,6 +2385,17 @@ function RestaurantDetailView({
           restaurant={restaurant}
         />
 
+        <RestaurantPresentationPanel
+          key={restaurant.id}
+          currentUser={currentUser}
+          onCopy={onCopy}
+          onCreateDemo={() => void onGenerateDemo({ templateKey: "auto" })}
+          initialResponsibleUserId={restaurant.responsible_user_id}
+          restaurantId={restaurant.id}
+          restaurantName={restaurant.name}
+          users={data.users}
+        />
+
         {showDemoChooser ? (
           <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4">
             <p className="font-heading text-lg font-semibold">Demo auswählen</p>
@@ -4373,13 +4385,7 @@ function TaskPanel({
                   <p className={`mt-2 text-sm ${overdue ? "text-red-200" : "text-premium-gold"}`}>
                     {task.title}: {formatDateTime(task.due_at)}
                   </p>
-                  <p className={`mt-2 inline-flex rounded border px-2 py-1 text-xs font-semibold ${
-                    restaurant.selected_demo === "custom" && restaurant.custom_demo_url
-                      ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100"
-                      : "border-orange-300/30 bg-orange-400/10 text-orange-100"
-                  }`}>
-                    {restaurant.selected_demo === "custom" && restaurant.custom_demo_url ? "Demo bereit" : "Demo fehlt"}
-                  </p>
+                  <VisitReadinessBadge restaurant={restaurant} />
                 </div>
                 <span className="text-xs text-slate-500">
                   {getUserName(users, task.assigned_to)}

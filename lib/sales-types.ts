@@ -59,7 +59,12 @@ export type ContactActionType =
   | "demo_link_copied"
   | "demo_sent"
   | "demo_archived"
-  | "demo_theme_changed";
+  | "demo_theme_changed"
+  | "presentation_generated"
+  | "presentation_regenerated"
+  | "presentation_downloaded"
+  | "presentation_printed"
+  | "presentation_shared";
 
 export type TourStatus = "Geplant" | "Aktiv" | "Abgeschlossen";
 export type TourStopStatus = "Geplant" | "Besucht" | "Übersprungen";
@@ -294,6 +299,22 @@ export type SalesSetting = {
   updated_at: string;
   updated_by: SalesUserId | "";
   value: unknown;
+};
+
+export type RestaurantPresentation = {
+  created_at: string;
+  demo_page_id: string;
+  demo_url: string;
+  generated_at: string;
+  generated_by: SalesUserId;
+  id: string;
+  pdf_storage_path: string;
+  presentation_type: "a4_sales_sheet";
+  qr_target_url: string;
+  restaurant_id: string;
+  theme_snapshot: Record<string, unknown>;
+  updated_at: string;
+  version: number;
 };
 
 export type SalesData = {
