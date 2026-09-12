@@ -71,6 +71,7 @@ import type {
 import { demoTemplateThemes } from "@/lib/demo-template/defaults";
 import type { DemoTemplateKey } from "@/lib/demo-template/types";
 import { RestaurantPresentationPanel, VisitReadinessBadge } from "@/components/sales/restaurant-presentation-panel";
+import { AgentDiscoveryBlock, AgentScoutAdminPanel } from "@/components/sales/agent-scout-admin";
 import {
   contactHistoryService,
   offersService,
@@ -95,7 +96,8 @@ type ViewMode =
   | "pipeline"
   | "statistics"
   | "more"
-  | "import";
+  | "import"
+  | "agentLeads";
 
 type RestaurantDraft = Omit<
   Restaurant,
@@ -1290,6 +1292,7 @@ DINEVIO`;
             onClearLegacyData={clearLegacyLocalData}
             onExport={exportCsv}
             onImport={() => setView("import")}
+            onOpenAgentLeads={() => setView("agentLeads")}
             onRestore={restoreBackup}
             onUpdateData={updateData}
           />
@@ -1304,6 +1307,30 @@ DINEVIO`;
             onPreview={createImportPreview}
             onSave={saveImportPreview}
           />
+        ) : null}
+
+        {view === "agentLeads" ? (
+          <div className="grid gap-5">
+            <SectionHeader
+              eyebrow="Scout"
+              title="Agent Leads."
+              text="Vom Restaurant Scout Bot gefundene Leads und Runs."
+              action={
+                <button className={outlineButtonClassName} type="button" onClick={() => setView("more")}>
+                  Zurück
+                </button>
+              }
+            />
+            <AgentScoutAdminPanel
+              currentUser={currentUser}
+              restaurants={restaurants}
+              users={data.users}
+              onOpenRestaurant={(id) => {
+                setSelectedRestaurantId(id);
+                setView("detail");
+              }}
+            />
+          </div>
         ) : null}
       </main>
 
@@ -2378,6 +2405,8 @@ function RestaurantDetailView({
         </div>
 
         <PresenceAnalysisPanel presence={restaurant.digital_presence} />
+
+        <AgentDiscoveryBlock restaurant={restaurant} users={data.users} />
 
         <PersonalDemoPanel
           data={data}
@@ -3512,6 +3541,7 @@ function MoreView({
   onClearLegacyData,
   onExport,
   onImport,
+  onOpenAgentLeads,
   onRestore,
   onUpdateData
 }: {
@@ -3521,6 +3551,7 @@ function MoreView({
   onClearLegacyData: () => void;
   onExport: () => void;
   onImport: () => void;
+  onOpenAgentLeads: () => void;
   onRestore: (file: File) => void;
   onUpdateData: (updater: (currentData: SalesData) => SalesData) => void;
 }) {
@@ -3564,6 +3595,11 @@ function MoreView({
         <a className={outlineButtonClassName} href="/sales/statistik">
           Statistik öffnen
         </a>
+        {currentUser.role === "admin" ? (
+          <button className={outlineButtonClassName} type="button" onClick={onOpenAgentLeads}>
+            Agent Leads & Runs
+          </button>
+        ) : null}
       </div>
       <div className={panelClassName}>
         <h2 className="font-heading text-xl font-semibold">Datensicherung</h2>
