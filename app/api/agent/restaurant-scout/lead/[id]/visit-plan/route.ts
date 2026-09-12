@@ -12,7 +12,7 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, context: RouteContext) {
-  const auth = await requireRestaurantScout({ requireBotEnabled: true });
+  const auth = await requireRestaurantScout({ requireBotEnabled: true, request });
   if (isAuthFailure(auth)) {
     return auth.response;
   }

@@ -31,17 +31,15 @@ export async function writeAgentAudit(
   ctx: ScoutAuthContext,
   input: AuditInput
 ) {
-  const { error } = await ctx.supabase.from("agent_audit_log").insert({
-    action: input.action,
-    agent_run_id: input.runId ?? null,
-    agent_user_id: ctx.user.id,
-    details: scrubDetails(input.details),
-    resource_id: input.resourceId ?? null,
-    resource_type: input.resourceType ?? null,
-    success: input.success ?? true
-  });
-
-  if (error) {
-    console.error("agent_audit_log insert failed", error.message);
+  // Successful mutations are logged atomically by the database RPCs. A bot
+  // cannot write audit rows directly; failed requests stay in server logs.
+  if (input.success === false) {
+    console.warn("restaurant scout request failed", {
+      action: input.action,
+      agentUserId: ctx.user.id,
+      details: scrubDetails(input.details),
+      resourceId: input.resourceId ?? null,
+      runId: input.runId ?? null
+    });
   }
 }

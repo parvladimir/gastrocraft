@@ -9,13 +9,12 @@ import {
   loadActiveRun,
   mapLeadPayload,
   requireRestaurantScout,
-  storeIdempotentResponse,
   validationErrorResponse,
   writeAgentAudit
 } from "@/lib/agent/restaurant-scout";
 
 export async function POST(request: Request) {
-  const auth = await requireRestaurantScout({ requireBotEnabled: true });
+  const auth = await requireRestaurantScout({ requireBotEnabled: true, request });
   if (isAuthFailure(auth)) {
     return auth.response;
   }
@@ -71,7 +70,7 @@ export async function POST(request: Request) {
       );
     }
     if (hit) {
-      if (hit.requestHash && hit.requestHash !== requestHash) {
+      if (hit.requestHash !== requestHash) {
         return NextResponse.json(
           {
             error: "idempotency_conflict",
@@ -127,7 +126,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const leadPayload = mapLeadPayload(parsed.data);
+  const leadPayload = {
+    ...mapLeadPayload(parsed.data),
+    ...(idempotencyKey
+      ? { _idempotency_key: idempotencyKey, _request_hash: requestHash }
+      : {})
+  };
   const { data, error } = await auth.supabase.rpc("create_scout_lead", {
     p_lead: leadPayload,
     p_run_id: parsed.data.run_id
@@ -136,6 +140,7 @@ export async function POST(request: Request) {
   if (error || !data) {
     const message = error?.message ?? "Lead creation failed.";
     const isDuplicate = /duplicate/i.test(message);
+    const isIdempotencyConflict = /Idempotency-Key conflict/i.test(message);
     await writeAgentAudit(auth, {
       action: "lead.create.failed",
       runId: parsed.data.run_id,
@@ -144,10 +149,14 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(
       {
-        error: isDuplicate ? "duplicate" : "lead_create_failed",
+        error: isIdempotencyConflict
+          ? "idempotency_conflict"
+          : isDuplicate
+            ? "duplicate"
+            : "lead_create_failed",
         message
       },
-      { status: isDuplicate ? 409 : 400 }
+      { status: isDuplicate || isIdempotencyConflict ? 409 : 400 }
     );
   }
 
@@ -177,16 +186,6 @@ export async function POST(request: Request) {
       lead_score: data.lead_score
     }
   });
-
-  if (idempotencyKey) {
-    await storeIdempotentResponse(auth, {
-      body,
-      key: idempotencyKey,
-      path,
-      requestHash,
-      status: 201
-    });
-  }
 
   return NextResponse.json(body, { status: 201 });
 }

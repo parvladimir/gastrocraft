@@ -8,7 +8,7 @@ import type { ScoutAuthContext } from "./authz";
 
 export function resolveMaxLeadsPerRun(requested?: number) {
   const configured = Number.isFinite(MAX_AGENT_LEADS_PER_RUN)
-    ? Math.max(1, Math.min(20, MAX_AGENT_LEADS_PER_RUN))
+    ? Math.max(1, Math.min(3, MAX_AGENT_LEADS_PER_RUN))
     : 3;
   if (typeof requested !== "number") {
     return configured;
@@ -55,12 +55,15 @@ export async function assertLeadRateLimits(ctx: ScoutAuthContext) {
     };
   }
 
-  if ((dayCount ?? 0) >= MAX_AGENT_LEADS_PER_DAY) {
+  const dailyCap = Number.isFinite(MAX_AGENT_LEADS_PER_DAY)
+    ? Math.max(1, Math.min(3, MAX_AGENT_LEADS_PER_DAY))
+    : 3;
+  if ((dayCount ?? 0) >= dailyCap) {
     return {
       ok: false as const,
       status: 429,
       error: "rate_limited",
-      message: `Daily lead cap (${MAX_AGENT_LEADS_PER_DAY}) exceeded.`
+      message: `Daily lead cap (${dailyCap}) exceeded.`
     };
   }
 

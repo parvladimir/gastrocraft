@@ -26,7 +26,7 @@ export function mapLeadPayload(input: CreateLeadInput) {
     source_url: emptyToUndefined(input.source_url),
     street: emptyToUndefined(input.street),
     website: emptyToUndefined(input.website),
-    website_status: input.website_status ?? "unknown"
+    website_status: input.website_status
   };
 }
 

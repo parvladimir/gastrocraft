@@ -10,7 +10,7 @@ import {
 } from "@/lib/agent/restaurant-scout";
 
 export async function POST(request: Request) {
-  const auth = await requireRestaurantScout({ requireBotEnabled: true });
+  const auth = await requireRestaurantScout({ requireBotEnabled: true, request });
   if (isAuthFailure(auth)) {
     return auth.response;
   }
@@ -37,18 +37,12 @@ export async function POST(request: Request) {
   }
 
   const maxLeads = resolveMaxLeadsPerRun(parsed.data.max_leads);
-  const { data, error } = await auth.supabase
-    .from("agent_runs")
-    .insert({
-      agent_user_id: auth.user.id,
-      city: parsed.data.city ?? null,
-      max_leads: maxLeads,
-      notes: parsed.data.notes ?? null,
-      region: parsed.data.region ?? null,
-      status: "running"
-    })
-    .select("*")
-    .single();
+  const { data, error } = await auth.supabase.rpc("scout_start_run", {
+    p_city: parsed.data.city ?? null,
+    p_max_leads: maxLeads,
+    p_notes: parsed.data.notes ?? null,
+    p_region: parsed.data.region ?? null
+  });
 
   if (error || !data) {
     await writeAgentAudit(auth, {

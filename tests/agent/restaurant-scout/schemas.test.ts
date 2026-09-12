@@ -34,21 +34,36 @@ describe("restaurant scout schemas", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects a lead with its own website or no source evidence", () => {
+    const base = {
+      run_id: "11111111-1111-4111-8111-111111111111",
+      name: "Test Imbiss",
+      lead_score: 50,
+      source_url: "https://example.com/listing",
+      website_status: "missing",
+      selection_reason: "Active restaurant with no own website"
+    };
+    expect(createLeadSchema.safeParse({ ...base, website: "https://test.example" }).success).toBe(false);
+    expect(createLeadSchema.safeParse({ ...base, source_url: "" }).success).toBe(false);
+  });
+
   it("accepts valid lead payload and maps allowlisted fields only", () => {
     const parsed = createLeadSchema.parse({
       run_id: "11111111-1111-4111-8111-111111111111",
       name: "Test Imbiss",
       city: "Berlin",
       lead_score: 77,
-      website: "https://example.com",
-      selection_reason: "No booking widget"
+      source_url: "https://example.com/listing",
+      website_status: "missing",
+      selection_reason: "Confirmed active and no own website"
     });
     const mapped = mapLeadPayload(parsed);
     expect(mapped).toMatchObject({
       name: "Test Imbiss",
       city: "Berlin",
       lead_score: 77,
-      website: "https://example.com"
+      source_url: "https://example.com/listing",
+      website_status: "missing"
     });
     expect(mapped).not.toHaveProperty("created_by");
     expect(mapped).not.toHaveProperty("role");
@@ -72,7 +87,7 @@ describe("restaurant scout schemas", () => {
   });
 
   it("caps max leads per run by configuration", () => {
-    expect(resolveMaxLeadsPerRun(99)).toBeLessThanOrEqual(20);
+    expect(resolveMaxLeadsPerRun(99)).toBeLessThanOrEqual(3);
     expect(resolveMaxLeadsPerRun(1)).toBe(1);
   });
 });

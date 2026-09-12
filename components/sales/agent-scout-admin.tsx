@@ -15,6 +15,12 @@ type LeadFilter = {
   visitStatus: string;
 };
 
+type ScoutBot = {
+  id: string;
+  name: string;
+  bot_enabled: boolean;
+};
+
 export function AgentDiscoveryBlock({
   restaurant,
   users
@@ -88,9 +94,9 @@ export function AgentScoutAdminPanel({
   });
   const [runs, setRuns] = useState<AgentRun[]>([]);
   const [runsError, setRunsError] = useState("");
-  const [killSwitchSql] = useState(
-    "update public.profiles set bot_enabled = false where role = 'restaurant_scout_bot';"
-  );
+  const [bots, setBots] = useState<ScoutBot[]>([]);
+  const [botError, setBotError] = useState("");
+  const [updatingBotId, setUpdatingBotId] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentUser.role !== "admin") {
@@ -119,10 +125,57 @@ export function AgentScoutAdminPanel({
     }
 
     void loadRuns();
+    async function loadBots() {
+      const supabase = createSupabaseBrowserClient();
+      if (!supabase) {
+        return;
+      }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name, bot_enabled")
+        .eq("role", "restaurant_scout_bot")
+        .order("name");
+      if (cancelled) {
+        return;
+      }
+      if (error) {
+        setBotError(error.message);
+        return;
+      }
+      setBots((data ?? []) as ScoutBot[]);
+    }
+    void loadBots();
     return () => {
       cancelled = true;
     };
   }, [currentUser.role]);
+
+  async function setBotEnabled(bot: ScoutBot, enabled: boolean) {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) {
+      setBotError("Supabase ist nicht konfiguriert.");
+      return;
+    }
+    setBotError("");
+    setUpdatingBotId(bot.id);
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ bot_enabled: enabled })
+      .eq("id", bot.id)
+      .eq("role", "restaurant_scout_bot")
+      .select("id, bot_enabled")
+      .single();
+    setUpdatingBotId(null);
+    if (error || !data) {
+      setBotError(error?.message ?? "Bot-Status konnte nicht geändert werden.");
+      return;
+    }
+    setBots((current) =>
+      current.map((item) =>
+        item.id === bot.id ? { ...item, bot_enabled: data.bot_enabled } : item
+      )
+    );
+  }
 
   const agentLeads = useMemo(() => {
     return restaurants
@@ -291,20 +344,31 @@ export function AgentScoutAdminPanel({
       <div className={panelClassName}>
         <h2 className="font-heading text-xl font-semibold">Kill Switch</h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Sofortiges Deaktivieren aller Scout-Bots in Supabase SQL Editor:
+          Scout-Zugriff sofort deaktivieren oder nach einer Prüfung wieder aktivieren.
         </p>
-        <pre className="mt-3 overflow-x-auto rounded border border-white/10 bg-midnight/50 p-3 text-xs text-slate-200">
-          {killSwitchSql}
-        </pre>
-        <button
-          className={`${outlineButtonClassName} mt-4`}
-          type="button"
-          onClick={async () => {
-            await navigator.clipboard.writeText(killSwitchSql);
-          }}
-        >
-          SQL kopieren
-        </button>
+        {botError ? <p className="mt-3 text-sm text-red-200">{botError}</p> : null}
+        <div className="mt-4 grid gap-3">
+          {bots.map((bot) => (
+            <div key={bot.id} className="flex flex-wrap items-center justify-between gap-3 rounded border border-white/10 bg-midnight/40 px-4 py-3">
+              <span className="text-sm text-warm-white">
+                {bot.name} · {bot.bot_enabled ? "Aktiv" : "Deaktiviert"}
+              </span>
+              <button
+                className={outlineButtonClassName}
+                type="button"
+                disabled={updatingBotId === bot.id}
+                onClick={() => void setBotEnabled(bot, !bot.bot_enabled)}
+              >
+                {updatingBotId === bot.id
+                  ? "Speichern…"
+                  : bot.bot_enabled
+                    ? "Deaktivieren"
+                    : "Aktivieren"}
+              </button>
+            </div>
+          ))}
+          {bots.length === 0 ? <p className="text-sm text-slate-400">Kein Scout-Bot vorhanden.</p> : null}
+        </div>
       </div>
     </div>
   );

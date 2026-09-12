@@ -9,7 +9,7 @@ import {
 } from "@/lib/agent/restaurant-scout";
 
 export async function POST(request: Request) {
-  const auth = await requireRestaurantScout();
+  const auth = await requireRestaurantScout({ request });
   if (isAuthFailure(auth)) {
     return auth.response;
   }

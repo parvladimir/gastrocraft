@@ -13,7 +13,7 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, context: RouteContext) {
-  const auth = await requireRestaurantScout({ requireBotEnabled: true });
+  const auth = await requireRestaurantScout({ requireBotEnabled: true, request });
   if (isAuthFailure(auth)) {
     return auth.response;
   }
@@ -49,19 +49,11 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 
-  const { data, error } = await auth.supabase
-    .from("agent_runs")
-    .update({
-      error_message: parsed.data.error_message ?? null,
-      finished_at: new Date().toISOString(),
-      status: parsed.data.status,
-      updated_at: new Date().toISOString()
-    })
-    .eq("id", id)
-    .eq("agent_user_id", auth.user.id)
-    .eq("status", "running")
-    .select("*")
-    .single();
+  const { data, error } = await auth.supabase.rpc("scout_finish_run", {
+    p_error_message: parsed.data.error_message ?? null,
+    p_run_id: id,
+    p_status: parsed.data.status
+  });
 
   if (error || !data) {
     await writeAgentAudit(auth, {

@@ -173,7 +173,10 @@ describe("POST /api/agent/restaurant-scout/lead security", () => {
         body: JSON.stringify({
           run_id: "11111111-1111-4111-8111-111111111111",
           name: "Cafe",
-          lead_score: 40
+          lead_score: 40,
+          source_url: "https://example.com/cafe",
+          website_status: "missing",
+          selection_reason: "Active cafe with no own website"
         })
       })
     );

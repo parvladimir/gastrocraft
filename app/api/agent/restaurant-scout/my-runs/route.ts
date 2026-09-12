@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { isAuthFailure, requireRestaurantScout } from "@/lib/agent/restaurant-scout";
 
-export async function GET() {
-  const auth = await requireRestaurantScout();
+export async function GET(request: Request) {
+  const auth = await requireRestaurantScout({ request });
   if (isAuthFailure(auth)) {
     return auth.response;
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import type { User } from "@supabase/supabase-js";
+import { createClient, type User } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { SCOUT_ROLE } from "./constants";
 
 export type ScoutProfile = {
@@ -22,10 +23,26 @@ export type ScoutAuthFailure = {
 };
 
 export async function requireRestaurantScout(
-  options: { requireBotEnabled?: boolean } = {}
+  options: { requireBotEnabled?: boolean; request?: Request } = {}
 ): Promise<ScoutAuthContext | ScoutAuthFailure> {
   const requireBotEnabled = options.requireBotEnabled ?? false;
-  const supabase = await createSupabaseServerClient();
+  const authorization = options.request?.headers.get("authorization");
+  const token = authorization?.match(/^Bearer ([^\s]+)$/i)?.[1];
+  if (authorization && !token) {
+    return {
+      response: NextResponse.json(
+        { error: "unauthorized", message: "Invalid Authorization header." },
+        { status: 401 }
+      )
+    };
+  }
+  const config = getSupabaseConfig();
+  const supabase = token && config.isConfigured
+    ? createClient(config.url, config.anonKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+        global: { headers: { Authorization: `Bearer ${token}` } }
+      })
+    : await createSupabaseServerClient();
 
   if (!supabase) {
     return {
@@ -39,7 +56,7 @@ export async function requireRestaurantScout(
   const {
     data: { user },
     error: userError
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser(token);
 
   if (userError || !user) {
     return {
