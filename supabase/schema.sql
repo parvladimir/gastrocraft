@@ -8,7 +8,8 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   name text not null,
   email text,
-  role text not null default 'sales' check (role in ('admin', 'sales')),
+  role text not null default 'sales' check (role in ('admin', 'sales', 'restaurant_scout_bot')),
+  bot_enabled boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

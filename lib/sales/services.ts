@@ -763,12 +763,20 @@ export function normalizeSalesError(message: string) {
 }
 
 function mapProfile(row: DbRecord): SalesUser {
+  const role =
+    row.role === "admin"
+      ? "admin"
+      : row.role === "restaurant_scout_bot"
+        ? "restaurant_scout_bot"
+        : "sales";
+
   return {
+    bot_enabled: row.bot_enabled !== false,
     created_at: toString(row.created_at),
     email: toString(row.email),
     id: toString(row.id),
     name: toString(row.name),
-    role: row.role === "admin" ? "admin" : "sales",
+    role,
     updated_at: toString(row.updated_at)
   };
 }
@@ -817,7 +825,18 @@ function mapRestaurant(row: DbRecord): Restaurant {
     tiktok: toString(row.tiktok),
     updated_at: toString(row.updated_at),
     updated_by: toString(row.updated_by),
-    website: toString(row.website)
+    website: toString(row.website),
+    source_type: toString(row.source_type) as Restaurant["source_type"],
+    created_by_agent: Boolean(row.created_by_agent),
+    agent_run_id: toString(row.agent_run_id),
+    discovered_at: toString(row.discovered_at),
+    source_url: toString(row.source_url),
+    source_name: toString(row.source_name),
+    website_status: toString(row.website_status) as Restaurant["website_status"],
+    lead_score: typeof row.lead_score === "number" ? row.lead_score : null,
+    selection_reason: toString(row.selection_reason),
+    lead_status: toString(row.lead_status) as Restaurant["lead_status"],
+    visit_status: toString(row.visit_status) as Restaurant["visit_status"]
   };
 }
 
@@ -1106,13 +1125,29 @@ function toMessageTemplatePatchRow(patch: Partial<MessageTemplate>): DbRecord {
 }
 
 const restaurantDateFields = [
+  "discovered_at",
   "generated_demo_at",
   "location_updated_at",
   "next_contact_at",
   "planned_visit_at"
 ];
-const restaurantNullableFields = ["custom_demo_slug", "custom_demo_url"];
-const restaurantUuidFields = ["created_by", "responsible_user_id", "updated_by"];
+const restaurantNullableFields = [
+  "custom_demo_slug",
+  "custom_demo_url",
+  "lead_status",
+  "selection_reason",
+  "source_name",
+  "source_type",
+  "source_url",
+  "visit_status",
+  "website_status"
+];
+const restaurantUuidFields = [
+  "agent_run_id",
+  "created_by",
+  "responsible_user_id",
+  "updated_by"
+];
 const contactHistoryDateFields = ["contact_at", "next_contact_at"];
 const contactHistoryNullableFields = [
   "channel",

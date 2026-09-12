@@ -105,12 +105,34 @@ export type MessageTemplateCategory =
 export type PhotoType = "facade" | "interior" | "menu" | "logo" | "other";
 export type ContactDirection = "incoming" | "outgoing" | "internal";
 
+export type ScoutLeadStatus = "new" | "qualified" | "rejected" | "converted" | "duplicate";
+export type ScoutVisitStatus = "none" | "to_plan" | "planned" | "done" | "skipped";
+export type RestaurantSourceType = "agent_discovery" | "manual" | "import" | "lookup";
+export type WebsiteStatus = "unknown" | "ok" | "broken" | "missing" | "redirect";
+
 export type SalesUser = {
+  bot_enabled?: boolean;
   created_at: string;
   email: string;
   id: SalesUserId;
   name: string;
-  role: "admin" | "sales";
+  role: "admin" | "sales" | "restaurant_scout_bot";
+  updated_at?: string;
+};
+
+export type AgentRun = {
+  agent_user_id: SalesUserId;
+  city: string;
+  created_at: string;
+  error_message: string;
+  finished_at: string;
+  id: string;
+  leads_created: number;
+  max_leads: number;
+  notes: string;
+  region: string;
+  started_at: string;
+  status: "running" | "finished" | "failed" | "cancelled";
   updated_at?: string;
 };
 
@@ -158,6 +180,17 @@ export type Restaurant = {
   updated_by: SalesUserId;
   website: string;
   digital_presence: DigitalPresenceAnalysis | null;
+  source_type?: RestaurantSourceType | "";
+  created_by_agent?: boolean;
+  agent_run_id?: string;
+  discovered_at?: string;
+  source_url?: string;
+  source_name?: string;
+  website_status?: WebsiteStatus | "";
+  lead_score?: number | null;
+  selection_reason?: string;
+  lead_status?: ScoutLeadStatus | "";
+  visit_status?: ScoutVisitStatus | "";
 };
 
 export type DigitalPresenceAnalysis = {
