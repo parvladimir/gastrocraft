@@ -9,7 +9,7 @@ export const MAX_AGENT_LEADS_PER_MINUTE = Number(
 );
 
 export const MAX_AGENT_LEADS_PER_DAY = Number(
-  process.env.MAX_AGENT_LEADS_PER_DAY ?? "30"
+  process.env.MAX_AGENT_LEADS_PER_DAY ?? "3"
 );
 
 export const MAX_AGENT_RUNS_PER_DAY = Number(

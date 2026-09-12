@@ -21,7 +21,7 @@ export const startRunSchema = z
     city: z.string().trim().max(MAX_TEXT_SHORT).optional(),
     region: z.string().trim().max(MAX_TEXT_SHORT).optional(),
     notes: z.string().trim().max(MAX_TEXT_MEDIUM).optional(),
-    max_leads: z.number().int().min(1).max(20).optional()
+    max_leads: z.number().int().min(1).max(3).optional()
   })
   .strict();
 
@@ -47,19 +47,17 @@ export const createLeadSchema = z
     city: z.string().trim().max(MAX_TEXT_SHORT).optional(),
     phone: z.string().trim().max(40).optional(),
     email: z.string().trim().email().max(MAX_TEXT_SHORT).optional().or(z.literal("")),
-    website: optionalHttpUrl,
+    website: z.literal("").optional(),
     google_maps_url: optionalHttpUrl,
     google_place_id: z.string().trim().max(MAX_TEXT_SHORT).optional(),
     latitude: z.string().trim().max(40).optional(),
     longitude: z.string().trim().max(40).optional(),
     notes: z.string().trim().max(MAX_TEXT_LONG).optional(),
-    source_url: optionalHttpUrl,
+    source_url: httpUrlSchema,
     source_name: z.string().trim().max(MAX_TEXT_SHORT).optional(),
-    website_status: z
-      .enum(["unknown", "ok", "broken", "missing", "redirect"])
-      .optional(),
+    website_status: z.literal("missing"),
     lead_score: z.number().int().min(0).max(100),
-    selection_reason: z.string().trim().max(MAX_TEXT_MEDIUM).optional(),
+    selection_reason: z.string().trim().min(10).max(MAX_TEXT_MEDIUM),
     discovered_at: z.string().datetime().optional()
   })
   .strict();

@@ -25,10 +25,23 @@ describe("restaurant scout RLS migration", () => {
     expect(sql).toContain("using (public.is_sales_staff())");
   });
 
-  it("restricts scout restaurant insert", () => {
-    expect(sql).toContain('create policy "Scout can insert own agent leads"');
-    expect(sql).toContain("created_by_agent = true");
-    expect(sql).toContain("source_type = 'agent_discovery'");
+  it("keeps scout writes behind checked RPCs", () => {
+    expect(sql).not.toContain('create policy "Scout can insert own agent leads"');
+    expect(sql).not.toContain('create policy "Scout can create visit tasks for own leads"');
+    expect(sql).not.toContain('create policy "Scout can insert own lead history"');
+    expect(sql).not.toContain('create policy "Scout can insert own runs"');
+    expect(sql).not.toContain('create policy "Scout can finish own running runs"');
+    expect(sql).not.toContain('create policy "Scout can insert own audit rows"');
+    expect(sql).not.toContain('create policy "Scout can manage own idempotency keys"');
+    expect(sql).toContain("create or replace function public.scout_start_run");
+    expect(sql).toContain("create or replace function public.scout_finish_run");
+    expect(sql).toContain("Daily lead limit exceeded");
+  });
+
+  it("closes old broad storage policies", () => {
+    expect(sql).toContain('drop policy if exists "Authenticated users can read offer files"');
+    expect(sql).toContain('drop policy if exists "Authenticated users can upload demo asset files"');
+    expect(sql).toContain('create policy "Sales staff can read private CRM files"');
   });
 
   it("does not grant scout update/delete on restaurants", () => {

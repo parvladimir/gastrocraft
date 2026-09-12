@@ -17,7 +17,7 @@ export async function findIdempotentResponse(
 ) {
   const { data, error } = await ctx.supabase
     .from("agent_idempotency_keys")
-    .select("response_status, response_body, request_hash")
+    .select("response_status, response_body, request_hash, request_path")
     .eq("agent_user_id", ctx.user.id)
     .eq("idempotency_key", key)
     .maybeSingle();
@@ -29,41 +29,17 @@ export async function findIdempotentResponse(
   if (!data) {
     return { hit: null, error: null };
   }
+  if (data.request_path !== path) {
+    return { hit: null, error: new Error("Idempotency-Key belongs to a different path.") };
+  }
 
   return {
     hit: {
       body: data.response_body,
-      path,
+      path: data.request_path,
       requestHash: data.request_hash as string | null,
       status: data.response_status as number
     },
     error: null
   };
-}
-
-export async function storeIdempotentResponse(
-  ctx: ScoutAuthContext,
-  input: {
-    body: unknown;
-    key: string;
-    path: string;
-    requestHash: string;
-    status: number;
-  }
-) {
-  const { error } = await ctx.supabase.from("agent_idempotency_keys").upsert(
-    {
-      agent_user_id: ctx.user.id,
-      idempotency_key: input.key,
-      request_hash: input.requestHash,
-      request_path: input.path,
-      response_body: input.body as Record<string, unknown>,
-      response_status: input.status
-    },
-    { onConflict: "agent_user_id,idempotency_key" }
-  );
-
-  if (error) {
-    console.error("idempotency store failed", error.message);
-  }
 }
