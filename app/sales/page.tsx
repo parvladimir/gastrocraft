@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     follow: false,
     index: false
   },
-  title: "Sales Manager"
+  title: "DINEVIO · Продажи"
 };
 
 export default function SalesPage() {

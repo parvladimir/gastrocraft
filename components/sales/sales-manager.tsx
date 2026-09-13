@@ -84,6 +84,7 @@ import {
 } from "@/lib/sales/services";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
+import { salesUiLabel, salesUiNote } from "@/lib/sales/ui-labels";
 
 type ViewMode =
   | "dashboard"
@@ -316,7 +317,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       }
 
       if (profileResult.error || !profileResult.data) {
-        setDataError(profileResult.error || "Profil konnte nicht geladen werden.");
+        setDataError(profileResult.error || "Не удалось загрузить профиль.");
         setDataLoading(false);
         return;
       }
@@ -328,7 +329,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       }
 
       if (salesDataResult.error || !salesDataResult.data) {
-        setDataError(salesDataResult.error || "Daten konnten nicht geladen werden.");
+        setDataError(salesDataResult.error || "Не удалось загрузить данные.");
         setDataLoading(false);
         return;
       }
@@ -376,7 +377,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       const result = await salesDataService.load(supabase);
 
       if (result.error || !result.data) {
-        setLastSyncError(result.error || "Daten konnten nicht geladen werden.");
+        setLastSyncError(result.error || "Не удалось загрузить данные.");
         return;
       }
 
@@ -402,32 +403,32 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "restaurants" },
-        () => reloadSalesData("Die Daten wurden von einem anderen Benutzer aktualisiert.")
+        () => reloadSalesData("Другой пользователь обновил данные.")
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "contact_history" },
-        () => reloadSalesData("Kontaktverlauf wurde aktualisiert.")
+        () => reloadSalesData("История общения обновлена.")
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "tours" },
-        () => reloadSalesData("Touren wurden aktualisiert.")
+        () => reloadSalesData("Маршруты обновлены.")
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "offers" },
-        () => reloadSalesData("Angebote wurden aktualisiert.")
+        () => reloadSalesData("Предложения обновлены.")
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "tasks" },
-        () => reloadSalesData("Aufgaben wurden aktualisiert.")
+        () => reloadSalesData("Задачи обновлены.")
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "restaurant_photos" },
-        () => reloadSalesData("Fotos wurden aktualisiert.")
+        () => reloadSalesData("Фотографии обновлены.")
       )
       .subscribe();
 
@@ -475,7 +476,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
     }
 
     if (!supabase) {
-      setLastSyncError(formatSaveError("Supabase ist nicht konfiguriert."));
+      setLastSyncError(formatSaveError("Supabase не настроен."));
       return false;
     }
 
@@ -490,7 +491,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       });
 
       if (updateResult.error || !updateResult.data) {
-        setLastSyncError(formatSaveError(updateResult.error || "Die Datenbankaktion konnte nicht abgeschlossen werden."));
+        setLastSyncError(formatSaveError(updateResult.error || "Не удалось завершить операцию с базой данных."));
         return false;
       }
 
@@ -527,7 +528,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
         )
       }));
       setLastSyncError("");
-      setToast("Gespeichert");
+      setToast("Сохранено");
       setSelectedRestaurantId(editingId);
       setView("detail");
       return true;
@@ -551,7 +552,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
     }
 
     if (duplicateResult.data) {
-      setToast("Möglicher Duplikat gefunden");
+      setToast("Найден возможный дубликат");
       setSelectedRestaurantId(duplicateResult.data.id);
       setView("detail");
       return true;
@@ -560,7 +561,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
     const createResult = await restaurantsService.create(supabase, restaurant);
 
     if (createResult.error || !createResult.data) {
-      setLastSyncError(formatSaveError(createResult.error || "Die Datenbankaktion konnte nicht abgeschlossen werden."));
+      setLastSyncError(formatSaveError(createResult.error || "Не удалось завершить операцию с базой данных."));
       return false;
     }
 
@@ -578,14 +579,14 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
     }));
     setLastSyncError(historyResult.error ? formatSaveError(historyResult.error) : "");
     window.localStorage.removeItem(draftKey);
-    setToast("Restaurant gespeichert");
+    setToast("Заведение сохранено");
     setSelectedRestaurantId(createResult.data.id);
     setView("detail");
     return true;
   }
 
   function archiveRestaurant(restaurantId: string) {
-    if (!currentUser || !window.confirm("Restaurant wirklich archivieren?")) {
+    if (!currentUser || !window.confirm("Переместить заведение в архив?")) {
       return;
     }
 
@@ -611,7 +612,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
           : restaurant
       )
     }));
-    setToast("Archiviert");
+    setToast("Перемещено в архив");
     setView("restaurants");
   }
 
@@ -738,7 +739,7 @@ export function SalesManager({ initialView = "dashboard" }: { initialView?: View
       });
     }
 
-    setToast("Besuch gespeichert");
+    setToast("Визит сохранён");
     setView("detail");
   }
 
@@ -810,7 +811,7 @@ DINEVIO`;
     setPendingWhatsappId("");
     setWhatsappRestaurantId("");
     setWhatsappText("");
-    setToast(sent ? "Versand gespeichert" : "Nicht gespeichert");
+    setToast(sent ? "Отправка сохранена" : "Отправка не сохранена");
   }
 
   async function generateAutomaticDemo(restaurantId: string, options: PersonalDemoOptions = {}) {
@@ -852,15 +853,15 @@ DINEVIO`;
             : restaurant
         )
       }));
-      setToast(payload.version && payload.version > 1 ? "Demo wurde aktualisiert" : "Demo wurde veröffentlicht");
+      setToast(payload.version && payload.version > 1 ? "Демо обновлено" : "Демо опубликовано");
     } catch {
-      setLastSyncError(formatSaveError("Automatisches Demo konnte nicht erstellt werden."));
+      setLastSyncError(formatSaveError("Не удалось создать автоматическое демо."));
     }
   }
 
   async function copyText(text: string) {
     await navigator.clipboard.writeText(text);
-    setToast("Kopiert");
+    setToast("Скопировано");
   }
 
   function exportCsv() {
@@ -924,7 +925,7 @@ DINEVIO`;
     link.download = `dinevio-sales-backup-${todayInputValue()}.json`;
     link.click();
     window.URL.revokeObjectURL(url);
-    setToast("Backup erstellt");
+    setToast("Резервная копия создана");
   }
 
   function restoreBackup(file: File) {
@@ -951,9 +952,9 @@ DINEVIO`;
         setSelectedRestaurantId("");
         setEditingRestaurantId("");
         setView("dashboard");
-        setToast("Backup wiederhergestellt");
+        setToast("Резервная копия восстановлена");
       } catch {
-        setToast("Backup konnte nicht gelesen werden");
+        setToast("Не удалось прочитать резервную копию");
       }
     });
 
@@ -961,7 +962,7 @@ DINEVIO`;
   }
 
   function clearLegacyLocalData() {
-    if (!window.confirm("Lokale alte Sales-Daten von diesem Gerät löschen?")) {
+    if (!window.confirm("Удалить старые локальные данные Sales с этого устройства?")) {
       return;
     }
 
@@ -970,7 +971,7 @@ DINEVIO`;
     window.localStorage.removeItem("supabaseMigrationDismissed");
     setHasLocalMigrationData(false);
     setMigrationSkipped(true);
-    setToast("Lokale Daten gelöscht");
+    setToast("Локальные данные удалены");
   }
 
   async function migrateLegacyLocalData() {
@@ -1048,10 +1049,10 @@ DINEVIO`;
       setHasLocalMigrationData(false);
       setMigrationSkipped(true);
       setToast(
-        `Datenübertragung abgeschlossen: ${restaurantsToImport.length} Restaurants, ${historyToImport.length} Kontakte, ${toursToImport.length} Touren, ${skippedRestaurants} Duplikate übersprungen`
+        `Перенос завершён: ${restaurantsToImport.length} заведений, ${historyToImport.length} контактов, ${toursToImport.length} маршрутов; пропущено дубликатов: ${skippedRestaurants}`
       );
     } catch {
-      setLastSyncError("Lokale Daten konnten nicht übertragen werden.");
+      setLastSyncError("Не удалось перенести локальные данные.");
     }
   }
 
@@ -1089,33 +1090,33 @@ DINEVIO`;
   if (!supabaseConfig.isConfigured) {
     return (
       <SalesTechnicalState
-        title="Supabase ist nicht konfiguriert."
-        text={`Fehlende Variablen: ${supabaseConfig.missing.join(", ")}`}
+        title="Supabase не настроен."
+        text={`Отсутствуют переменные: ${supabaseConfig.missing.join(", ")}`}
       />
     );
   }
 
   if (dataLoading) {
-    return <SalesTechnicalState title="Daten werden geladen …" text="Sales Manager wird vorbereitet." />;
+    return <SalesTechnicalState title="Загрузка данных…" text="Подготовка раздела продаж." />;
   }
 
   if (dataError) {
     return (
       <SalesTechnicalState
-        title="Daten konnten nicht geladen werden."
+        title="Не удалось загрузить данные."
         text={dataError}
-        action={<button className={goldButtonClassName} onClick={() => window.location.reload()} type="button">Erneut versuchen</button>}
+        action={<button className={goldButtonClassName} onClick={() => window.location.reload()} type="button">Повторить</button>}
       />
     );
   }
 
   if (!currentUser) {
     router.replace("/sales/login");
-    return <SalesTechnicalState title="Sitzung wird geprüft …" text="Weiterleitung zur Anmeldung." />;
+    return <SalesTechnicalState title="Проверка входа…" text="Переход к странице входа." />;
   }
 
   return (
-    <div className="min-h-screen bg-midnight pb-24 text-warm-white">
+    <div lang="ru" className="min-h-screen bg-midnight pb-24 text-warm-white">
       <SalesTopBar currentUser={currentUser} onLogout={logout} />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
@@ -1124,7 +1125,7 @@ DINEVIO`;
         ) : null}
         {syncing ? (
           <div className="mb-4 rounded border border-premium-gold/25 bg-premium-gold/10 px-4 py-3 text-sm text-premium-gold">
-            Wird gespeichert …
+            Сохранение…
           </div>
         ) : null}
         {hasLocalMigrationData && !migrationSkipped ? (
@@ -1314,11 +1315,11 @@ DINEVIO`;
           <div className="grid gap-5">
             <SectionHeader
               eyebrow="Scout"
-              title="Agent Leads."
+              title="Лиды бота"
               text="Vom Restaurant Scout Bot gefundene Leads und Runs."
               action={
                 <button className={outlineButtonClassName} type="button" onClick={() => setView("more")}>
-                  Zurück
+                  Назад
                 </button>
               }
             />
@@ -1348,7 +1349,7 @@ DINEVIO`;
 
       {pendingWhatsappId ? (
         <ConfirmDialog
-          title="Wurde die Nachricht gesendet?"
+          title="Сообщение отправлено?"
           text="Nur nach Bestätigung wird der Versand im Kontaktverlauf gespeichert."
           onNo={() => confirmWhatsappSent(false)}
           onYes={() => confirmWhatsappSent(true)}
@@ -1380,10 +1381,10 @@ function SalesTechnicalState({
   title: string;
 }) {
   return (
-    <main className="grid min-h-screen place-items-center bg-midnight px-4 py-10 text-warm-white">
+    <main lang="ru" className="grid min-h-screen place-items-center bg-midnight px-4 py-10 text-warm-white">
       <div className="w-full max-w-md rounded-lg border border-white/10 bg-[#101a2c] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.3)]">
         <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-          DINEVIO Sales Manager
+          DINEVIO · Продажи
         </p>
         <h1 className="mt-4 font-heading text-3xl font-semibold">{title}</h1>
         <p className="mt-3 text-sm leading-6 text-slate-400">{text}</p>
@@ -1403,7 +1404,7 @@ function SalesErrorNotice({ message }: { message: string }) {
       {technicalDetails ? (
         <details className="mt-2">
           <summary className="cursor-pointer text-red-100 underline decoration-red-200/40 underline-offset-4">
-            Technische Details anzeigen
+            Показать технические сведения
           </summary>
           <pre className="mt-2 whitespace-pre-wrap rounded border border-red-200/15 bg-midnight/45 p-3 text-xs leading-5 text-red-50">
             {technicalDetails}
@@ -1425,20 +1426,19 @@ function LocalMigrationNotice({
 }) {
   return (
     <div className="mb-5 rounded-lg border border-premium-gold/35 bg-[#101a2c] p-5">
-      <p className="font-heading text-xl font-semibold">Lokale Daten gefunden</p>
+      <p className="font-heading text-xl font-semibold">Найдены данные на устройстве</p>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-        Auf diesem Gerät wurden lokale Sales-Daten gefunden. Möchten Sie diese
-        Daten in die gemeinsame Datenbank übertragen?
+        На этом устройстве найдены локальные данные Sales. Перенести их в общую базу?
       </p>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
         <button className={goldButtonClassName} type="button" onClick={onMigrate}>
-          Jetzt übertragen
+          Перенести сейчас
         </button>
         <button className={outlineButtonClassName} type="button" onClick={onDismiss}>
-          Später
+          Позже
         </button>
         <button className={outlineButtonClassName} type="button" onClick={onHidePermanently}>
-          Nicht mehr anzeigen
+          Больше не показывать
         </button>
       </div>
     </div>
@@ -1459,27 +1459,26 @@ export function LegacyLocalLoginScreen({
     setError("");
 
     if (!onLogin(email, password)) {
-      setError("Login fehlgeschlagen. Bitte Zugangsdaten prüfen.");
+      setError("Не удалось войти. Проверьте данные для входа.");
     }
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-midnight px-4 py-10 text-warm-white">
+    <main lang="ru" className="grid min-h-screen place-items-center bg-midnight px-4 py-10 text-warm-white">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-md rounded-lg border border-white/10 bg-[#101a2c] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.3)]"
       >
         <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-          DINEVIO Sales Manager
+          DINEVIO · Продажи
         </p>
-        <h1 className="mt-4 font-heading text-3xl font-semibold">Anmelden</h1>
+        <h1 className="mt-4 font-heading text-3xl font-semibold">Войти</h1>
         <p className="mt-3 text-sm leading-6 text-slate-400">
-          Temporärer localStorage-Modus. Supabase-Auth kann später an dieselbe
-          Datenstruktur angeschlossen werden.
+          Временный локальный режим. Позже можно подключить вход через Supabase.
         </p>
 
         <label className="mt-6 block text-sm font-semibold" htmlFor="sales-email">
-          E-Mail
+          Электронная почта
         </label>
         <input
           id="sales-email"
@@ -1492,7 +1491,7 @@ export function LegacyLocalLoginScreen({
         />
 
         <label className="mt-4 block text-sm font-semibold" htmlFor="sales-password">
-          Passwort
+          Пароль
         </label>
         <input
           id="sales-password"
@@ -1507,11 +1506,11 @@ export function LegacyLocalLoginScreen({
         {error ? <p className="mt-4 text-sm text-red-200">{error}</p> : null}
 
         <button className={primaryButtonClassName} type="submit">
-          Anmelden
+          Войти
         </button>
 
         <div className="mt-6 rounded border border-white/10 bg-midnight/45 p-4 text-xs leading-5 text-slate-400">
-          <p className="font-semibold text-slate-300">Lokale Testzugänge</p>
+          <p className="font-semibold text-slate-300">Локальные тестовые учётные записи</p>
         </div>
       </form>
     </main>
@@ -1533,7 +1532,7 @@ function SalesTopBar({
             DINE<span className="text-premium-gold">V</span>IO
           </p>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold/90">
-            Sales Manager
+            Управление продажами
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -1546,7 +1545,7 @@ function SalesTopBar({
             className="inline-flex min-h-11 items-center gap-2 rounded border border-white/10 px-3 text-sm font-semibold text-slate-300 transition-colors hover:border-premium-gold/50 hover:text-premium-gold"
           >
             <LogOut aria-hidden="true" className="h-4 w-4" />
-            <span className="hidden sm:inline">Abmelden</span>
+            <span className="hidden sm:inline">Выйти</span>
           </button>
         </div>
       </div>
@@ -1572,15 +1571,15 @@ function DashboardView({
     <div className="grid gap-6">
       <SectionHeader
         eyebrow="Dashboard"
-        title="Heute im Blick."
+        title="Сегодня"
         text="Kompakte Übersicht über Besuche, Rückrufe und offene Kontakte."
-        action={<button className={goldButtonClassName} onClick={onAdd} type="button">+ Restaurant hinzufügen</button>}
+        action={<button className={goldButtonClassName} onClick={onAdd} type="button">+ Добавить заведение</button>}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {summaryStats.map((stat) => (
           <div key={stat.label} className={panelClassName}>
-            <p className="text-sm text-slate-400">{stat.label}</p>
+            <p className="text-sm text-slate-400">{salesUiLabel(stat.label)}</p>
             <p className="mt-2 font-heading text-3xl font-semibold">
               {restaurants.filter(stat.predicate).length}
             </p>
@@ -1590,13 +1589,13 @@ function DashboardView({
 
       <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
         <TaskPanel
-          title="Heute zu erledigen"
+          title="Задачи на сегодня"
           tasks={dueTasks}
           users={data.users}
           onOpenRestaurant={onOpenRestaurant}
         />
         <TaskPanel
-          title="Nächste sieben Tage"
+          title="Следующие семь дней"
           tasks={nextTasks}
           users={data.users}
           onOpenRestaurant={onOpenRestaurant}
@@ -1674,9 +1673,9 @@ function RestaurantsView({
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Restaurants"
-        title="Alle Kontakte."
+        title="Все контакты"
         text="Suchen, filtern und direkt in die Restaurantkarte springen."
-        action={<button className={goldButtonClassName} onClick={onAdd} type="button">+ Restaurant hinzufügen</button>}
+        action={<button className={goldButtonClassName} onClick={onAdd} type="button">+ Добавить заведение</button>}
       />
 
       <div className="grid gap-3 rounded-lg border border-white/10 bg-[#101a2c] p-4 lg:grid-cols-[1fr_auto_auto_auto]">
@@ -1688,7 +1687,7 @@ function RestaurantsView({
           <input
             value={searchTerm}
             onChange={(event) => onSearch(event.target.value)}
-            placeholder="Name, Ort, Straße, Kontakt oder Telefon suchen"
+            placeholder="Поиск по названию, городу, адресу, контакту или телефону"
             className={`${inputClassName} mt-0 pl-10`}
           />
         </label>
@@ -1697,9 +1696,9 @@ function RestaurantsView({
           onChange={(event) => onStatusFilter(event.target.value as RestaurantStatus | "Alle")}
           className={selectClassName}
         >
-          <option>Alle</option>
+          <option value="Alle">Все</option>
           {restaurantStatuses.map((status) => (
-            <option key={status}>{status}</option>
+            <option key={status} value={status}>{salesUiLabel(status)}</option>
           ))}
         </select>
         <select
@@ -1707,10 +1706,10 @@ function RestaurantsView({
           onChange={(event) => onSort(event.target.value as "created" | "city" | "name" | "next")}
           className={selectClassName}
         >
-          <option value="next">Nächster Kontakt</option>
-          <option value="created">Datum hinzugefügt</option>
-          <option value="name">Name</option>
-          <option value="city">Ort</option>
+          <option value="next">Следующий контакт</option>
+          <option value="created">Дата добавления</option>
+          <option value="name">Название</option>
+          <option value="city">Город</option>
         </select>
         <div className="flex gap-2">
           <button className={outlineButtonClassName} type="button" onClick={onExport}>
@@ -1719,7 +1718,7 @@ function RestaurantsView({
           </button>
           <button className={outlineButtonClassName} type="button" onClick={onImport}>
             <Upload aria-hidden="true" className="h-4 w-4" />
-            Import
+            Импорт
           </button>
         </div>
       </div>
@@ -1739,20 +1738,20 @@ function RestaurantsView({
               <div>
                 <h2 className="font-heading text-xl font-semibold">{restaurant.name}</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  {formatAddress(restaurant) || "Keine Adresse"} ·{" "}
-                  {restaurant.phone || "Keine Telefonnummer"}
+                  {formatAddress(restaurant) || "Адрес не указан"} ·{" "}
+                  {restaurant.phone || "Телефон не указан"}
                 </p>
                 <p className="mt-2 text-sm text-slate-400">
-                  Ansprechpartner: {restaurant.contact_person || "-"}
+                  Контактное лицо: {restaurant.contact_person || "-"}
                 </p>
               </div>
               <StatusBadge status={restaurant.status} />
             </div>
             <div className="mt-4 grid gap-2 text-sm text-slate-400 sm:grid-cols-4">
-              <span>Letzter Kontakt: {getLastContact(data.contact_history, restaurant.id) || "-"}</span>
-              <span>Nächster Kontakt: {formatDateTime(restaurant.next_contact_at) || "-"}</span>
-              <span>Verantwortlich: {getUserName(data.users, restaurant.responsible_user_id)}</span>
-              <span>Demo: {demoOptions[restaurant.selected_demo].label}</span>
+              <span>Последний контакт: {getLastContact(data.contact_history, restaurant.id) || "-"}</span>
+              <span>Следующий контакт: {formatDateTime(restaurant.next_contact_at) || "-"}</span>
+              <span>Ответственный: {getUserName(data.users, restaurant.responsible_user_id)}</span>
+              <span>Демо: {salesUiLabel(demoOptions[restaurant.selected_demo].label)}</span>
             </div>
           </button>
         ))}
@@ -1829,7 +1828,7 @@ function RestaurantForm({
     const query = lookupQuery.trim();
 
     if (query.length < 3) {
-      setLookupError("Bitte geben Sie einen Google Maps Link oder Restaurantnamen ein.");
+      setLookupError("Введите ссылку Google Maps или название заведения.");
       return;
     }
 
@@ -1850,7 +1849,7 @@ function RestaurantForm({
       const payload = (await response.json()) as RestaurantLookupResponse;
 
       if (!response.ok || payload.status === "error" || payload.status === "not_found") {
-        setLookupError(payload.message || "Informationen konnten nicht geladen werden.");
+        setLookupError(salesUiLabel(payload.message || "Не удалось загрузить сведения."));
         return;
       }
 
@@ -1863,7 +1862,7 @@ function RestaurantForm({
         applyLookupCandidate(payload.candidates[0]);
       }
     } catch {
-      setLookupError("Informationen konnten nicht geladen werden.");
+      setLookupError("Не удалось загрузить сведения.");
     } finally {
       setLookupBusy(false);
     }
@@ -1873,7 +1872,7 @@ function RestaurantForm({
     const duplicate = findDuplicateRestaurant(candidate, restaurants);
 
     setDuplicateRestaurant(duplicate);
-    setPostalCodeWarning(candidate.postal_code ? "" : "PLZ konnte nicht eindeutig bestimmt werden.");
+    setPostalCodeWarning(candidate.postal_code ? "" : "Не удалось однозначно определить почтовый индекс.");
     setLookupCandidates([]);
     setLookupError("");
     setDraft((currentDraft) => ({
@@ -1942,7 +1941,7 @@ function RestaurantForm({
     setLocationError("");
 
     if (!navigator.geolocation) {
-      setLocationError("Standort konnte nicht bestimmt werden.");
+      setLocationError("Не удалось определить местоположение.");
       return;
     }
 
@@ -1953,7 +1952,7 @@ function RestaurantForm({
         const latitude = position.coords.latitude.toFixed(7);
         const longitude = position.coords.longitude.toFixed(7);
 
-        if (!window.confirm(`Aktuellen Standort übernehmen?\nBreitengrad: ${latitude}\nLängengrad: ${longitude}`)) {
+        if (!window.confirm(`Использовать текущее местоположение?\nШирота: ${latitude}\nДолгота: ${longitude}`)) {
           return;
         }
 
@@ -1969,7 +1968,7 @@ function RestaurantForm({
       },
       () => {
         setLocationBusy(false);
-        setLocationError("Standortzugriff wurde abgelehnt oder ist nicht verfügbar.");
+        setLocationError("Доступ к местоположению отклонён или недоступен.");
       },
       {
         enableHighAccuracy: true,
@@ -1991,7 +1990,7 @@ function RestaurantForm({
       updated_by: currentUser.id
     });
     updateField("google_maps_url", mapsUrl);
-    setLocationError("Adresse wurde als Google-Maps-Link vorbereitet. Koordinaten können anschließend manuell ergänzt oder per aktuellem Standort gesetzt werden.");
+    setLocationError("Ссылка Google Maps создана по адресу. Координаты можно ввести вручную или взять из текущего местоположения.");
   }
 
   return (
@@ -1999,24 +1998,24 @@ function RestaurantForm({
       <SectionHeader
         eyebrow={isEditing ? "Restaurant bearbeiten" : "Neues Restaurant"}
         title={isEditing ? "Daten aktualisieren." : "Restaurant hinzufügen."}
-        text="Die wichtigsten Informationen sind für die Nutzung unterwegs optimiert."
+        text="Основные сведения удобно заполнять с телефона."
       />
 
       <div className="rounded-xl border border-premium-gold/35 bg-[#101a2c] p-5 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
           <div className="flex-1">
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-              Restaurant automatisch finden
+              Найти заведение автоматически
             </p>
             <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-lookup">
-              Google Maps Link oder Restaurantname
+              Ссылка Google Maps или название заведения
             </label>
             <input
               id="restaurant-lookup"
               value={lookupQuery}
               onChange={(event) => setLookupQuery(event.target.value)}
               className={inputClassName}
-              placeholder={"https://maps.app.goo.gl/...\noder\nRhodos Grill Marl"}
+              placeholder={"https://maps.app.goo.gl/...\nили\nRhodos Grill Marl"}
               type="text"
             />
           </div>
@@ -2029,7 +2028,7 @@ function RestaurantForm({
             {lookupBusy ? (
               <>
                 <RefreshCw aria-hidden="true" className="h-4 w-4 animate-spin" />
-                Informationen werden geladen
+                Загрузка сведений
               </>
             ) : (
               "Informationen laden"
@@ -2053,7 +2052,7 @@ function RestaurantForm({
           <div className="mt-4 rounded-lg border border-premium-gold/35 bg-midnight/65 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-heading text-lg font-semibold">Möglicher Duplikat gefunden</p>
+                <p className="font-heading text-lg font-semibold">Возможно, запись уже существует</p>
                 <p className="mt-1 text-sm text-slate-400">
                   {duplicateRestaurant.name} · {formatAddress(duplicateRestaurant)}
                 </p>
@@ -2063,7 +2062,7 @@ function RestaurantForm({
                 onClick={() => onOpenRestaurant(duplicateRestaurant.id)}
                 type="button"
               >
-                Bestehenden Eintrag öffnen
+                Открыть существующую запись
               </button>
             </div>
           </div>
@@ -2076,12 +2075,12 @@ function RestaurantForm({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-                  Mehrere Ergebnisse
+                  Найдено несколько вариантов
                 </p>
-                <h2 className="mt-2 font-heading text-2xl font-semibold">Restaurant auswählen</h2>
+                <h2 className="mt-2 font-heading text-2xl font-semibold">Выберите заведение</h2>
               </div>
               <button
-                aria-label="Auswahl schließen"
+                aria-label="Закрыть выбор"
                 className={iconButtonClassName}
                 onClick={() => setLookupCandidates([])}
                 type="button"
@@ -2125,7 +2124,7 @@ function RestaurantForm({
                     onClick={() => applyLookupCandidate(candidate)}
                     type="button"
                   >
-                    Auswählen
+                    Выбрать
                   </button>
                 </div>
               ))}
@@ -2170,14 +2169,14 @@ function RestaurantForm({
         <div className="mt-6 rounded-lg border border-white/10 bg-midnight/45 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="font-heading text-xl font-semibold">Standort</h2>
+              <h2 className="font-heading text-xl font-semibold">Местоположение</h2>
               <p className="mt-1 text-sm leading-6 text-slate-400">
-                Koordinaten für Navigation, Tourenplanung und spätere Umkreissuche.
+                Координаты для навигации, планирования маршрута и поиска поблизости.
               </p>
             </div>
             {draft.latitude && draft.longitude ? (
               <span className="rounded border border-premium-gold/35 px-3 py-2 text-xs font-semibold text-premium-gold">
-                Standort gespeichert
+                Местоположение сохранено
               </span>
             ) : null}
           </div>
@@ -2188,7 +2187,7 @@ function RestaurantForm({
           </div>
           {draft.latitude && draft.longitude ? (
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Breitengrad: {draft.latitude} · Längengrad: {draft.longitude}
+              Широта: {draft.latitude} · Долгота: {draft.longitude}
             </p>
           ) : null}
           {locationError ? (
@@ -2198,7 +2197,7 @@ function RestaurantForm({
           ) : null}
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <button className={outlineButtonClassName} type="button" onClick={inferLocationFromAddress}>
-              Standort aus Adresse ermitteln
+              Определить по адресу
             </button>
             <button className={outlineButtonClassName} type="button" onClick={useCurrentLocation} disabled={locationBusy}>
               {locationBusy ? "Standort wird ermittelt ..." : "Aktuellen Standort verwenden"}
@@ -2218,13 +2217,13 @@ function RestaurantForm({
               target="_blank"
               rel="noopener noreferrer"
             >
-              In Google Maps öffnen
+              Открыть в Google Maps
             </a>
           </div>
         </div>
 
         <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-opening-hours">
-          Öffnungszeiten
+          Часы работы
         </label>
         <textarea
           id="restaurant-opening-hours"
@@ -2233,7 +2232,7 @@ function RestaurantForm({
           className={`${inputClassName} min-h-28 py-3`}
         />
         <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-photo-urls">
-          Foto-URLs
+          Ссылки на фото
         </label>
         <textarea
           id="restaurant-photo-urls"
@@ -2243,7 +2242,7 @@ function RestaurantForm({
         />
         <PresenceAnalysisPanel presence={draft.digital_presence} />
         <label className="mt-4 block text-sm font-semibold" htmlFor="restaurant-notes">
-          Notizen
+          Заметки
         </label>
         <textarea
           id="restaurant-notes"
@@ -2254,10 +2253,10 @@ function RestaurantForm({
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button className={goldButtonClassName} disabled={saving} type="submit">
-            {saving ? "Speichern ..." : "Speichern"}
+            {saving ? "Сохранение…" : "Сохранить"}
           </button>
           <button className={outlineButtonClassName} type="button" onClick={onCancel}>
-            Abbrechen
+            Отмена
           </button>
         </div>
       </div>
@@ -2288,9 +2287,9 @@ function PresenceAnalysisPanel({
     <div className="mt-5 rounded-lg border border-white/10 bg-midnight/45 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="font-heading text-lg font-semibold">Online-Analyse</p>
+          <p className="font-heading text-lg font-semibold">Анализ присутствия в интернете</p>
           <p className="mt-1 text-sm text-slate-400">
-            Schneller Überblick für das Gespräch vor Ort.
+            Краткая сводка для разговора с заведением.
           </p>
         </div>
         <div className="rounded border border-premium-gold/45 px-3 py-2 text-sm font-semibold text-premium-gold">
@@ -2365,7 +2364,7 @@ function RestaurantDetailView({
   return (
     <div className="grid gap-5">
       <button type="button" onClick={onBack} className="w-fit text-sm font-semibold text-premium-gold">
-        ← Zurück zur Liste
+        ← К списку
       </button>
 
       <div className={panelClassName}>
@@ -2377,16 +2376,16 @@ function RestaurantDetailView({
             </div>
             <p className="mt-3 text-slate-400">{formatAddress(restaurant) || "Keine Adresse"}</p>
             <div className="mt-4 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-              <span>Kontakt: {restaurant.contact_person || "-"}</span>
-              <span>Telefon: {restaurant.phone || "-"}</span>
-              <span>Verantwortlich: {getUserName(data.users, restaurant.responsible_user_id)}</span>
-              <span>Demo: {demoOptions[restaurant.selected_demo].label}</span>
-              <span>Erstellt von {getUserName(data.users, restaurant.created_by)}</span>
-              <span>Zuletzt bearbeitet von {getUserName(data.users, restaurant.updated_by)}</span>
+              <span>Контакт: {restaurant.contact_person || "-"}</span>
+              <span>Телефон: {restaurant.phone || "-"}</span>
+              <span>Ответственный: {getUserName(data.users, restaurant.responsible_user_id)}</span>
+              <span>Демо: {salesUiLabel(demoOptions[restaurant.selected_demo].label)}</span>
+              <span>Создал: {getUserName(data.users, restaurant.created_by)}</span>
+              <span>Последним изменил: {getUserName(data.users, restaurant.updated_by)}</span>
             </div>
           </div>
           <button className={goldButtonClassName} type="button" onClick={onStartVisit}>
-            Besuch starten
+            Начать визит
           </button>
         </div>
 
@@ -2397,11 +2396,11 @@ function RestaurantDetailView({
           <ActionLink href={restaurant.website} icon={<ExternalLink />} label="Webseite öffnen" external disabled={!restaurant.website} />
           <button className={mobileActionClassName} type="button" onClick={openDemo}>
             <ExternalLink aria-hidden="true" className="h-5 w-5" />
-            Demo zeigen
+            Показать демо
           </button>
           <button className={mobileActionClassName} type="button" onClick={onEdit}>
             <FileText aria-hidden="true" className="h-5 w-5" />
-            Bearbeiten
+            Изменить
           </button>
         </div>
 
@@ -2432,12 +2431,12 @@ function RestaurantDetailView({
 
         {showDemoChooser ? (
           <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4">
-            <p className="font-heading text-lg font-semibold">Demo auswählen</p>
+            <p className="font-heading text-lg font-semibold">Выбрать демо</p>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Automatisches Demo aus aktuellen Restaurantdaten erstellen oder eine bestehende Konzeptdemo öffnen.
+              Создать демо из данных заведения или открыть готовый пример.
             </p>
             <button className={`${goldButtonClassName} mt-4 w-full sm:w-auto`} type="button" onClick={() => onGenerateDemo({ templateKey: "auto" })}>
-              Automatisches Demo erstellen
+              Создать демо автоматически
             </button>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {(["schnellundlecker", "schlemmerhus", "rhodosgrill"] as DemoId[]).map((demoId) => (
@@ -2454,7 +2453,7 @@ function RestaurantDetailView({
                     onShowDemoChooser(false);
                   }}
                 >
-                  {demoOptions[demoId].label}
+                  {salesUiLabel(demoOptions[demoId].label)}
                 </button>
               ))}
             </div>
@@ -2464,27 +2463,27 @@ function RestaurantDetailView({
 
       <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
         <div className={panelClassName}>
-          <h2 className="font-heading text-xl font-semibold">Schnellaktionen</h2>
+          <h2 className="font-heading text-xl font-semibold">Быстрые действия</h2>
           <div className="mt-4 grid gap-3">
             <button className={outlineButtonClassName} type="button" onClick={() => onOpenWhatsapp("afterVisit")}>
               <MessageCircle aria-hidden="true" className="h-4 w-4" />
-              WhatsApp-Nachricht erstellen
+              Подготовить сообщение WhatsApp
             </button>
             <button className={outlineButtonClassName} type="button" onClick={() => onOpenWhatsapp("reminder")}>
               <RefreshCw aria-hidden="true" className="h-4 w-4" />
-              Erinnerung vorbereiten
+              Подготовить напоминание
             </button>
             <button className={outlineButtonClassName} type="button" onClick={() => onCopy(demoUrl || "Noch kein Demo ausgewählt")}>
               <Clipboard aria-hidden="true" className="h-4 w-4" />
-              Demo-Link kopieren
+              Скопировать ссылку на демо
             </button>
             <button className={outlineButtonClassName} type="button" onClick={() => onCopy(`${restaurant.name}\n${formatAddress(restaurant)}\n${restaurant.phone}`)}>
               <Clipboard aria-hidden="true" className="h-4 w-4" />
-              Kontaktdaten kopieren
+              Скопировать контакты
             </button>
             <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-red-400/35 px-4 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/10" type="button" onClick={onArchive}>
               <Trash2 aria-hidden="true" className="h-4 w-4" />
-              Archivieren
+              Архивировать
             </button>
           </div>
         </div>
@@ -2507,25 +2506,25 @@ function RestaurantDetailView({
       />
 
       <div className={panelClassName}>
-        <h2 className="font-heading text-xl font-semibold">Kontaktverlauf</h2>
+        <h2 className="font-heading text-xl font-semibold">История общения</h2>
         <div className="mt-5 grid gap-4">
           {history.length === 0 ? <EmptyState text="Noch kein Kontaktverlauf." /> : null}
           {history.map((entry) => (
             <div key={entry.id} className="border-l border-premium-gold/45 pl-4">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-semibold">{entry.action_type}</p>
+                <p className="font-semibold">{salesUiLabel(entry.action_type)}</p>
                 <span className="text-xs text-slate-500">{formatDateTime(entry.created_at)}</span>
               </div>
               <p className="mt-1 text-sm text-slate-400">
                 {getUserName(data.users, entry.user_id)}
-                {entry.old_status || entry.new_status ? ` · ${entry.old_status || "-"} → ${entry.new_status || "-"}` : ""}
+                {entry.old_status || entry.new_status ? ` · ${salesUiLabel(entry.old_status || "-")} → ${salesUiLabel(entry.new_status || "-")}` : ""}
               </p>
               {entry.next_contact_at ? (
                 <p className="mt-1 text-sm text-premium-gold">
-                  Nächster Kontakt: {formatDateTime(entry.next_contact_at)}
+                  Следующий контакт: {formatDateTime(entry.next_contact_at)}
                 </p>
               ) : null}
-              {entry.note ? <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300">{entry.note}</p> : null}
+              {entry.note ? <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-300">{salesUiNote(entry.note)}</p> : null}
             </div>
           ))}
         </div>
@@ -2572,14 +2571,14 @@ function PersonalDemoPanel({
     ? galleryPhotoIds.map((id) => photos.find((photo) => photo.id === id)).filter((photo): photo is RestaurantPhoto => Boolean(photo))
     : photos.filter((photo) => photo.id !== heroPhoto?.id).slice(0, 6);
   const cuisineType = restaurant.category || "Gastronomie";
-  const wizardSteps = ["Daten", "Bilder", "Design", "Inhalte", "Vorschau", "Veröffentlichen"];
+  const wizardSteps = ["Данные", "Изображения", "Дизайн", "Содержимое", "Предпросмотр", "Публикация"];
   const themeChoices: [DemoTemplateKey | "auto", string, string][] = [
-    ["auto", "Automatisch auswählen", "Vorschlag: " + demoTemplateThemes[suggestedTemplate].label],
-    ["premium-dark", "Premium Dark", "Fine Dining, Steakhouse, Weinbar, Premium Restaurant"],
-    ["cocktail-neon", "Cocktail Neon", "Cocktailbar, Lounge, Nachtbar, Shisha-Bar"],
-    ["imbiss-pro", "Imbiss Pro", "Döner, Burger, Pizza, Grill, Chicken, Imbiss, Takeaway"],
-    ["cafe-minimal", "Café Minimal", "Café, Bäckerei, Frühstück, Brunch, Eisdiele"],
-    ["german-gasthaus", "German Gasthaus", "Deutsches Restaurant, Biergarten, Familienrestaurant, klassische Küche"]
+    ["auto", "Выбрать автоматически", "Рекомендуем: " + demoTemplateThemes[suggestedTemplate].label],
+    ["premium-dark", "Premium Dark", "Авторская кухня, стейк-хаус, винный бар, ресторан премиум-класса"],
+    ["cocktail-neon", "Cocktail Neon", "Коктейльный бар, лаунж, ночной бар, кальянная"],
+    ["imbiss-pro", "Imbiss Pro", "Дёнер, бургеры, пицца, гриль, курица, еда навынос"],
+    ["cafe-minimal", "Café Minimal", "Кафе, пекарня, завтраки, бранчи, мороженое"],
+    ["german-gasthaus", "German Gasthaus", "Немецкий ресторан, пивной сад, семейное заведение, традиционная кухня"]
   ];
 
   function openWizard() {
@@ -2666,14 +2665,14 @@ function PersonalDemoPanel({
     <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h2 className="font-heading text-xl font-semibold">Persönliches Demo</h2>
+          <h2 className="font-heading text-xl font-semibold">Персональное демо</h2>
           {demoUrl ? (
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Demo bereit: Version vom {formatDateTime(restaurant.generated_demo_at || "") || "letzten Stand"}.
+              Демо готово: версия от {formatDateTime(restaurant.generated_demo_at || "") || "последнего обновления"}.
             </p>
           ) : (
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Noch kein persönliches Demo erstellt.
+              Персональное демо ещё не создано.
             </p>
           )}
         </div>
@@ -2681,13 +2680,13 @@ function PersonalDemoPanel({
           {demoUrl ? (
             <>
               <a className={outlineButtonClassName} href={demoUrl} target="_blank" rel="noopener noreferrer">
-                Demo öffnen
+                Открыть демо
               </a>
               <button className={outlineButtonClassName} type="button" onClick={() => onCopy(demoUrl)}>
-                Link kopieren
+                Скопировать ссылку
               </button>
               <button className={outlineButtonClassName} type="button" onClick={openDemoWhatsappMessage}>
-                WhatsApp-Nachricht erstellen
+                Подготовить сообщение WhatsApp
               </button>
             </>
           ) : null}
@@ -2703,11 +2702,11 @@ function PersonalDemoPanel({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-                  Persönliches Demo
+                  Персональное демо
                 </p>
                 <h2 className="mt-2 font-heading text-2xl font-semibold">{restaurant.name}</h2>
               </div>
-              <button className={iconButtonClassName} type="button" aria-label="Demo-Wizard schließen" onClick={() => setOpen(false)}>
+              <button className={iconButtonClassName} type="button" aria-label="Закрыть настройку демо" onClick={() => setOpen(false)}>
                 ?
               </button>
             </div>
@@ -2738,7 +2737,7 @@ function PersonalDemoPanel({
                 ].map(([label, value]) => (
                   <div key={label} className="rounded border border-white/10 bg-midnight/45 p-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-premium-gold">{label}</p>
-                    <p className="mt-2 whitespace-pre-line text-sm text-slate-200">{value || "Nicht vorhanden"}</p>
+                    <p className="mt-2 whitespace-pre-line text-sm text-slate-200">{value || "Не указано"}</p>
                   </div>
                 ))}
               </div>
@@ -2749,22 +2748,22 @@ function PersonalDemoPanel({
                 <label className="flex items-start gap-3 rounded border border-premium-gold/35 bg-premium-gold/10 p-4 text-sm">
                   <input checked={useTemplateImages} onChange={(event) => setUseTemplateImages(event.target.checked)} type="checkbox" />
                   <span>
-                    <strong className="block text-warm-white">Standardbilder des Templates verwenden</strong>
-                    <span className="mt-1 block text-slate-400">Empfohlen, wenn noch keine eigenen Fotos hochgeladen wurden.</span>
+                    <strong className="block text-warm-white">Использовать стандартные изображения</strong>
+                    <span className="mt-1 block text-slate-400">Подойдёт, если свои фотографии ещё не загружены.</span>
                   </span>
                 </label>
 
                 {photos.length === 0 ? (
                   <div className="rounded border border-white/10 bg-midnight/45 p-4">
-                    <p className="font-semibold">Keine CRM-Fotos vorhanden.</p>
+                    <p className="font-semibold">В CRM пока нет фотографий.</p>
                     <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Das Demo wird mit Standardbildern des gewählten Templates erstellt. Diese Bilder werden nicht in Supabase kopiert.
+                      Демо будет создано со стандартными изображениями выбранного шаблона. В Supabase они не копируются.
                     </p>
                   </div>
                 ) : (
                   <div className={useTemplateImages ? "pointer-events-none opacity-45" : ""}>
                     <div>
-                      <label className="text-sm font-semibold" htmlFor="hero-photo">Hero-Foto</label>
+                      <label className="text-sm font-semibold" htmlFor="hero-photo">Главное фото</label>
                       <select id="hero-photo" className={selectClassName + " mt-2"} value={heroPhotoId} onChange={(event) => setHeroPhotoId(event.target.value)}>
                         {photos.map((photo) => (
                           <option key={photo.id} value={photo.id}>{photo.file_name || photo.photo_type}</option>
@@ -2772,7 +2771,7 @@ function PersonalDemoPanel({
                       </select>
                     </div>
                     <div className="mt-5">
-                      <p className="text-sm font-semibold">Galerie-Fotos</p>
+                      <p className="text-sm font-semibold">Фото для галереи</p>
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         {photos.map((photo) => (
                           <label key={photo.id} className="flex items-center gap-3 rounded border border-white/10 bg-midnight/45 p-3 text-sm">
@@ -2783,9 +2782,9 @@ function PersonalDemoPanel({
                       </div>
                     </div>
                     <div className="mt-5">
-                      <label className="text-sm font-semibold" htmlFor="logo-photo">Logo</label>
+                      <label className="text-sm font-semibold" htmlFor="logo-photo">Логотип</label>
                       <select id="logo-photo" className={selectClassName + " mt-2"} value={logoPhotoId} onChange={(event) => setLogoPhotoId(event.target.value)}>
-                        <option value="">Nicht vorhanden</option>
+                        <option value="">Нет</option>
                         {photos.map((photo) => (
                           <option key={photo.id} value={photo.id}>{photo.file_name || photo.photo_type}</option>
                         ))}
@@ -2826,7 +2825,7 @@ function PersonalDemoPanel({
                           rel="noopener noreferrer"
                           target="_blank"
                         >
-                          Vorschau
+                          Предпросмотр
                         </a>
                       ) : null}
                     </div>
@@ -2838,25 +2837,25 @@ function PersonalDemoPanel({
             {step === 4 ? (
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <label className="block text-sm font-semibold">
-                  Slogan
+                  Слоган
                   <input className={inputClassName} value={slogan} onChange={(event) => setSlogan(event.target.value)} />
                 </label>
                 <label className="block text-sm font-semibold">
-                  Hervorgehobenes Angebot
-                  <input className={inputClassName} value={specialOfferTitle} onChange={(event) => setSpecialOfferTitle(event.target.value)} placeholder="Zum Beispiel: Empfehlung des Hauses" />
+                  Особое предложение
+                  <input className={inputClassName} value={specialOfferTitle} onChange={(event) => setSpecialOfferTitle(event.target.value)} placeholder="Например: фирменное блюдо" />
                 </label>
                 <label className="block text-sm font-semibold sm:col-span-2">
-                  Angebotstext
-                  <textarea className={inputClassName + " min-h-24 py-3"} value={specialOfferText} onChange={(event) => setSpecialOfferText(event.target.value)} placeholder="Kurzer optionaler Text für den Angebotsbereich." />
+                  Текст предложения
+                  <textarea className={inputClassName + " min-h-24 py-3"} value={specialOfferText} onChange={(event) => setSpecialOfferText(event.target.value)} placeholder="Короткий необязательный текст предложения." />
                 </label>
                 <label className="block text-sm font-semibold">
-                  Preis
-                  <input className={inputClassName} value={specialOfferPrice} onChange={(event) => setSpecialOfferPrice(event.target.value)} placeholder="Optional" />
+                  Цена
+                  <input className={inputClassName} value={specialOfferPrice} onChange={(event) => setSpecialOfferPrice(event.target.value)} placeholder="Необязательно" />
                 </label>
                 <div className="grid gap-2 text-sm sm:col-span-2 sm:grid-cols-3">
-                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={deliveryEnabled} onChange={(event) => setDeliveryEnabled(event.target.checked)} type="checkbox" />Lieferung möglich</label>
-                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={pickupEnabled} onChange={(event) => setPickupEnabled(event.target.checked)} type="checkbox" />Abholung möglich</label>
-                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={reservationEnabled} onChange={(event) => setReservationEnabled(event.target.checked)} type="checkbox" />Reservierung möglich</label>
+                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={deliveryEnabled} onChange={(event) => setDeliveryEnabled(event.target.checked)} type="checkbox" />Есть доставка</label>
+                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={pickupEnabled} onChange={(event) => setPickupEnabled(event.target.checked)} type="checkbox" />Есть самовывоз</label>
+                  <label className="flex items-center gap-2 rounded border border-white/10 bg-midnight/45 p-3"><input checked={reservationEnabled} onChange={(event) => setReservationEnabled(event.target.checked)} type="checkbox" />Можно забронировать стол</label>
                 </div>
               </div>
             ) : null}
@@ -2869,23 +2868,23 @@ function PersonalDemoPanel({
                     {restaurant.category || "Gastronomie"}{restaurant.city ? " in " + restaurant.city : ""}
                   </p>
                   <div className="mt-4 grid gap-2 text-sm text-slate-300">
-                    <span>Hero: {useTemplateImages ? "Standardbild des Templates" : heroPhoto?.file_name || "Standardbild des Templates"}</span>
-                    <span>Galerie: {useTemplateImages ? "Standardbilder" : galleryPhotos.length > 0 ? galleryPhotos.length + " Fotos" : "Standardbilder"}</span>
-                    <span>Logo: {logoPhoto?.file_name || "Textmarke / Platzhalter"}</span>
-                    <span>Design: {demoTemplateThemes[selectedTemplate].label}</span>
-                    <span>Speisekarte: Beispiel-Speisekarte</span>
+                    <span>Главное фото: {useTemplateImages ? "Изображение шаблона" : heroPhoto?.file_name || "Изображение шаблона"}</span>
+                    <span>Галерея: {useTemplateImages ? "Изображения шаблона" : galleryPhotos.length > 0 ? `${galleryPhotos.length} фото` : "Изображения шаблона"}</span>
+                    <span>Логотип: {logoPhoto?.file_name || "Текстовый логотип"}</span>
+                    <span>Дизайн: {demoTemplateThemes[selectedTemplate].label}</span>
+                    <span>Меню: пример</span>
                   </div>
                 </div>
                 <div className="rounded border border-premium-gold/35 bg-midnight p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-premium-gold">Template Preview</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-premium-gold">Предпросмотр шаблона</p>
                   <h3 className="mt-3 font-heading text-3xl font-semibold">{restaurant.name}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-400">
-                    Das öffentliche Demo verwendet den gemeinsamen Restaurant-Template-Aufbau mit Header, Hero, Speisekarte, Galerie, Kontakt und Legal-Seiten.
+                    Публичное демо включает шапку, главную секцию, меню, галерею, контакты и юридические страницы.
                   </p>
                   <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-300">
-                    {restaurant.phone ? <span className="rounded border border-white/10 px-2 py-1">Anrufen</span> : null}
-                    {formatAddress(restaurant) ? <span className="rounded border border-white/10 px-2 py-1">Route</span> : null}
-                    <span className="rounded border border-white/10 px-2 py-1">Beispiel-Speisekarte</span>
+                    {restaurant.phone ? <span className="rounded border border-white/10 px-2 py-1">Позвонить</span> : null}
+                    {formatAddress(restaurant) ? <span className="rounded border border-white/10 px-2 py-1">Маршрут</span> : null}
+                    <span className="rounded border border-white/10 px-2 py-1">Пример меню</span>
                     <span className="rounded border border-white/10 px-2 py-1">{demoTemplateThemes[selectedTemplate].label}</span>
                   </div>
                 </div>
@@ -2894,15 +2893,15 @@ function PersonalDemoPanel({
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
               <button className={outlineButtonClassName} type="button" onClick={() => step === 1 ? setOpen(false) : setStep((current) => current - 1)}>
-                {step === 1 ? "Abbrechen" : "Zurück"}
+                {step === 1 ? "Отмена" : "Назад"}
               </button>
               {step < 6 ? (
                 <button className={goldButtonClassName} type="button" onClick={() => setStep((current) => current + 1)}>
-                  Weiter
+                  Далее
                 </button>
               ) : (
                 <button className={goldButtonClassName} type="button" disabled={publishing} onClick={publishDemo}>
-                  {publishing ? "Demo wird erstellt …" : "Demo veröffentlichen"}
+                  {publishing ? "Создание демо…" : "Опубликовать демо"}
                 </button>
               )}
             </div>
@@ -2926,10 +2925,10 @@ function VisitModeView({
     <div className="grid gap-5">
       <div className={panelClassName}>
         <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-          Besuchsmodus
+          Режим визита
         </p>
         <h1 className="mt-3 font-heading text-3xl font-semibold">{restaurant.name}</h1>
-        <p className="mt-2 text-slate-400">Kontakt: {restaurant.contact_person || "-"}</p>
+        <p className="mt-2 text-slate-400">Контакт: {restaurant.contact_person || "-"}</p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {(["schnellundlecker", "schlemmerhus", "rhodosgrill"] as DemoId[]).map((demoId) => (
@@ -2941,22 +2940,22 @@ function VisitModeView({
               className={mobileActionClassName}
             >
               <ExternalLink aria-hidden="true" className="h-5 w-5" />
-              {demoOptions[demoId].label}
+              {salesUiLabel(demoOptions[demoId].label)}
             </a>
           ))}
         </div>
       </div>
 
       <div className={panelClassName}>
-        <h2 className="font-heading text-xl font-semibold">Vorteile</h2>
+        <h2 className="font-heading text-xl font-semibold">Преимущества</h2>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
-            "Moderner professioneller Auftritt",
-            "Optimiert für Smartphone",
-            "Speisekarte und Öffnungszeiten sofort sichtbar",
-            "Direkte Kontakt- und Bestellmöglichkeiten",
-            "Individuelles Design statt Standard-Baukasten",
-            "Persönliche Betreuung"
+            "Современный профессиональный сайт",
+            "Удобно пользоваться со смартфона",
+            "Меню и часы работы всегда под рукой",
+            "Гость может сразу связаться и сделать заказ",
+            "Индивидуальный дизайн вместо типового шаблона",
+            "Личная поддержка"
           ].map((benefit) => (
             <li key={benefit} className="flex gap-3 text-sm leading-6 text-slate-300">
               <Check aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-premium-gold" />
@@ -2968,23 +2967,23 @@ function VisitModeView({
 
       <details className={panelClassName}>
         <summary className="cursor-pointer font-heading text-xl font-semibold">
-          Gesprächsleitfaden
+          План разговора
         </summary>
         <ol className="mt-4 grid gap-3 text-sm leading-6 text-slate-300">
-          <li>1. Kurze Vorstellung.</li>
-          <li>2. Aktuelle Webseite oder Online-Präsenz ansprechen.</li>
-          <li>3. Passende Live-Demo zeigen.</li>
-          <li>4. Vorteile für Gäste erklären.</li>
-          <li>5. Interesse und nächsten Schritt klären.</li>
+          <li>1. Коротко представиться.</li>
+          <li>2. Обсудить нынешний сайт или присутствие в интернете.</li>
+          <li>3. Показать подходящее демо.</li>
+          <li>4. Объяснить пользу для гостей.</li>
+          <li>5. Уточнить интерес и следующий шаг.</li>
         </ol>
       </details>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <button type="button" className={outlineButtonClassName} onClick={onBack}>
-          Zurück
+          Назад
         </button>
         <button type="button" className={goldButtonClassName} onClick={onFinish}>
-          Besuch beenden
+          Завершить визит
         </button>
       </div>
     </div>
@@ -3041,7 +3040,7 @@ function FinishVisitView({
         <SelectField label="Ergebnis" value={result} onChange={(value) => setResult(value as VisitResult)} options={visitResults} />
 
         <div className="mt-5">
-          <p className="text-sm font-semibold">Bewertung des Interesses</p>
+          <p className="text-sm font-semibold">Оценка интереса</p>
           <div className="mt-3 grid grid-cols-5 gap-2">
             {[1, 2, 3, 4, 5].map((level) => (
               <button
@@ -3058,7 +3057,7 @@ function FinishVisitView({
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-slate-500">1 = kein Interesse, 5 = sehr großes Interesse</p>
+          <p className="mt-2 text-xs text-slate-500">1 — нет интереса, 5 — очень заинтересованы</p>
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
@@ -3068,22 +3067,22 @@ function FinishVisitView({
         </div>
 
         <label className="mt-5 block text-sm font-semibold" htmlFor="visit-note">
-          Notizen
+          Заметки
         </label>
         <textarea
           id="visit-note"
           value={note}
           onChange={(event) => setNote(event.target.value)}
           className={`${inputClassName} min-h-40 py-3`}
-          placeholder="Kurze Gesprächsnotiz, Einwände, nächster Schritt."
+          placeholder="Кратко о разговоре, возражениях и следующем шаге."
         />
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <button className={outlineButtonClassName} type="button" onClick={onCancel}>
-            Zurück
+            Назад
           </button>
           <button className={goldButtonClassName} type="submit">
-            Ergebnis speichern
+            Сохранить результат
           </button>
         </div>
       </div>
@@ -3231,19 +3230,19 @@ function TourView({
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Tour planen"
-        title="Tagesroute vorbereiten."
+        title="Маршрут на день"
         text="Für die erste Version als geordnete Liste mit Navigation und Besuchsstatus."
-        action={<button className={goldButtonClassName} type="button" onClick={openRoute}>Route in Google Maps öffnen</button>}
+        action={<button className={goldButtonClassName} type="button" onClick={openRoute}>Открыть маршрут в Google Maps</button>}
       />
       <div className={panelClassName}>
         <div className="grid gap-4 sm:grid-cols-3">
           <TextField label="Datum" value={tourDate} onChange={setTourDate} type="date" />
           <SelectField label="Verantwortlich" value={responsibleUserId} onChange={(value) => setResponsibleUserId(value as SalesUserId)} options={data.users.map((user) => user.id)} labels={Object.fromEntries(data.users.map((user) => [user.id, user.name]))} />
           <div>
-            <label className="block text-sm font-semibold">Restaurant hinzufügen</label>
+            <label className="block text-sm font-semibold">Добавить заведение</label>
             <div className="mt-2 flex gap-2">
               <select value={restaurantIdToAdd} onChange={(event) => setRestaurantIdToAdd(event.target.value)} className={selectClassName}>
-                <option value="">Auswählen</option>
+                <option value="">Выбрать</option>
                 {restaurants.map((restaurant) => (
                   <option value={restaurant.id} key={restaurant.id}>
                     {restaurant.name}
@@ -3271,10 +3270,10 @@ function TourView({
             <div key={stop.id} className={panelClassName}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-premium-gold">Stopp {index + 1}</p>
+                  <p className="text-sm font-semibold text-premium-gold">Остановка {index + 1}</p>
                   <h2 className="mt-1 font-heading text-xl font-semibold">{restaurant.name}</h2>
                   <p className="mt-1 text-sm text-slate-400">{formatAddress(restaurant)}</p>
-                  <p className="mt-1 text-sm text-slate-400">{stop.status}</p>
+                  <p className="mt-1 text-sm text-slate-400">{salesUiLabel(stop.status)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button className={iconButtonClassName} type="button" onClick={() => moveStop(stop.id, -1)}>
@@ -3287,13 +3286,13 @@ function TourView({
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-3">
                 <a className={outlineButtonClassName} href={getMapsUrl(restaurant)} target="_blank" rel="noopener noreferrer">
-                  Navigation
+                  Навигация
                 </a>
                 <button className={outlineButtonClassName} type="button" onClick={() => onOpenRestaurant(restaurant.id)}>
-                  Öffnen
+                  Открыть
                 </button>
                 <button className={goldButtonClassName} type="button" onClick={() => markVisited(stop.id)}>
-                  Als besucht markieren
+                  Отметить как посещённое
                 </button>
               </div>
             </div>
@@ -3319,11 +3318,11 @@ function TasksView({
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Aufgaben"
-        title="Offene Kontakte."
+        title="Ожидают контакта"
         text="Überfällige Aufgaben, heutige Kontakte und die nächsten sieben Tage."
       />
-      <TaskPanel title="Heute und überfällig" tasks={getDueTasks(restaurants, data.tasks)} users={users} onOpenRestaurant={onOpenRestaurant} />
-      <TaskPanel title="Nächste sieben Tage" tasks={getNextSevenDayTasks(restaurants, data.tasks)} users={users} onOpenRestaurant={onOpenRestaurant} />
+      <TaskPanel title="Сегодня и просрочено" tasks={getDueTasks(restaurants, data.tasks)} users={users} onOpenRestaurant={onOpenRestaurant} />
+      <TaskPanel title="Следующие семь дней" tasks={getNextSevenDayTasks(restaurants, data.tasks)} users={users} onOpenRestaurant={onOpenRestaurant} />
     </div>
   );
 }
@@ -3391,7 +3390,7 @@ function PipelineView({
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Pipeline"
-        title="Sales Pipeline."
+        title="Воронка продаж"
         text="Restaurants nach aktuellem Status verschieben und Fortschritt sichtbar machen."
       />
       <div className="overflow-x-auto pb-2">
@@ -3434,11 +3433,11 @@ function PipelineView({
                         <p className="font-semibold text-warm-white">{restaurant.name}</p>
                         <p className="mt-1 text-xs text-slate-400">{restaurant.city || "-"}</p>
                         <p className="mt-2 text-xs text-premium-gold">
-                          Interesse: {restaurant.interest_level || "-"} · {getUserName(data.users, restaurant.responsible_user_id)}
+                          Интерес: {restaurant.interest_level || "-"} · {getUserName(data.users, restaurant.responsible_user_id)}
                         </p>
                         {offer ? (
                           <p className="mt-1 text-xs text-slate-400">
-                            Angebot: {offer.setup_price || "-"} / {offer.monthly_price || "-"}
+                            Предложение: {offer.setup_price || "-"} / {offer.monthly_price || "-"}
                           </p>
                         ) : null}
                       </button>
@@ -3490,13 +3489,13 @@ function StatisticsView({
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Statistik"
-        title="Vertrieb im Überblick."
+        title="Сводка продаж"
         text="Aktuelle Kennzahlen, Conversion und offene Potenziale."
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {summary.map((item) => (
           <div key={item.label} className={panelClassName}>
-            <p className="text-sm text-slate-400">{item.label}</p>
+            <p className="text-sm text-slate-400">{salesUiLabel(item.label)}</p>
             <p className="mt-2 font-heading text-3xl font-semibold">{item.value}</p>
           </div>
         ))}
@@ -3504,7 +3503,7 @@ function StatisticsView({
       <OutreachStatistics />
       <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
         <div className={panelClassName}>
-          <h2 className="font-heading text-xl font-semibold">Conversion Funnel</h2>
+          <h2 className="font-heading text-xl font-semibold">Воронка конверсии</h2>
           <div className="mt-5 grid gap-3">
             {funnel.map((step, index) => {
               const previous = index === 0 ? step.value : funnel[index - 1].value;
@@ -3513,11 +3512,11 @@ function StatisticsView({
               return (
                 <div key={step.label} className="rounded border border-white/10 bg-midnight/35 p-3">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold">{step.label}</p>
+                    <p className="font-semibold">{salesUiLabel(step.label)}</p>
                     <p className="text-premium-gold">{step.value}</p>
                   </div>
                   <p className="mt-1 text-sm text-slate-400">
-                    {formatPercent(step.value, previous)} vom vorherigen Schritt · {formatPercent(step.value, total)} gesamt
+                    {formatPercent(step.value, previous)} от предыдущего этапа · {formatPercent(step.value, total)} всего
                   </p>
                 </div>
               );
@@ -3525,11 +3524,11 @@ function StatisticsView({
           </div>
         </div>
         <div className={panelClassName}>
-          <h2 className="font-heading text-xl font-semibold">Umsatz</h2>
+          <h2 className="font-heading text-xl font-semibold">Выручка</h2>
           <div className="mt-5 grid gap-3 text-sm">
-            <MetricRow label="Einmalige Verkäufe" value={`${setupRevenue.toLocaleString("de-DE")} €`} />
-            <MetricRow label="Monatliche Verträge" value={`${monthlyRevenue.toLocaleString("de-DE")} €`} />
-            <MetricRow label="Potenzial monatlich" value={`${potentialMonthlyRevenue.toLocaleString("de-DE")} €`} />
+            <MetricRow label="Einmalige Verkäufe" value={`${setupRevenue.toLocaleString("ru-RU")} €`} />
+            <MetricRow label="Monatliche Verträge" value={`${monthlyRevenue.toLocaleString("ru-RU")} €`} />
+            <MetricRow label="Potenzial monatlich" value={`${potentialMonthlyRevenue.toLocaleString("ru-RU")} €`} />
             <MetricRow label="Angebote angenommen" value={String(wonOffers.length)} />
           </div>
         </div>
@@ -3581,41 +3580,39 @@ function MoreView({
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="Mehr"
-        title="Verwaltung."
+        title="Управление"
         text="Export, Import und anpassbare Paketvorlagen."
       />
       <div className="grid gap-3 sm:grid-cols-2">
         <button className={outlineButtonClassName} type="button" onClick={onExport}>
           <Download aria-hidden="true" className="h-4 w-4" />
-          Restaurants exportieren
+          Экспорт заведений
         </button>
         <button className={outlineButtonClassName} type="button" onClick={onImport}>
           <Upload aria-hidden="true" className="h-4 w-4" />
-          CSV importieren
+          Импорт CSV
         </button>
         <a className={outlineButtonClassName} href="/sales/pipeline">
-          Pipeline öffnen
+          Открыть воронку
         </a>
         <a className={outlineButtonClassName} href="/sales/statistik">
-          Statistik öffnen
+          Открыть статистику
         </a>
         {currentUser.role === "admin" ? (
           <button className={outlineButtonClassName} type="button" onClick={onOpenAgentLeads}>
-            Agent Leads & Runs
+            Лиды и запуски бота
           </button>
         ) : null}
       </div>
       <div className={panelClassName}>
-        <h2 className="font-heading text-xl font-semibold">Datensicherung</h2>
+        <h2 className="font-heading text-xl font-semibold">Резервная копия</h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Vollständiges Backup für Restaurants, Kontaktverlauf, Touren, Angebote
-          und Paketvorlagen. Wichtig, solange die Daten noch lokal gespeichert
-          werden.
+          Полная копия заведений, истории общения, маршрутов, предложений и пакетов услуг. Особенно важно для локальных данных.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <button className={outlineButtonClassName} type="button" onClick={onBackup}>
             <Download aria-hidden="true" className="h-4 w-4" />
-            Vollständiges Backup herunterladen
+            Скачать полную копию
           </button>
           <button
             className={outlineButtonClassName}
@@ -3624,30 +3621,30 @@ function MoreView({
             onClick={() => backupInputRef.current?.click()}
           >
             <Upload aria-hidden="true" className="h-4 w-4" />
-            {currentUser.role === "admin" ? "Backup wiederherstellen" : "Restore nur für Admin"}
+            {currentUser.role === "admin" ? "Восстановить резервную копию" : "Доступно только администратору"}
           </button>
         </div>
         {backupPreview && backupFile ? (
           <div className="mt-4 rounded border border-premium-gold/30 bg-midnight/45 p-4 text-sm text-slate-300">
-            <p className="font-heading text-lg font-semibold text-warm-white">Backup-Vorschau</p>
+            <p className="font-heading text-lg font-semibold text-warm-white">Состав копии</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-4">
-              <span>{backupPreview.restaurants} Restaurants</span>
-              <span>{backupPreview.contacts} Kontakte</span>
-              <span>{backupPreview.tours} Touren</span>
-              <span>{backupPreview.offers} Angebote</span>
+              <span>{backupPreview.restaurants} Заведения</span>
+              <span>{backupPreview.contacts} Контакты</span>
+              <span>{backupPreview.tours} Маршруты</span>
+              <span>{backupPreview.offers} Предложения</span>
             </div>
             <button
               className={`${goldButtonClassName} mt-4`}
               type="button"
               onClick={() => {
-                if (window.confirm("Backup in die gemeinsame Datenbank importieren?")) {
+                if (window.confirm("Импортировать резервную копию в общую базу данных?")) {
                   onRestore(backupFile);
                   setBackupFile(null);
                   setBackupPreview(null);
                 }
               }}
             >
-              Import bestätigen
+              Подтвердить импорт
             </button>
           </div>
         ) : null}
@@ -3656,7 +3653,7 @@ function MoreView({
           type="button"
           onClick={onClearLegacyData}
         >
-          Alte lokale Daten löschen
+          Удалить старые локальные данные
         </button>
         <input
           ref={backupInputRef}
@@ -3683,7 +3680,7 @@ function MoreView({
                     tours: backupData.tours?.length || 0
                   });
                 } catch {
-                  window.alert("Backup konnte nicht gelesen werden.");
+                  window.alert("Не удалось прочитать резервную копию.");
                 }
               });
               reader.readAsText(file);
@@ -3694,16 +3691,15 @@ function MoreView({
         />
       </div>
       <div className={panelClassName}>
-        <h2 className="font-heading text-xl font-semibold">Paketvorlagen</h2>
+        <h2 className="font-heading text-xl font-semibold">Шаблоны пакетов услуг</h2>
         <p className="mt-2 text-sm text-slate-400">
-          Anfangswerte, die intern anpassbar sind. Preise werden hier bewusst
-          nicht fest vorgegeben.
+          Начальные значения можно изменить. Цены здесь намеренно не заданы.
         </p>
         <div className="mt-5 grid gap-4">
           {data.package_templates.map((packageTemplate) => (
             <div key={packageTemplate.id} className="rounded border border-white/10 p-4">
               <TextField label="Paketname" value={packageTemplate.name} onChange={(value) => updatePackage(packageTemplate.id, { name: value })} />
-              <label className="mt-4 block text-sm font-semibold">Beschreibung</label>
+              <label className="mt-4 block text-sm font-semibold">Описание</label>
               <textarea
                 value={packageTemplate.description}
                 onChange={(event) => updatePackage(packageTemplate.id, { description: event.target.value })}
@@ -3742,7 +3738,7 @@ function MessageTemplatesPanel({
       created_by: currentUser.id,
       id: createId(),
       is_active: true,
-      name: "Neuer Vorlage",
+      name: "Новый шаблон",
       subject: "",
       updated_at: now,
       updated_by: currentUser.id
@@ -3816,13 +3812,13 @@ function MessageTemplatesPanel({
     <div className={panelClassName}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-heading text-xl font-semibold">Nachrichtenvorlagen</h2>
+          <h2 className="font-heading text-xl font-semibold">Шаблоны сообщений</h2>
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            WhatsApp- und E-Mail-Texte mit Variablen wie {"{{restaurant_name}}"} oder {"{{demo_link}}"}.
+            Тексты для WhatsApp и почты с переменными, например {"{{restaurant_name}}"} или {"{{demo_link}}"}.
           </p>
         </div>
         <button className={goldButtonClassName} type="button" onClick={startNewTemplate}>
-          Vorlage erstellen
+          Создать шаблон
         </button>
       </div>
       <div className="mt-5 grid gap-3">
@@ -3833,18 +3829,18 @@ function MessageTemplatesPanel({
               <div>
                 <p className="font-heading text-lg font-semibold">{template.name}</p>
                 <p className="mt-1 text-sm text-slate-400">
-                  {template.channel} · {template.category || "custom"}
+                  {salesUiLabel(template.channel)} · {salesUiLabel(template.category || "custom")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button className={outlineButtonClassName} type="button" onClick={() => editTemplate(template)}>
-                  Bearbeiten
+                  Изменить
                 </button>
                 <button className={outlineButtonClassName} type="button" onClick={() => duplicateTemplate(template)}>
-                  Duplizieren
+                  Дублировать
                 </button>
                 <button className="inline-flex min-h-11 items-center justify-center rounded border border-red-400/35 px-3 text-sm font-semibold text-red-200" type="button" onClick={() => archiveTemplate(template.id)}>
-                  Archivieren
+                  Архивировать
                 </button>
               </div>
             </div>
@@ -3858,7 +3854,7 @@ function MessageTemplatesPanel({
       {draft ? (
         <div className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/55 p-4">
           <p className="font-heading text-lg font-semibold">
-            {editingTemplateId === "new" ? "Neue Vorlage" : "Vorlage bearbeiten"}
+            {editingTemplateId === "new" ? "Новый шаблон" : "Изменить шаблон"}
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <TextField label="Name" value={draft.name} onChange={(value) => setDraft({ ...draft, name: value })} />
@@ -3866,7 +3862,7 @@ function MessageTemplatesPanel({
             <SelectField label="Kanal" value={draft.channel} onChange={(value) => setDraft({ ...draft, channel: value as MessageTemplate["channel"] })} options={["whatsapp", "email", "sms", "internal"]} />
             <SelectField label="Kategorie" value={draft.category} onChange={(value) => setDraft({ ...draft, category: value as MessageTemplate["category"] })} options={["first_contact", "after_visit", "demo", "reminder", "offer", "follow_up", "appointment", "rejection", "custom"]} />
           </div>
-          <label className="mt-4 block text-sm font-semibold">Text</label>
+          <label className="mt-4 block text-sm font-semibold">Текст</label>
           <textarea
             value={draft.body}
             onChange={(event) => setDraft({ ...draft, body: event.target.value })}
@@ -3874,10 +3870,10 @@ function MessageTemplatesPanel({
           />
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <button className={goldButtonClassName} type="button" onClick={saveTemplate}>
-              Vorlage speichern
+              Сохранить шаблон
             </button>
             <button className={outlineButtonClassName} type="button" onClick={() => setDraft(null)}>
-              Abbrechen
+              Отмена
             </button>
           </div>
         </div>
@@ -3905,7 +3901,7 @@ function ImportView({
     <div className="grid gap-5">
       <SectionHeader
         eyebrow="CSV Import"
-        title="Daten prüfen."
+        title="Проверка данных"
         text="Einfacher Import mit Vorschau. Die Struktur kann später für Supabase erweitert werden."
       />
       <div className={panelClassName}>
@@ -3913,23 +3909,23 @@ function ImportView({
           value={importText}
           onChange={(event) => onChange(event.target.value)}
           className={`${inputClassName} min-h-56 py-3 font-mono text-sm`}
-          placeholder="Restaurant,Adresse,Ort,Telefon,Ansprechpartner,Status,Interesse,Letzter Kontakt,Nächster Kontakt,Verantwortlich,Demo,Notizen"
+          placeholder="Заведение,Адрес,Город,Телефон,Контактное лицо,Статус,Интерес,Последний контакт,Следующий контакт,Ответственный,Демо,Заметки"
         />
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <button className={outlineButtonClassName} type="button" onClick={onBack}>
-            Zurück
+            Назад
           </button>
           <button className={outlineButtonClassName} type="button" onClick={onPreview}>
-            Vorschau erstellen
+            Создать предпросмотр
           </button>
           <button className={goldButtonClassName} type="button" onClick={onSave} disabled={importPreview.length === 0}>
-            Vorschau speichern
+            Сохранить предпросмотр
           </button>
         </div>
       </div>
       {importPreview.length > 0 ? (
         <div className={panelClassName}>
-          <h2 className="font-heading text-xl font-semibold">Vorschau</h2>
+          <h2 className="font-heading text-xl font-semibold">Предпросмотр</h2>
           <div className="mt-4 grid gap-2">
             {importPreview.map((restaurant, index) => (
               <div key={`${restaurant.name}-${index}`} className="rounded border border-white/10 p-3 text-sm">
@@ -4003,7 +3999,7 @@ function RestaurantPhotosPanel({
     });
 
     if (acceptedFiles.length !== files.length) {
-      setError("Einige Fotos wurden übersprungen. Erlaubt sind JPG, PNG, WebP bis 10 MB.");
+      setError("Некоторые фотографии пропущены. Допустимы JPG, PNG и WebP до 10 МБ.");
     } else {
       setError("");
     }
@@ -4021,7 +4017,7 @@ function RestaurantPhotosPanel({
       const uploadResult = await photosService.uploadFile(supabase, storagePath, file);
 
       if (uploadResult.error || !uploadResult.data) {
-        setError(uploadResult.error || "Foto konnte nicht hochgeladen werden.");
+        setError(uploadResult.error || "Не удалось загрузить фотографию.");
         continue;
       }
 
@@ -4042,7 +4038,7 @@ function RestaurantPhotosPanel({
       const createResult = await photosService.create(supabase, photo);
 
       if (createResult.error || !createResult.data) {
-        setError(createResult.error || "Foto konnte nicht gespeichert werden.");
+        setError(createResult.error || "Не удалось сохранить фотографию.");
         continue;
       }
 
@@ -4079,7 +4075,7 @@ function RestaurantPhotosPanel({
   }
 
   async function removePhoto(photo: RestaurantPhoto) {
-    if (!supabase || !window.confirm("Foto wirklich löschen?")) {
+    if (!supabase || !window.confirm("Удалить фотографию?")) {
       return;
     }
 
@@ -4109,9 +4105,9 @@ function RestaurantPhotosPanel({
     <div className={panelClassName}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-heading text-xl font-semibold">Fotos</h2>
+          <h2 className="font-heading text-xl font-semibold">Фотографии</h2>
           <p className="mt-1 text-sm leading-6 text-slate-400">
-            Fassaden, Innenraum, Speisekarte oder Logo direkt vom Telefon hochladen.
+            Загрузите с телефона фото фасада, интерьера, меню или логотипа.
           </p>
         </div>
         <button
@@ -4121,7 +4117,7 @@ function RestaurantPhotosPanel({
           onClick={() => fileInputRef.current?.click()}
         >
           <Camera aria-hidden="true" className="h-4 w-4" />
-          {uploading ? "Fotos werden hochgeladen ..." : "Fotos hinzufügen"}
+          {uploading ? "Загрузка фотографий…" : "Добавить фотографии"}
         </button>
       </div>
       <input
@@ -4151,7 +4147,7 @@ function RestaurantPhotosPanel({
               {previewUrl ? (
                 <a href={previewUrl} target="_blank" rel="noopener noreferrer">
                   <Image
-                    alt={`Foto von ${restaurant.name}`}
+                    alt={`Фото заведения ${restaurant.name}`}
                     className="aspect-[4/3] w-full rounded object-cover"
                     height={240}
                     src={previewUrl}
@@ -4168,7 +4164,7 @@ function RestaurantPhotosPanel({
                   {photo.is_primary ? "Hauptfoto" : "Als Hauptfoto"}
                 </button>
                 <button className="inline-flex min-h-11 items-center justify-center rounded border border-red-400/35 px-3 text-sm font-semibold text-red-200" type="button" onClick={() => void removePhoto(photo)}>
-                  Löschen
+                  Удалить
                 </button>
               </div>
             </div>
@@ -4260,7 +4256,7 @@ function OfferPanel({
       : await offersService.createOffer(supabase, nextOffer);
 
     if (result.error || !result.data) {
-      setPdfError(result.error || "Angebot konnte nicht gespeichert werden.");
+      setPdfError(result.error || "Не удалось сохранить предложение.");
       return null;
     }
 
@@ -4330,7 +4326,7 @@ function OfferPanel({
       };
 
       if (!response.ok || !payload.offer) {
-        setPdfError(payload.message || "PDF konnte nicht erstellt werden.");
+        setPdfError(salesUiLabel(payload.message || "Не удалось создать PDF."));
         return;
       }
 
@@ -4348,7 +4344,7 @@ function OfferPanel({
           : [...currentData.offers, nextOffer]
       }));
     } catch {
-      setPdfError("PDF konnte nicht erstellt werden.");
+      setPdfError("Не удалось создать PDF.");
     } finally {
       setPdfBusy(false);
     }
@@ -4356,7 +4352,7 @@ function OfferPanel({
 
   return (
     <div className={panelClassName}>
-      <h2 className="font-heading text-xl font-semibold">Angebot</h2>
+      <h2 className="font-heading text-xl font-semibold">Предложение</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <SelectField label="Paket" value={offer.package_name} onChange={(value) => updateField("package_name", value)} options={data.package_templates.map((packageTemplate) => packageTemplate.name)} />
         <SelectField label="Status" value={offer.status} onChange={(value) => updateField("status", value as Offer["status"])} options={offerStatuses} labels={offerStatusLabels} />
@@ -4365,7 +4361,7 @@ function OfferPanel({
         <TextField label="Angebotsdatum" value={offer.offer_date} onChange={(value) => updateField("offer_date", value)} type="date" />
         <TextField label="Gültig bis" value={offer.valid_until} onChange={(value) => updateField("valid_until", value)} type="date" />
       </div>
-      <label className="mt-4 block text-sm font-semibold">Sonderwünsche</label>
+      <label className="mt-4 block text-sm font-semibold">Особые пожелания</label>
       <textarea
         value={offer.special_requests}
         onChange={(event) => updateField("special_requests", event.target.value)}
@@ -4373,28 +4369,28 @@ function OfferPanel({
       />
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <button className={goldButtonClassName} type="button" onClick={() => void saveOffer()}>
-          Angebot speichern
+          Сохранить предложение
         </button>
         <button className={outlineButtonClassName} type="button" onClick={() => onCopy(createOfferText(restaurant, offer))}>
-          Angebotstext kopieren
+          Скопировать текст предложения
         </button>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <button className={outlineButtonClassName} type="button" onClick={generatePdf} disabled={pdfBusy}>
           <FileText aria-hidden="true" className="h-4 w-4" />
-          {pdfBusy ? "PDF wird erstellt ..." : "PDF erstellen"}
+          {pdfBusy ? "Создание PDF…" : "Создать PDF"}
         </button>
-        <button className={outlineButtonClassName} type="button" onClick={() => onCopy(pdfUrl || "PDF noch nicht erstellt")} disabled={!pdfUrl}>
+        <button className={outlineButtonClassName} type="button" onClick={() => onCopy(pdfUrl || "PDF ещё не создан")} disabled={!pdfUrl}>
           <Clipboard aria-hidden="true" className="h-4 w-4" />
-          Link kopieren
+          Скопировать ссылку
         </button>
         {pdfUrl ? (
           <>
             <a className={outlineButtonClassName} href={pdfUrl} target="_blank" rel="noopener noreferrer">
-              PDF ansehen
+              Просмотреть PDF
             </a>
             <a className={outlineButtonClassName} href={pdfUrl} download>
-              PDF herunterladen
+              Скачать PDF
             </a>
           </>
         ) : null}
@@ -4446,7 +4442,7 @@ function TaskPanel({
                     {formatAddress(restaurant) || restaurant.city || "-"}
                   </p>
                   <p className={`mt-2 text-sm ${overdue ? "text-red-200" : "text-premium-gold"}`}>
-                    {task.title}: {formatDateTime(task.due_at)}
+                    {salesUiLabel(task.title)}: {formatDateTime(task.due_at)}
                   </p>
                   <VisitReadinessBadge restaurant={restaurant} />
                 </div>
@@ -4488,7 +4484,7 @@ function WhatsappModal({
           {template === "afterVisit" ? "Nach erstem Besuch" : "Erinnerung"}
         </p>
         <h2 className="mt-2 font-heading text-2xl font-semibold">
-          WhatsApp-Nachricht bearbeiten
+          Изменить сообщение WhatsApp
         </h2>
         <textarea
           value={text}
@@ -4497,10 +4493,10 @@ function WhatsappModal({
         />
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <button className={outlineButtonClassName} type="button" onClick={onClose}>
-            Abbrechen
+            Отмена
           </button>
           <button className={goldButtonClassName} type="button" onClick={() => onOpen(restaurant)}>
-            WhatsApp öffnen
+            Открыть WhatsApp
           </button>
         </div>
       </div>
@@ -4526,10 +4522,10 @@ function ConfirmDialog({
         <p className="mt-3 text-sm leading-6 text-slate-400">{text}</p>
         <div className="mt-5 grid grid-cols-2 gap-3">
           <button className={outlineButtonClassName} type="button" onClick={onNo}>
-            Nein
+            Нет
           </button>
           <button className={goldButtonClassName} type="button" onClick={onYes}>
-            Ja
+            Да
           </button>
         </div>
       </div>
@@ -4573,7 +4569,7 @@ function BottomNavigation({
             }`}
           >
             <span className="h-5 w-5 [&>svg]:h-5 [&>svg]:w-5">{item.icon}</span>
-            {item.label}
+            {salesUiLabel(item.label)}
             {item.target === "tasks" && taskCount > 0 ? (
               <span className="absolute right-2 top-1 rounded-full bg-red-500 px-1.5 text-[0.62rem] text-white">
                 {taskCount}
@@ -4601,13 +4597,13 @@ function SectionHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-          {eyebrow}
+          {salesUiLabel(eyebrow)}
         </p>
         <h1 className="mt-2 font-heading text-3xl font-semibold leading-tight sm:text-4xl">
-          {title}
+          {salesUiLabel(title)}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-          {text}
+          {salesUiLabel(text)}
         </p>
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
@@ -4618,7 +4614,7 @@ function SectionHeader({
 function StatusBadge({ status }: { status: RestaurantStatus }) {
   return (
     <span className={`w-fit rounded border px-3 py-1 text-xs font-semibold ${statusClassNames[status]}`}>
-      {status}
+      {salesUiLabel(status)}
     </span>
   );
 }
@@ -4626,7 +4622,7 @@ function StatusBadge({ status }: { status: RestaurantStatus }) {
 function EmptyState({ text }: { text: string }) {
   return (
     <div className="rounded border border-dashed border-white/15 p-6 text-center text-sm text-slate-400">
-      {text}
+      {salesUiLabel(text)}
     </div>
   );
 }
@@ -4649,7 +4645,7 @@ function TextField({
   return (
     <div>
       <label className="block text-sm font-semibold" htmlFor={id}>
-        {label}
+        {salesUiLabel(label)}
       </label>
       <input
         id={id}
@@ -4693,7 +4689,7 @@ function SelectField({
   return (
     <div>
       <label className="block text-sm font-semibold" htmlFor={id}>
-        {label}
+        {salesUiLabel(label)}
       </label>
       <select
         id={id}
@@ -4703,7 +4699,7 @@ function SelectField({
       >
         {options.map((option) => (
           <option key={option || "empty"} value={option}>
-            {labels[option] || option}
+            {salesUiLabel(labels[option] || option)}
           </option>
         ))}
       </select>
@@ -4728,7 +4724,7 @@ function ActionLink({
     return (
       <span className={`${mobileActionClassName} cursor-not-allowed opacity-45`}>
         {icon}
-        {label}
+        {salesUiLabel(label)}
       </span>
     );
   }
@@ -4741,7 +4737,7 @@ function ActionLink({
       className={mobileActionClassName}
     >
       {icon}
-      {label}
+      {salesUiLabel(label)}
     </a>
   );
 }
@@ -5001,7 +4997,7 @@ function createHistoryEntry({
 
 function formatSaveError(error: string) {
   const details = error.replace(/^Restaurant konnte nicht gespeichert werden\.\n?/, "");
-  return `Restaurant konnte nicht gespeichert werden.${details ? `\n${details}` : ""}`;
+  return `Не удалось сохранить заведение.${details ? `\n${salesUiLabel(details)}` : ""}`;
 }
 
 function suggestPersonalDemoTemplate(restaurant: Restaurant): DemoTemplateKey {
@@ -5035,15 +5031,15 @@ function formatDemoApiError(payload: {
   technicalMessage?: string;
 }) {
   const details = [
-    payload.operation ? `Operation: ${payload.operation}` : "",
+    payload.operation ? `Операция: ${payload.operation}` : "",
     payload.supabaseCode ? `Supabase code: ${payload.supabaseCode}` : "",
-    payload.technicalMessage ? `Message: ${payload.technicalMessage}` : "",
-    payload.details ? `Details: ${payload.details}` : "",
-    payload.hint ? `Hint: ${payload.hint}` : ""
+    payload.technicalMessage ? `Сообщение: ${payload.technicalMessage}` : "",
+    payload.details ? `Подробности: ${payload.details}` : "",
+    payload.hint ? `Подсказка: ${payload.hint}` : ""
   ].filter(Boolean);
 
   return [
-    payload.message || "Demo konnte nicht veröffentlicht werden.",
+    salesUiLabel(payload.message || "Не удалось опубликовать демо."),
     ...details
   ].join("\n");
 }
@@ -5247,7 +5243,7 @@ function formatDateTime(value: string) {
     return "";
   }
 
-  return new Intl.DateTimeFormat("de-DE", {
+  return new Intl.DateTimeFormat("ru-RU", {
     dateStyle: "medium",
     timeStyle: value.includes("T") ? "short" : undefined
   }).format(new Date(value));
@@ -5436,7 +5432,7 @@ function renderMessageTemplatePreview(template: MessageTemplate) {
 function MetricRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded border border-white/10 bg-midnight/35 px-3 py-2">
-      <span className="text-slate-400">{label}</span>
+      <span className="text-slate-400">{salesUiLabel(label)}</span>
       <span className="font-semibold text-warm-white">{value}</span>
     </div>
   );
@@ -5454,7 +5450,7 @@ function formatPercent(value: number, base: number) {
     return "0 %";
   }
 
-  return `${((value / base) * 100).toLocaleString("de-DE", {
+  return `${((value / base) * 100).toLocaleString("ru-RU", {
     maximumFractionDigits: 1
   })} %`;
 }
