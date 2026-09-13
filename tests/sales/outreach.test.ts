@@ -13,7 +13,9 @@ describe("DINEVIO outreach", () => {
     expect(proposal.text).toContain("https://www.dinevio.de/");
     expect(proposal.text).toContain("Google Maps");
     expect(proposal.text).toContain("kostenlos und unverbindlich");
-    expect(proposal.html).toContain("Ihr eigenes Demo – kostenlos.");
+    expect(proposal.html).toContain("Ihre Website. Ihre digitale Speisekarte. Ihr kostenloses Demo.");
+    expect(proposal.html).toContain("Google Maps hilft Gästen, Sie zu finden.");
+    expect(proposal.text).toContain("mit digitaler Speisekarte");
   });
   it("excludes unsafe map links", () => {
     expect(safeGoogleMapsUrl("javascript:alert(1)")).toBeNull();
