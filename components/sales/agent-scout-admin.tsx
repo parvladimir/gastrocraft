@@ -192,7 +192,7 @@ export function AgentScoutAdminPanel({
         }
         return true;
       })
-      .sort((a, b) => (b.discovered_at || b.created_at).localeCompare(a.discovered_at || a.created_at));
+      .sort((a, b) => Number(Boolean(b.email)) - Number(Boolean(a.email)) || (b.discovered_at || b.created_at).localeCompare(a.discovered_at || a.created_at));
   }, [filter, restaurants]);
 
   if (currentUser.role !== "admin") {
@@ -262,6 +262,7 @@ export function AgentScoutAdminPanel({
                 <th className="px-2 py-2">Restaurant</th>
                 <th className="px-2 py-2">Stadt</th>
                 <th className="px-2 py-2">Score</th>
+                <th className="px-2 py-2">E-Mail</th>
                 <th className="px-2 py-2">Website</th>
                 <th className="px-2 py-2">Quelle</th>
                 <th className="px-2 py-2">Gefunden</th>
@@ -284,6 +285,7 @@ export function AgentScoutAdminPanel({
                   </td>
                   <td className="px-2 py-3">{restaurant.city || "-"}</td>
                   <td className="px-2 py-3">{restaurant.lead_score ?? "-"}</td>
+                  <td className="px-2 py-3">{restaurant.email || "-"}</td>
                   <td className="px-2 py-3">
                     {restaurant.website ? (
                       <a
