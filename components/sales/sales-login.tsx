@@ -49,7 +49,7 @@ export function SalesLogin() {
     const supabase = createSupabaseBrowserClient();
 
     if (!supabase) {
-      setError("Supabase ist nicht konfiguriert.");
+      setError("Supabase не настроен.");
       return;
     }
 
@@ -65,8 +65,8 @@ export function SalesLogin() {
       setSubmitting(false);
       setError(
         signInError.message.toLowerCase().includes("invalid")
-          ? "E-Mail oder Passwort ist falsch."
-          : "Die Anmeldung ist momentan nicht möglich. Bitte erneut versuchen."
+          ? "Неверная почта или пароль."
+          : "Сейчас не удалось войти. Попробуйте ещё раз."
       );
       return;
     }
@@ -76,29 +76,29 @@ export function SalesLogin() {
   }
 
   return (
-    <main className="min-h-screen bg-midnight px-4 py-10 text-warm-white">
+    <main lang="ru" className="min-h-screen bg-midnight px-4 py-10 text-warm-white">
       <div className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-md place-items-center">
         <form
           onSubmit={handleSubmit}
           className="w-full rounded-xl border border-white/10 bg-[#101a2c] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.24)]"
         >
           <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-            DINEVIO Sales Manager
+            DINEVIO · Продажи
           </p>
-          <h1 className="mt-3 font-heading text-3xl font-semibold">Anmelden</h1>
+          <h1 className="mt-3 font-heading text-3xl font-semibold">Вход</h1>
           <p className="mt-3 text-sm leading-6 text-slate-400">
-            Geschützter interner Bereich für Restaurantkontakte und Besuchsplanung.
+            Внутренняя система для работы с заведениями, контактами и визитами.
           </p>
 
           {!config.isConfigured ? (
             <div className="mt-5 rounded border border-orange-300/35 bg-orange-400/10 p-4 text-sm leading-6 text-orange-100">
-              <p className="font-semibold">Supabase ist nicht konfiguriert.</p>
-              <p className="mt-1">Fehlende Variablen: {config.missing.join(", ")}</p>
+              <p className="font-semibold">Supabase не настроен.</p>
+              <p className="mt-1">Отсутствуют параметры: {config.missing.join(", ")}</p>
             </div>
           ) : null}
 
           <label className="mt-6 block text-sm font-semibold" htmlFor="sales-email">
-            E-Mail
+            Электронная почта
           </label>
           <input
             id="sales-email"
@@ -111,7 +111,7 @@ export function SalesLogin() {
           />
 
           <label className="mt-4 block text-sm font-semibold" htmlFor="sales-password">
-            Passwort
+            Пароль
           </label>
           <input
             id="sales-password"
@@ -131,7 +131,7 @@ export function SalesLogin() {
 
           <button className={`${goldButtonClassName} mt-6 w-full`} disabled={loading || submitting || !config.isConfigured} type="submit">
             <LogIn aria-hidden="true" className="h-4 w-4" />
-            {submitting ? "Anmeldung läuft ..." : loading ? "Sitzung wird geprüft ..." : "Anmelden"}
+            {submitting ? "Вход…" : loading ? "Проверка входа…" : "Войти"}
           </button>
         </form>
       </div>

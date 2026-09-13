@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Clipboard, Download, ExternalLink, FileText, Printer, RefreshCw, Share2, X } from "lucide-react";
 import type { Restaurant, SalesUser } from "@/lib/sales-types";
+import { salesUiLabel } from "@/lib/sales/ui-labels";
 
 type PresentationContent = {
   cta: string;
@@ -81,7 +82,7 @@ export function RestaurantPresentationPanel({
         presentation?: PresentationState | null;
       };
       if (!response.ok) {
-        setError(payload.message || "Präsentationsmaterial konnte nicht geladen werden.");
+        setError(salesUiLabel(payload.message || "Не удалось загрузить материалы презентации."));
         return;
       }
       setDemo(payload.demo ?? null);
@@ -90,7 +91,7 @@ export function RestaurantPresentationPanel({
         setResponsibleUserId((current) => current || initialResponsibleUserId || currentUser.id);
       }
     } catch {
-      setError("Präsentationsmaterial konnte nicht geladen werden.");
+      setError("Не удалось загрузить материалы презентации.");
     } finally {
       setIsLoading(false);
     }
@@ -123,14 +124,14 @@ export function RestaurantPresentationPanel({
         presentation?: PresentationState;
       };
       if (!response.ok || !payload.presentation) {
-        setError(payload.message || "Präsentationsblatt konnte nicht erstellt werden.");
+        setError(salesUiLabel(payload.message || "Не удалось создать презентацию."));
         return;
       }
       setPresentation({ ...payload.presentation, downloadUrl: payload.downloadUrl || "", isStale: false, presentationDemoVersion: activeDemo?.version || 0 });
       setPreviewOpen(false);
       await load();
     } catch {
-      setError("Präsentationsblatt konnte nicht erstellt werden.");
+      setError("Не удалось создать презентацию.");
     } finally {
       setIsGenerating(false);
     }
@@ -185,39 +186,39 @@ export function RestaurantPresentationPanel({
 
   const status = useMemo(() => {
     if (!activeDemo) {
-      return { label: "DEMO FEHLT", tone: "text-orange-200" };
+      return { label: "НЕТ ДЕМО", tone: "text-orange-200" };
     }
     if (!presentation) {
-      return { label: "PRÄSENTATION FEHLT", tone: "text-orange-200" };
+      return { label: "НЕТ ПРЕЗЕНТАЦИИ", tone: "text-orange-200" };
     }
     if (presentation.isStale) {
-      return { label: "PRÄSENTATION NICHT AKTUELL", tone: "text-amber-200" };
+      return { label: "ПРЕЗЕНТАЦИЯ УСТАРЕЛА", tone: "text-amber-200" };
     }
-    return { label: "BESUCHSBEREIT", tone: "text-emerald-200" };
+    return { label: "ГОТОВО К ВИЗИТУ", tone: "text-emerald-200" };
   }, [activeDemo, presentation]);
 
   return (
     <section className="mt-5 rounded-lg border border-premium-gold/30 bg-midnight/50 p-4" aria-labelledby="presentation-heading">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold">Präsentationsmaterial</p>
-          <h2 id="presentation-heading" className="mt-1 font-heading text-xl font-semibold">Persönliche Präsentation</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold">Материалы для встречи</p>
+          <h2 id="presentation-heading" className="mt-1 font-heading text-xl font-semibold">Персональная презентация</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
             {activeDemo
-              ? "Ein druckbares A4-Blatt mit persönlicher Live-Demo und QR-Code für den Besuch vor Ort."
-              : "Für dieses Restaurant muss zuerst ein persönliches Demo erstellt werden."}
+              ? "Лист A4 с персональным демо и QR-кодом для встречи в заведении."
+              : "Сначала создайте персональное демо для этого заведения."}
           </p>
         </div>
         <span className={`w-fit rounded border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold ${status.tone}`}>{status.label}</span>
       </div>
 
       {error ? <p className="mt-4 rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-100">{error}</p> : null}
-      {isLoading ? <p className="mt-4 text-sm text-slate-400">Präsentationsmaterial wird geladen …</p> : null}
+      {isLoading ? <p className="mt-4 text-sm text-slate-400">Загрузка материалов…</p> : null}
 
       {!isLoading && !activeDemo ? (
         <button className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded bg-premium-gold px-4 text-sm font-semibold text-midnight transition-colors hover:bg-[#e0b936]" type="button" onClick={onCreateDemo}>
           <FileText aria-hidden="true" className="h-4 w-4" />
-          Demo erstellen
+          Создать демо
         </button>
       ) : null}
 
@@ -225,30 +226,30 @@ export function RestaurantPresentationPanel({
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded bg-premium-gold px-4 text-sm font-semibold text-midnight transition-colors hover:bg-[#e0b936]" type="button" onClick={() => setPreviewOpen(true)}>
             <FileText aria-hidden="true" className="h-4 w-4" />
-            {presentation ? "Neu generieren" : "Präsentationsblatt erstellen"}
+            {presentation ? "Создать заново" : "Создать презентацию"}
           </button>
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold disabled:cursor-not-allowed disabled:opacity-45" type="button" disabled={!presentation?.downloadUrl} onClick={() => openPdf("open")}>
-            <ExternalLink aria-hidden="true" className="h-4 w-4" /> PDF ansehen
+            <ExternalLink aria-hidden="true" className="h-4 w-4" /> Просмотреть PDF
           </button>
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold disabled:cursor-not-allowed disabled:opacity-45" type="button" disabled={!presentation?.downloadUrl} onClick={() => openPdf("download")}>
-            <Download aria-hidden="true" className="h-4 w-4" /> PDF herunterladen
+            <Download aria-hidden="true" className="h-4 w-4" /> Скачать PDF
           </button>
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold disabled:cursor-not-allowed disabled:opacity-45" type="button" disabled={!presentation?.downloadUrl} onClick={() => openPdf("print")}>
-            <Printer aria-hidden="true" className="h-4 w-4" /> Drucken
+            <Printer aria-hidden="true" className="h-4 w-4" /> Печать
           </button>
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold" type="button" onClick={() => onCopy(activeDemo.url)}>
-            <Clipboard aria-hidden="true" className="h-4 w-4" /> Link kopieren
+            <Clipboard aria-hidden="true" className="h-4 w-4" /> Скопировать ссылку
           </button>
           <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-white/15 px-4 text-sm font-semibold text-slate-200 transition-colors hover:border-premium-gold/50 hover:text-premium-gold" type="button" onClick={shareDemo}>
-            <Share2 aria-hidden="true" className="h-4 w-4" /> Per WhatsApp senden
+            <Share2 aria-hidden="true" className="h-4 w-4" /> Отправить в WhatsApp
           </button>
         </div>
       ) : null}
 
       {presentation ? (
         <p className="mt-4 text-sm text-slate-400">
-          Präsentationsblatt erstellt: {formatDate(presentation.generated_at)} · Version {presentation.version}
-          {presentation.isStale ? " · Die Demo wurde danach geändert." : ""}
+          Презентация создана: {formatDate(presentation.generated_at)} · версия {presentation.version}
+          {presentation.isStale ? " · После этого демо изменилось." : ""}
         </p>
       ) : null}
 
@@ -284,14 +285,15 @@ export function RestaurantPresentationPanel({
               </div>
             </div>
             <aside className="rounded-lg border border-white/12 bg-[#101a2c] p-4 shadow-xl">
-              <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold">A4 Vorschau</p><h3 className="mt-1 font-heading text-xl font-semibold">Inhalte anpassen</h3></div><button className="rounded border border-white/10 p-2 text-slate-300 hover:text-premium-gold" type="button" aria-label="Vorschau schließen" onClick={() => setPreviewOpen(false)}><X className="h-4 w-4" /></button></div>
-              <label className="mt-5 block text-sm font-semibold">Headline<textarea value={content.headline} maxLength={100} onChange={(event) => setContent((current) => ({ ...current, headline: event.target.value }))} className="mt-2 min-h-20 w-full rounded border border-white/15 bg-midnight/60 p-3 text-sm font-normal text-white outline-none focus:border-premium-gold" /></label>
-              <label className="mt-4 block text-sm font-semibold">Einleitung<textarea value={content.intro} maxLength={240} onChange={(event) => setContent((current) => ({ ...current, intro: event.target.value }))} className="mt-2 min-h-24 w-full rounded border border-white/15 bg-midnight/60 p-3 text-sm font-normal text-white outline-none focus:border-premium-gold" /></label>
-              <label className="mt-4 block text-sm font-semibold">CTA<textarea value={content.cta} maxLength={150} onChange={(event) => setContent((current) => ({ ...current, cta: event.target.value }))} className="mt-2 min-h-16 w-full rounded border border-white/15 bg-midnight/60 p-3 text-sm font-normal text-white outline-none focus:border-premium-gold" /></label>
-              <label className="mt-4 block text-sm font-semibold">Ansprechpartner<select value={activeResponsibleId} onChange={(event) => setResponsibleUserId(event.target.value)} className="mt-2 min-h-11 w-full rounded border border-white/15 bg-midnight/60 px-3 text-sm font-normal text-white outline-none focus:border-premium-gold">{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></label>
-              <label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={content.showBenefits} onChange={(event) => setContent((current) => ({ ...current, showBenefits: event.target.checked }))} /> Nutzenkarten zeigen</label>
-              <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={content.showServices} onChange={(event) => setContent((current) => ({ ...current, showServices: event.target.checked }))} /> Leistungsblock zeigen</label>
-              <button disabled={isGenerating} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded bg-premium-gold px-4 text-sm font-semibold text-midnight transition-colors hover:bg-[#e0b936] disabled:opacity-60" type="button" onClick={() => void generate()}>{isGenerating ? <><RefreshCw className="h-4 w-4 animate-spin" /> Wird erstellt …</> : <><FileText className="h-4 w-4" /> Präsentationsblatt erstellen</>}</button>
+              <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold">Предпросмотр A4</p><h3 className="mt-1 font-heading text-xl font-semibold">Настроить содержание</h3></div><button className="rounded border border-white/10 p-2 text-slate-300 hover:text-premium-gold" type="button" aria-label="Закрыть предпросмотр" onClick={() => setPreviewOpen(false)}><X className="h-4 w-4" /></button></div>
+              <p className="mt-3 text-xs leading-5 text-slate-400">Текст самой презентации остаётся на немецком для клиента.</p>
+              <label className="mt-5 block text-sm font-semibold">Заголовок<textarea value={content.headline} maxLength={100} onChange={(event) => setContent((current) => ({ ...current, headline: event.target.value }))} className="mt-2 min-h-20 w-full rounded border border-white/15 bg-midnight/60 p-3 text-sm font-normal text-white outline-none focus:border-premium-gold" /></label>
+              <label className="mt-4 block text-sm font-semibold">Вступление<textarea value={content.intro} maxLength={240} onChange={(event) => setContent((current) => ({ ...current, intro: event.target.value }))} className="mt-2 min-h-24 w-full rounded border border-white/15 bg-midnight/60 p-3 text-sm font-normal text-white outline-none focus:border-premium-gold" /></label>
+              <label className="mt-4 block text-sm font-semibold">Призыв к действию<textarea value={content.cta} maxLength={150} onChange={(event) => setContent((current) => ({ ...current, cta: event.target.value }))} className="mt-2 min-h-16 w-full rounded border border-white/15 bg-midnight/60 p-3 text-sm font-normal text-white outline-none focus:border-premium-gold" /></label>
+              <label className="mt-4 block text-sm font-semibold">Контактное лицо<select value={activeResponsibleId} onChange={(event) => setResponsibleUserId(event.target.value)} className="mt-2 min-h-11 w-full rounded border border-white/15 bg-midnight/60 px-3 text-sm font-normal text-white outline-none focus:border-premium-gold">{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></label>
+              <label className="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" checked={content.showBenefits} onChange={(event) => setContent((current) => ({ ...current, showBenefits: event.target.checked }))} /> Показать преимущества</label>
+              <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={content.showServices} onChange={(event) => setContent((current) => ({ ...current, showServices: event.target.checked }))} /> Показать блок услуг</label>
+              <button disabled={isGenerating} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded bg-premium-gold px-4 text-sm font-semibold text-midnight transition-colors hover:bg-[#e0b936] disabled:opacity-60" type="button" onClick={() => void generate()}>{isGenerating ? <><RefreshCw className="h-4 w-4 animate-spin" /> Создание…</> : <><FileText className="h-4 w-4" /> Создать презентацию</>}</button>
             </aside>
           </div>
         </div>
@@ -336,18 +338,18 @@ export function VisitReadinessBadge({ restaurant }: { restaurant: Restaurant }) 
   }, [hasDemo, restaurant.id]);
 
   if (!hasDemo) {
-    return <span className="mt-2 inline-flex rounded border border-orange-300/30 bg-orange-400/10 px-2 py-1 text-xs font-semibold text-orange-100">Demo fehlt</span>;
+    return <span className="mt-2 inline-flex rounded border border-orange-300/30 bg-orange-400/10 px-2 py-1 text-xs font-semibold text-orange-100">Демо отсутствует</span>;
   }
 
   if (presentationState === "loading") {
-    return <span className="mt-2 inline-flex rounded border border-white/10 px-2 py-1 text-xs font-semibold text-slate-400">Vorbereitung wird geprüft …</span>;
+    return <span className="mt-2 inline-flex rounded border border-white/10 px-2 py-1 text-xs font-semibold text-slate-400">Проверка готовности…</span>;
   }
 
   if (presentationState === "ready") {
-    return <span className="mt-2 inline-flex rounded border border-emerald-300/30 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-100">Besuchsbereit</span>;
+    return <span className="mt-2 inline-flex rounded border border-emerald-300/30 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-100">Готово к визиту</span>;
   }
 
-  return <span className="mt-2 inline-flex rounded border border-amber-300/30 bg-amber-400/10 px-2 py-1 text-xs font-semibold text-amber-100">{presentationState === "stale" ? "Präsentation nicht aktuell" : "Präsentation fehlt"}</span>;
+  return <span className="mt-2 inline-flex rounded border border-amber-300/30 bg-amber-400/10 px-2 py-1 text-xs font-semibold text-amber-100">{presentationState === "stale" ? "Презентация устарела" : "Презентация отсутствует"}</span>;
 }
 
 function formatDate(value: string) {
@@ -355,7 +357,7 @@ function formatDate(value: string) {
     return "";
   }
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 function createFallbackDemo(url: string): DemoState | null {

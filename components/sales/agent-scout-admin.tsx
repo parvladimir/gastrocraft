@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AgentRun, Restaurant, SalesUser } from "@/lib/sales-types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { salesUiLabel } from "@/lib/sales/ui-labels";
 
 const panelClassName =
   "rounded-lg border border-white/10 bg-[#101a2c] p-5 shadow-[0_18px_42px_rgba(0,0,0,0.18)]";
@@ -40,20 +41,20 @@ export function AgentDiscoveryBlock({
   return (
     <div className={`${panelClassName} mt-5`}>
       <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
-        Agent Discovery
+        Лид, найденный ботом
       </p>
-      <h2 className="mt-2 font-heading text-xl font-semibold">Scout-Herkunft</h2>
+      <h2 className="mt-2 font-heading text-xl font-semibold">Откуда появился лид</h2>
       <div className="mt-4 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-        <span>Quelle: {restaurant.source_type || "agent_discovery"}</span>
-        <span>Gefunden von: {foundBy}</span>
-        <span>Lead-Score: {restaurant.lead_score ?? "-"}</span>
-        <span>Lead-Status: {restaurant.lead_status || "-"}</span>
-        <span>Visit-Status: {restaurant.visit_status || "-"}</span>
-        <span>Website-Status: {restaurant.website_status || "-"}</span>
-        <span>Gefunden am: {formatDate(restaurant.discovered_at)}</span>
-        <span>Run-ID: {restaurant.agent_run_id || "-"}</span>
+        <span>Источник: {salesUiLabel(restaurant.source_type || "agent_discovery")}</span>
+        <span>Нашёл: {foundBy}</span>
+        <span>Оценка лида: {restaurant.lead_score ?? "-"}</span>
+        <span>Статус лида: {salesUiLabel(restaurant.lead_status || "-")}</span>
+        <span>Статус визита: {salesUiLabel(restaurant.visit_status || "-")}</span>
+        <span>Статус сайта: {salesUiLabel(restaurant.website_status || "-")}</span>
+        <span>Найден: {formatDate(restaurant.discovered_at)}</span>
+        <span>ID запуска: {restaurant.agent_run_id || "-"}</span>
         <span className="sm:col-span-2">
-          Source: {restaurant.source_name || "-"}
+          Источник сведений: {restaurant.source_name || "-"}
           {restaurant.source_url ? (
             <>
               {" · "}
@@ -63,13 +64,13 @@ export function AgentDiscoveryBlock({
                 rel="noreferrer"
                 target="_blank"
               >
-                Link
+                Ссылка
               </a>
             </>
           ) : null}
         </span>
         {restaurant.selection_reason ? (
-          <span className="sm:col-span-2">Begründung: {restaurant.selection_reason}</span>
+          <span className="sm:col-span-2">Почему выбран: {restaurant.selection_reason}</span>
         ) : null}
       </div>
     </div>
@@ -153,7 +154,7 @@ export function AgentScoutAdminPanel({
   async function setBotEnabled(bot: ScoutBot, enabled: boolean) {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
-      setBotError("Supabase ist nicht konfiguriert.");
+      setBotError("Supabase не настроен.");
       return;
     }
     setBotError("");
@@ -167,7 +168,7 @@ export function AgentScoutAdminPanel({
       .single();
     setUpdatingBotId(null);
     if (error || !data) {
-      setBotError(error?.message ?? "Bot-Status konnte nicht geändert werden.");
+      setBotError(error?.message ?? "Не удалось изменить состояние бота.");
       return;
     }
     setBots((current) =>
@@ -205,14 +206,14 @@ export function AgentScoutAdminPanel({
         <p className="font-heading text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
           Restaurant Scout
         </p>
-        <h2 className="mt-2 font-heading text-xl font-semibold">Agent Leads</h2>
+        <h2 className="mt-2 font-heading text-xl font-semibold">Лиды бота</h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Nur für Admins sichtbar. Bot schreibt ausschließlich über die gesicherte Agent-API.
+          Доступно только администратору. Бот добавляет лиды через защищённый интерфейс.
         </p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <label className="grid gap-1 text-sm">
-            <span className="text-slate-400">Stadt</span>
+            <span className="text-slate-400">Город</span>
             <input
               className="min-h-11 rounded border border-white/10 bg-midnight/60 px-3"
               value={filter.city}
@@ -220,7 +221,7 @@ export function AgentScoutAdminPanel({
             />
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-slate-400">Lead-Status</span>
+            <span className="text-slate-400">Статус лида</span>
             <select
               className="min-h-11 rounded border border-white/10 bg-midnight/60 px-3"
               value={filter.leadStatus}
@@ -228,16 +229,16 @@ export function AgentScoutAdminPanel({
                 setFilter((current) => ({ ...current, leadStatus: event.target.value }))
               }
             >
-              <option value="">Alle</option>
-              <option value="new">new</option>
-              <option value="qualified">qualified</option>
-              <option value="rejected">rejected</option>
-              <option value="converted">converted</option>
-              <option value="duplicate">duplicate</option>
+              <option value="">Все</option>
+              <option value="new">Новый</option>
+              <option value="qualified">Подходит</option>
+              <option value="rejected">Отклонён</option>
+              <option value="converted">Конвертирован</option>
+              <option value="duplicate">Дубликат</option>
             </select>
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-slate-400">Visit-Status</span>
+            <span className="text-slate-400">Статус визита</span>
             <select
               className="min-h-11 rounded border border-white/10 bg-midnight/60 px-3"
               value={filter.visitStatus}
@@ -245,12 +246,12 @@ export function AgentScoutAdminPanel({
                 setFilter((current) => ({ ...current, visitStatus: event.target.value }))
               }
             >
-              <option value="">Alle</option>
-              <option value="none">none</option>
-              <option value="to_plan">to_plan</option>
-              <option value="planned">planned</option>
-              <option value="done">done</option>
-              <option value="skipped">skipped</option>
+              <option value="">Все</option>
+              <option value="none">Нет</option>
+              <option value="to_plan">Запланировать</option>
+              <option value="planned">Запланировано</option>
+              <option value="done">Выполнено</option>
+              <option value="skipped">Пропущено</option>
             </select>
           </label>
         </div>
@@ -259,16 +260,16 @@ export function AgentScoutAdminPanel({
           <table className="min-w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-slate-400">
               <tr>
-                <th className="px-2 py-2">Restaurant</th>
-                <th className="px-2 py-2">Stadt</th>
-                <th className="px-2 py-2">Score</th>
-                <th className="px-2 py-2">E-Mail</th>
-                <th className="px-2 py-2">Website</th>
-                <th className="px-2 py-2">Quelle</th>
-                <th className="px-2 py-2">Gefunden</th>
-                <th className="px-2 py-2">Von</th>
-                <th className="px-2 py-2">Visit</th>
-                <th className="px-2 py-2">Lead</th>
+                <th className="px-2 py-2">Заведение</th>
+                <th className="px-2 py-2">Город</th>
+                <th className="px-2 py-2">Оценка</th>
+                <th className="px-2 py-2">Почта</th>
+                <th className="px-2 py-2">Сайт</th>
+                <th className="px-2 py-2">Источник</th>
+                <th className="px-2 py-2">Найден</th>
+                <th className="px-2 py-2">Кем</th>
+                <th className="px-2 py-2">Визит</th>
+                <th className="px-2 py-2">Лид</th>
               </tr>
             </thead>
             <tbody>
@@ -294,7 +295,7 @@ export function AgentScoutAdminPanel({
                         rel="noreferrer"
                         target="_blank"
                       >
-                        Link
+                        Ссылка
                       </a>
                     ) : (
                       "-"
@@ -305,20 +306,20 @@ export function AgentScoutAdminPanel({
                   <td className="px-2 py-3">
                     {users.find((user) => user.id === restaurant.created_by)?.name || "Bot"}
                   </td>
-                  <td className="px-2 py-3">{restaurant.visit_status || "-"}</td>
-                  <td className="px-2 py-3">{restaurant.lead_status || "-"}</td>
+                  <td className="px-2 py-3">{salesUiLabel(restaurant.visit_status || "-")}</td>
+                  <td className="px-2 py-3">{salesUiLabel(restaurant.lead_status || "-")}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           {agentLeads.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-400">Keine Agent-Leads gefunden.</p>
+            <p className="mt-4 text-sm text-slate-400">Лиды бота не найдены.</p>
           ) : null}
         </div>
       </div>
 
       <div className={panelClassName}>
-        <h2 className="font-heading text-xl font-semibold">Agent Runs</h2>
+        <h2 className="font-heading text-xl font-semibold">Запуски бота</h2>
         {runsError ? <p className="mt-2 text-sm text-red-200">{runsError}</p> : null}
         <div className="mt-4 grid gap-3">
           {runs.map((run) => (
@@ -326,34 +327,34 @@ export function AgentScoutAdminPanel({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-semibold text-warm-white">{run.id.slice(0, 8)}…</span>
                 <span className="rounded border border-premium-gold/30 px-2 py-0.5 text-xs text-premium-gold">
-                  {run.status}
+                  {salesUiLabel(run.status)}
                 </span>
               </div>
               <div className="mt-2 grid gap-1 text-slate-300 sm:grid-cols-2">
-                <span>Start: {formatDate(run.started_at)}</span>
-                <span>Ende: {formatDate(run.finished_at)}</span>
+                <span>Начало: {formatDate(run.started_at)}</span>
+                <span>Конец: {formatDate(run.finished_at)}</span>
                 <span>
-                  Leads: {run.leads_created}/{run.max_leads}
+                  Лиды: {run.leads_created}/{run.max_leads}
                 </span>
-                <span>Stadt: {run.city || "-"}</span>
+                <span>Город: {run.city || "-"}</span>
               </div>
             </div>
           ))}
-          {runs.length === 0 ? <p className="text-sm text-slate-400">Noch keine Runs.</p> : null}
+          {runs.length === 0 ? <p className="text-sm text-slate-400">Запусков пока нет.</p> : null}
         </div>
       </div>
 
       <div className={panelClassName}>
-        <h2 className="font-heading text-xl font-semibold">Kill Switch</h2>
+        <h2 className="font-heading text-xl font-semibold">Управление доступом бота</h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Scout-Zugriff sofort deaktivieren oder nach einer Prüfung wieder aktivieren.
+          Здесь можно отключить доступ бота или включить его после проверки.
         </p>
         {botError ? <p className="mt-3 text-sm text-red-200">{botError}</p> : null}
         <div className="mt-4 grid gap-3">
           {bots.map((bot) => (
             <div key={bot.id} className="flex flex-wrap items-center justify-between gap-3 rounded border border-white/10 bg-midnight/40 px-4 py-3">
               <span className="text-sm text-warm-white">
-                {bot.name} · {bot.bot_enabled ? "Aktiv" : "Deaktiviert"}
+                {bot.name} · {bot.bot_enabled ? "Активен" : "Отключён"}
               </span>
               <button
                 className={outlineButtonClassName}
@@ -362,14 +363,14 @@ export function AgentScoutAdminPanel({
                 onClick={() => void setBotEnabled(bot, !bot.bot_enabled)}
               >
                 {updatingBotId === bot.id
-                  ? "Speichern…"
+                  ? "Сохранение…"
                   : bot.bot_enabled
-                    ? "Deaktivieren"
-                    : "Aktivieren"}
+                    ? "Отключить"
+                    : "Включить"}
               </button>
             </div>
           ))}
-          {bots.length === 0 ? <p className="text-sm text-slate-400">Kein Scout-Bot vorhanden.</p> : null}
+          {bots.length === 0 ? <p className="text-sm text-slate-400">Бот Restaurant Scout не найден.</p> : null}
         </div>
       </div>
     </div>
@@ -384,5 +385,5 @@ function formatDate(value?: string) {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return date.toLocaleString("de-DE");
+  return date.toLocaleString("ru-RU");
 }

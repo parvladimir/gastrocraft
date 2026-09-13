@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     follow: false,
     index: false
   },
-  title: "Sales Pipeline"
+  title: "DINEVIO · Воронка продаж"
 };
 
 export default function SalesPipelinePage() {

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     follow: false,
     index: false
   },
-  title: "Sales Statistik"
+  title: "DINEVIO · Статистика продаж"
 };
 
 export default function SalesStatisticsPage() {
