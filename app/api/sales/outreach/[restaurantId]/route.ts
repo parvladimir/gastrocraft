@@ -75,6 +75,7 @@ export async function POST(request: Request, context: Context) {
   const payload = {
     from,
     to: [reserved.recipient_email],
+    bcc: [notify],
     reply_to: replyTo,
     subject: proposal.subject,
     text: proposal.text,
