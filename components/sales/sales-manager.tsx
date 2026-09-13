@@ -72,6 +72,7 @@ import { demoTemplateThemes } from "@/lib/demo-template/defaults";
 import type { DemoTemplateKey } from "@/lib/demo-template/types";
 import { RestaurantPresentationPanel, VisitReadinessBadge } from "@/components/sales/restaurant-presentation-panel";
 import { AgentDiscoveryBlock, AgentScoutAdminPanel } from "@/components/sales/agent-scout-admin";
+import { OutreachStatistics, RestaurantOutreachPanel } from "@/components/sales/restaurant-outreach-panel";
 import {
   contactHistoryService,
   offersService,
@@ -2408,6 +2409,8 @@ function RestaurantDetailView({
 
         <AgentDiscoveryBlock restaurant={restaurant} users={data.users} />
 
+        <RestaurantOutreachPanel restaurant={restaurant} />
+
         <PersonalDemoPanel
           data={data}
           onCopy={onCopy}
@@ -3498,6 +3501,7 @@ function StatisticsView({
           </div>
         ))}
       </div>
+      <OutreachStatistics />
       <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
         <div className={panelClassName}>
           <h2 className="font-heading text-xl font-semibold">Conversion Funnel</h2>
