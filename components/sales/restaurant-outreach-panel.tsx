@@ -16,7 +16,7 @@ type Outreach = {
 };
 type DetailResponse = {
   outreach: Outreach | null;
-  proposal: { subject: string; text: string };
+  proposal: { subject: string; text: string; html: string };
   canSend: boolean;
   restaurant: { email: string | null };
   message?: string;
@@ -65,9 +65,19 @@ export function RestaurantOutreachPanel({ restaurant }: { restaurant: Restaurant
     {outreach?.reply_excerpt ? <div className="mt-4 rounded border border-white/10 bg-midnight/40 p-3 text-sm whitespace-pre-wrap text-slate-200">{outreach.reply_excerpt}</div> : null}
     {outreach?.last_error ? <p className="mt-2 text-sm text-amber-200">{outreach.last_error}</p> : null}
     {detail?.proposal && outreach?.status === "draft" ? <details className="mt-4 rounded border border-white/10 bg-midnight/40 p-3 text-sm">
-      <summary className="cursor-pointer font-semibold text-premium-gold">Vorschau des Angebots</summary>
+      <summary className="cursor-pointer font-semibold text-premium-gold">Gestaltete E-Mail ansehen</summary>
       <p className="mt-3 font-semibold">{detail.proposal.subject}</p>
-      <p className="mt-3 whitespace-pre-wrap leading-6 text-slate-300">{detail.proposal.text}</p>
+      <iframe
+        title="Vorschau der DINEVIO E-Mail"
+        srcDoc={detail.proposal.html}
+        sandbox=""
+        referrerPolicy="no-referrer"
+        className="mt-4 h-[700px] w-full rounded border border-white/10 bg-white"
+      />
+      <details className="mt-3">
+        <summary className="cursor-pointer text-slate-300">Textversion und Links anzeigen</summary>
+        <p className="mt-3 whitespace-pre-wrap leading-6 text-slate-300">{detail.proposal.text}</p>
+      </details>
     </details> : null}
     {detail?.canSend && outreach?.status === "draft" ? <div className="mt-4 grid gap-3">
       <label className="grid gap-2 text-sm text-slate-300">

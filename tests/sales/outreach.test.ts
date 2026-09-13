@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyReply, createProposal, safeGoogleMapsUrl } from "@/lib/sales/outreach/proposal";
+import { classifyReply, createProposal, safeGoogleMapsUrl, SCHNELL_UND_LECKER_MAPS_URL } from "@/lib/sales/outreach/proposal";
 
 describe("DINEVIO outreach", () => {
   it("builds a personalized offer with verified reference links and escapes restaurant names", () => {
@@ -7,9 +7,13 @@ describe("DINEVIO outreach", () => {
     expect(proposal.subject).toContain("<Cafe & Bar>");
     expect(proposal.html).toContain("&lt;Cafe &amp; Bar&gt;");
     expect(proposal.html).toContain("http://schnellundlecker.dinevio.de/");
+    expect(proposal.html).toContain(SCHNELL_UND_LECKER_MAPS_URL);
+    expect(proposal.text).toContain(SCHNELL_UND_LECKER_MAPS_URL);
+    expect(proposal.html).toContain("restaurant-demo-desktop.webp");
     expect(proposal.text).toContain("https://www.dinevio.de/");
     expect(proposal.text).toContain("Google Maps");
-    expect(proposal.text).toContain("eigenes Demo");
+    expect(proposal.text).toContain("kostenlos und unverbindlich");
+    expect(proposal.html).toContain("Ihr eigenes Demo – kostenlos.");
   });
   it("excludes unsafe map links", () => {
     expect(safeGoogleMapsUrl("javascript:alert(1)")).toBeNull();
