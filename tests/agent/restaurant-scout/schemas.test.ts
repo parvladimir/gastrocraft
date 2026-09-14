@@ -87,7 +87,22 @@ describe("restaurant scout schemas", () => {
   });
 
   it("caps max leads per run by configuration", () => {
-    expect(resolveMaxLeadsPerRun(99)).toBeLessThanOrEqual(3);
+    expect(resolveMaxLeadsPerRun(99)).toBeLessThanOrEqual(6);
     expect(resolveMaxLeadsPerRun(1)).toBe(1);
+  });
+
+  it("requires a public source URL when claiming a restaurant email", () => {
+    const lead = {
+      run_id: "11111111-1111-4111-8111-111111111111",
+      name: "Test Imbiss",
+      lead_score: 75,
+      source_url: "https://example.com/listing",
+      website_status: "missing",
+      selection_reason: "Confirmed active and no own website",
+      email: "kontakt@example.com"
+    };
+    expect(createLeadSchema.safeParse(lead).success).toBe(false);
+    expect(createLeadSchema.safeParse({ ...lead, email_source_url: "https://example.com/contact" }).success).toBe(true);
+    expect(createLeadSchema.safeParse({ ...lead, email_source_url: "file:///private/contact" }).success).toBe(false);
   });
 });

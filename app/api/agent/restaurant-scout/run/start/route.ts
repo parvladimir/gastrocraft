@@ -45,14 +45,18 @@ export async function POST(request: Request) {
   });
 
   if (error || !data) {
+    const paused = /Scout paused at 50 total leads/i.test(error?.message ?? "");
     await writeAgentAudit(auth, {
       action: "run.start.failed",
       success: false,
       details: { message: error?.message }
     });
     return NextResponse.json(
-      { error: "run_start_failed", message: error?.message ?? "Failed to start run." },
-      { status: 500 }
+      {
+        error: paused ? "owner_approval_required" : "run_start_failed",
+        message: error?.message ?? "Failed to start run."
+      },
+      { status: paused ? 409 : 500 }
     );
   }
 

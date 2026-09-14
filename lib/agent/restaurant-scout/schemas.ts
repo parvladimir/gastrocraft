@@ -21,7 +21,7 @@ export const startRunSchema = z
     city: z.string().trim().max(MAX_TEXT_SHORT).optional(),
     region: z.string().trim().max(MAX_TEXT_SHORT).optional(),
     notes: z.string().trim().max(MAX_TEXT_MEDIUM).optional(),
-    max_leads: z.number().int().min(1).max(3).optional()
+    max_leads: z.number().int().min(1).max(6).optional()
   })
   .strict();
 
@@ -47,6 +47,7 @@ export const createLeadSchema = z
     city: z.string().trim().max(MAX_TEXT_SHORT).optional(),
     phone: z.string().trim().max(40).optional(),
     email: z.string().trim().email().max(MAX_TEXT_SHORT).optional().or(z.literal("")),
+    email_source_url: optionalHttpUrl,
     website: z.literal("").optional(),
     google_maps_url: optionalHttpUrl,
     google_place_id: z.string().trim().max(MAX_TEXT_SHORT).optional(),
@@ -60,7 +61,16 @@ export const createLeadSchema = z
     selection_reason: z.string().trim().min(10).max(MAX_TEXT_MEDIUM),
     discovered_at: z.string().datetime().optional()
   })
-  .strict();
+  .strict()
+  .superRefine((lead, context) => {
+    if (lead.email?.trim() && !lead.email_source_url?.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["email_source_url"],
+        message: "A public source URL for the business email is required."
+      });
+    }
+  });
 
 export const finishRunSchema = z
   .object({

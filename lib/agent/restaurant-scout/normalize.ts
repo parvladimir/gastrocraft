@@ -11,6 +11,7 @@ export function mapLeadPayload(input: CreateLeadInput) {
     city: emptyToUndefined(input.city),
     discovered_at: input.discovered_at,
     email: emptyToUndefined(input.email),
+    email_source_url: emptyToUndefined(input.email_source_url),
     google_maps_url: emptyToUndefined(input.google_maps_url),
     google_place_id: emptyToUndefined(input.google_place_id),
     house_number: emptyToUndefined(input.house_number),
