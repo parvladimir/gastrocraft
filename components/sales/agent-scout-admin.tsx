@@ -98,6 +98,8 @@ export function AgentScoutAdminPanel({
   const [bots, setBots] = useState<ScoutBot[]>([]);
   const [botError, setBotError] = useState("");
   const [updatingBotId, setUpdatingBotId] = useState<string | null>(null);
+  const [leadCounts, setLeadCounts] = useState<{ total: number; today: number; withoutEmail: number } | null>(null);
+  const [leadCountsError, setLeadCountsError] = useState("");
 
   useEffect(() => {
     if (currentUser.role !== "admin") {
@@ -146,6 +148,24 @@ export function AgentScoutAdminPanel({
       setBots((data ?? []) as ScoutBot[]);
     }
     void loadBots();
+    async function loadLeadCounts() {
+      const supabase = createSupabaseBrowserClient();
+      if (!supabase) return;
+      const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+      const [total, today, withoutEmail] = await Promise.all([
+        supabase.from("restaurants").select("id", { count: "exact", head: true }).eq("created_by_agent", true),
+        supabase.from("restaurants").select("id", { count: "exact", head: true }).eq("created_by_agent", true).gte("created_at", since),
+        supabase.from("restaurants").select("id", { count: "exact", head: true }).eq("created_by_agent", true).is("email", null).gte("created_at", since)
+      ]);
+      if (cancelled) return;
+      const error = total.error || today.error || withoutEmail.error;
+      if (error) {
+        setLeadCountsError(error.message);
+        return;
+      }
+      setLeadCounts({ total: total.count ?? 0, today: today.count ?? 0, withoutEmail: withoutEmail.count ?? 0 });
+    }
+    void loadLeadCounts();
     return () => {
       cancelled = true;
     };
@@ -210,6 +230,17 @@ export function AgentScoutAdminPanel({
         <p className="mt-2 text-sm leading-6 text-slate-400">
           Доступно только администратору. Бот добавляет лиды через защищённый интерфейс.
         </p>
+        {leadCounts ? (
+          <div className="mt-4 grid gap-2 text-sm text-slate-200 sm:grid-cols-3">
+            <p>Всего лидов бота: <strong>{leadCounts.total}/50</strong></p>
+            <p>За последние 24 часа: <strong>{leadCounts.today}/6</strong></p>
+            <p>Без почты за 24 часа: <strong>{leadCounts.withoutEmail}/3</strong></p>
+            {leadCounts.total >= 50 ? (
+              <p className="font-semibold text-amber-300 sm:col-span-3">Бот остановлен до вашего разрешения продолжить.</p>
+            ) : null}
+          </div>
+        ) : null}
+        {leadCountsError ? <p className="mt-3 text-sm text-red-300">Не удалось загрузить квоты: {leadCountsError}</p> : null}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <label className="grid gap-1 text-sm">

@@ -1,7 +1,7 @@
 export const SCOUT_ROLE = "restaurant_scout_bot" as const;
 
 export const MAX_AGENT_LEADS_PER_RUN = Number(
-  process.env.MAX_AGENT_LEADS_PER_RUN ?? "3"
+  process.env.MAX_AGENT_LEADS_PER_RUN ?? "6"
 );
 
 export const MAX_AGENT_LEADS_PER_MINUTE = Number(
@@ -9,8 +9,11 @@ export const MAX_AGENT_LEADS_PER_MINUTE = Number(
 );
 
 export const MAX_AGENT_LEADS_PER_DAY = Number(
-  process.env.MAX_AGENT_LEADS_PER_DAY ?? "3"
+  process.env.MAX_AGENT_LEADS_PER_DAY ?? "6"
 );
+
+export const MAX_AGENT_LEADS_WITHOUT_EMAIL_PER_DAY = 3;
+export const MAX_AGENT_LEADS_TOTAL = 50;
 
 export const MAX_AGENT_RUNS_PER_DAY = Number(
   process.env.MAX_AGENT_RUNS_PER_DAY ?? "20"

@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       { status: 409 }
     );
   }
-  if ((run.leads_created ?? 0) >= (run.max_leads ?? 3)) {
+  if ((run.leads_created ?? 0) >= (run.max_leads ?? 6)) {
     return NextResponse.json(
       {
         error: "run_lead_limit",
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const rate = await assertLeadRateLimits(auth);
+  const rate = await assertLeadRateLimits(auth, Boolean(parsed.data.email));
   if (!rate.ok) {
     await writeAgentAudit(auth, {
       action: "lead.create.rate_limited",
@@ -141,23 +141,30 @@ export async function POST(request: Request) {
     const message = error?.message ?? "Lead creation failed.";
     const isDuplicate = /duplicate/i.test(message);
     const isIdempotencyConflict = /Idempotency-Key conflict/i.test(message);
+    const isPaused = /Scout paused at 50 total leads/i.test(message);
+    const emailSlotsReserved = /Email lead slots reserved/i.test(message);
     await writeAgentAudit(auth, {
       action: "lead.create.failed",
       runId: parsed.data.run_id,
       success: false,
       details: { message }
     });
-    return NextResponse.json(
-      {
-        error: isIdempotencyConflict
-          ? "idempotency_conflict"
-          : isDuplicate
-            ? "duplicate"
-            : "lead_create_failed",
-        message
-      },
-      { status: isDuplicate || isIdempotencyConflict ? 409 : 400 }
-    );
+    let errorCode = "lead_create_failed";
+    let status = 400;
+    if (isPaused) {
+      errorCode = "owner_approval_required";
+      status = 409;
+    } else if (emailSlotsReserved) {
+      errorCode = "email_slots_reserved";
+      status = 429;
+    } else if (isIdempotencyConflict) {
+      errorCode = "idempotency_conflict";
+      status = 409;
+    } else if (isDuplicate) {
+      errorCode = "duplicate";
+      status = 409;
+    }
+    return NextResponse.json({ error: errorCode, message }, { status });
   }
 
   const body = {

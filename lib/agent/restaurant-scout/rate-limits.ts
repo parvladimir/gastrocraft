@@ -2,26 +2,33 @@ import {
   MAX_AGENT_LEADS_PER_DAY,
   MAX_AGENT_LEADS_PER_MINUTE,
   MAX_AGENT_LEADS_PER_RUN,
+  MAX_AGENT_LEADS_TOTAL,
+  MAX_AGENT_LEADS_WITHOUT_EMAIL_PER_DAY,
   MAX_AGENT_RUNS_PER_DAY
 } from "./constants";
 import type { ScoutAuthContext } from "./authz";
 
 export function resolveMaxLeadsPerRun(requested?: number) {
   const configured = Number.isFinite(MAX_AGENT_LEADS_PER_RUN)
-    ? Math.max(1, Math.min(3, MAX_AGENT_LEADS_PER_RUN))
-    : 3;
+    ? Math.max(1, Math.min(6, MAX_AGENT_LEADS_PER_RUN))
+    : 6;
   if (typeof requested !== "number") {
     return configured;
   }
   return Math.max(1, Math.min(configured, requested));
 }
 
-export async function assertLeadRateLimits(ctx: ScoutAuthContext) {
+export async function assertLeadRateLimits(ctx: ScoutAuthContext, hasEmail: boolean) {
   const now = Date.now();
   const minuteAgo = new Date(now - 60_000).toISOString();
   const dayAgo = new Date(now - 24 * 60 * 60_000).toISOString();
 
-  const [{ count: minuteCount, error: minuteError }, { count: dayCount, error: dayError }] =
+  const [
+    { count: minuteCount, error: minuteError },
+    { count: dayCount, error: dayError },
+    { count: withoutEmailCount, error: withoutEmailError },
+    { count: totalCount, error: totalError }
+  ] =
     await Promise.all([
       ctx.supabase
         .from("restaurants")
@@ -34,15 +41,35 @@ export async function assertLeadRateLimits(ctx: ScoutAuthContext) {
         .select("id", { count: "exact", head: true })
         .eq("created_by", ctx.user.id)
         .eq("created_by_agent", true)
-        .gte("created_at", dayAgo)
+        .gte("created_at", dayAgo),
+      ctx.supabase
+        .from("restaurants")
+        .select("id", { count: "exact", head: true })
+        .eq("created_by", ctx.user.id)
+        .eq("created_by_agent", true)
+        .is("email", null)
+        .gte("created_at", dayAgo),
+      ctx.supabase
+        .from("restaurants")
+        .select("id", { count: "exact", head: true })
+        .eq("created_by_agent", true)
     ]);
 
-  if (minuteError || dayError) {
+  if (minuteError || dayError || withoutEmailError || totalError) {
     return {
       ok: false as const,
       status: 500,
       error: "rate_limit_check_failed",
-      message: minuteError?.message ?? dayError?.message ?? "Rate limit check failed."
+      message: minuteError?.message ?? dayError?.message ?? withoutEmailError?.message ?? totalError?.message ?? "Rate limit check failed."
+    };
+  }
+
+  if ((totalCount ?? 0) >= MAX_AGENT_LEADS_TOTAL) {
+    return {
+      ok: false as const,
+      status: 409,
+      error: "owner_approval_required",
+      message: `Scout paused at ${MAX_AGENT_LEADS_TOTAL} total leads; owner approval required.`
     };
   }
 
@@ -56,14 +83,23 @@ export async function assertLeadRateLimits(ctx: ScoutAuthContext) {
   }
 
   const dailyCap = Number.isFinite(MAX_AGENT_LEADS_PER_DAY)
-    ? Math.max(1, Math.min(3, MAX_AGENT_LEADS_PER_DAY))
-    : 3;
+    ? Math.max(1, Math.min(6, MAX_AGENT_LEADS_PER_DAY))
+    : 6;
   if ((dayCount ?? 0) >= dailyCap) {
     return {
       ok: false as const,
       status: 429,
       error: "rate_limited",
       message: `Daily lead cap (${dailyCap}) exceeded.`
+    };
+  }
+
+  if (!hasEmail && (withoutEmailCount ?? 0) >= MAX_AGENT_LEADS_WITHOUT_EMAIL_PER_DAY) {
+    return {
+      ok: false as const,
+      status: 429,
+      error: "email_slots_reserved",
+      message: "Three remaining daily lead slots are reserved for verified email leads."
     };
   }
 
