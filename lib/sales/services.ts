@@ -27,7 +27,7 @@ export const profilesService = {
     const { data: authData, error: authError } = await supabase.auth.getUser();
 
     if (authError || !authData.user) {
-      return { data: null, error: "Sitzung konnte nicht geladen werden." };
+      return { data: null, error: "Не удалось проверить сеанс пользователя." };
     }
 
     const { data, error } = await supabase
@@ -41,7 +41,7 @@ export const profilesService = {
     }
 
     if (!data) {
-      return { data: null, error: "Für diesen Benutzer wurde noch kein Profil angelegt." };
+      return { data: null, error: "Для этого пользователя ещё не создан профиль." };
     }
 
     return { data: mapProfile(data as DbRecord), error: null };
@@ -741,25 +741,29 @@ export const packagesService = {
 };
 
 export function normalizeSalesError(message: string) {
-  const technicalDetails = `Technische Details: ${message}`;
+  const technicalDetails = `Технические сведения: ${message}`;
+
+  if (/invalid input syntax for type (numeric|integer|double precision)/i.test(message)) {
+    return `В числовом поле указано пустое или неверное значение.\n${technicalDetails}`;
+  }
 
   if (/not-null constraint|null value/i.test(message)) {
-    return `Ein Pflichtfeld wurde ohne Wert an die Datenbank gesendet.\n${technicalDetails}`;
+    return `Не заполнено обязательное поле.\n${technicalDetails}`;
   }
 
   if (/column|schema cache|Could not find|does not exist|relation/i.test(message)) {
-    return `Die Datenbankstruktur ist nicht aktuell. Bitte führen Sie die neuesten Supabase-Migrationen aus.\n${technicalDetails}`;
+    return `Структура базы данных не обновлена. Примените последние миграции Supabase.\n${technicalDetails}`;
   }
 
   if (/jwt|auth|permission|policy|rls/i.test(message)) {
-    return `Sie haben keine Berechtigung für diese Aktion.\n${technicalDetails}`;
+    return `Нет прав для этого действия.\n${technicalDetails}`;
   }
 
   if (/network|fetch|failed/i.test(message)) {
-    return `Daten konnten nicht geladen werden.\n${technicalDetails}`;
+    return `Не удалось связаться с базой данных.\n${technicalDetails}`;
   }
 
-  return `Die Datenbankaktion konnte nicht abgeschlossen werden.\n${technicalDetails}`;
+  return `Не удалось завершить операцию с базой данных.\n${technicalDetails}`;
 }
 
 function mapProfile(row: DbRecord): SalesUser {
@@ -988,17 +992,16 @@ function mapSalesSetting(row: DbRecord): SalesSetting {
 }
 
 function toRestaurantRow(restaurant: Restaurant): DbRecord {
+  const row = withNullableNumericFields({
+    ...restaurant,
+    latitude: toNullableNumber(restaurant.latitude),
+    longitude: toNullableNumber(restaurant.longitude),
+    opening_hours: restaurant.opening_hours,
+    photos: restaurant.photos
+  }, restaurantNumericFields);
+
   return withNullableFields(
-    withNullableFields(withNullableDateFields({
-      ...restaurant,
-      google_rating: restaurant.google_rating,
-      google_review_count: restaurant.google_review_count,
-      interest_level: restaurant.interest_level,
-      latitude: toNullableNumber(restaurant.latitude),
-      longitude: toNullableNumber(restaurant.longitude),
-      opening_hours: restaurant.opening_hours,
-      photos: restaurant.photos
-    }, restaurantDateFields), restaurantUuidFields),
+    withNullableFields(withNullableDateFields(row, restaurantDateFields), restaurantUuidFields),
     restaurantNullableFields
   );
 }
@@ -1014,6 +1017,7 @@ function toRestaurantPatchRow(patch: Partial<Restaurant>): DbRecord {
     row.longitude = toNullableNumber(row.longitude);
   }
 
+  withNullableNumericFields(row, restaurantNumericFields);
   return withNullableFields(
     withNullableFields(withNullableDateFields(row, restaurantDateFields), restaurantUuidFields),
     restaurantNullableFields
@@ -1051,10 +1055,12 @@ function toTourStopRow(stop: TourStop): DbRecord {
 }
 
 function toOfferRow(offer: Offer): DbRecord {
-  return withNullableFields(withNullableDateFields({
+  const row = withNullableNumericFields({
     ...offer,
     status: normalizeOfferStatusForDatabase(offer.status)
-  }, offerDateFields), offerUuidFields);
+  }, offerNumericFields);
+
+  return withNullableFields(withNullableDateFields(row, offerDateFields), offerUuidFields);
 }
 
 function toOfferPatchRow(patch: Partial<Offer>): DbRecord {
@@ -1064,6 +1070,7 @@ function toOfferPatchRow(patch: Partial<Offer>): DbRecord {
     row.status = normalizeOfferStatusForDatabase(row.status as Offer["status"]);
   }
 
+  withNullableNumericFields(row, offerNumericFields);
   return withNullableFields(withNullableDateFields(row, offerDateFields), offerUuidFields);
 }
 
@@ -1131,6 +1138,7 @@ const restaurantDateFields = [
   "next_contact_at",
   "planned_visit_at"
 ];
+const restaurantNumericFields = ["google_rating", "google_review_count", "interest_level"];
 const restaurantNullableFields = [
   "custom_demo_slug",
   "custom_demo_url",
@@ -1170,6 +1178,7 @@ const offerDateFields = [
   "valid_until"
 ];
 const offerUuidFields = ["created_by", "restaurant_id", "updated_by"];
+const offerNumericFields = ["discount_amount", "discount_percent", "vat_rate"];
 const restaurantPhotoUuidFields = ["restaurant_id", "uploaded_by"];
 const taskDateFields = ["completed_at", "due_at"];
 const taskUuidFields = [
@@ -1189,6 +1198,16 @@ function withNullableFields(row: DbRecord, fields: string[]) {
   for (const field of fields) {
     if (row[field] === "") {
       row[field] = null;
+    }
+  }
+
+  return row;
+}
+
+function withNullableNumericFields(row: DbRecord, fields: string[]) {
+  for (const field of fields) {
+    if (field in row) {
+      row[field] = toNullableNumber(row[field]);
     }
   }
 
